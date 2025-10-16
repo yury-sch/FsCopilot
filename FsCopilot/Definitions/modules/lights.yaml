@@ -1,0 +1,61 @@
+shared:
+  sim_vars:
+    - #Light switch state.
+      name: LIGHT BEACON
+      units: Bool
+    
+    - #Vehicle backlights current intensity (0 = off, 1 = full intensity).
+      name: LIGHT BACKLIGHT INTENSITY
+      units: Percent Over 100
+
+    - #Light switch state.
+      name: LIGHT CABIN
+      units: Bool
+    
+    - #Whether or not the Light switch for the Glareshield is enabled.
+      name: LIGHT GLARESHIELD
+      units: Bool
+
+    - #Vehicle gyrolights current intensity (0 = off, 1 = full intensity).
+      name: LIGHT GYROLIGHT INTENSITY
+      units: Percent Over 100
+
+    - #Vehicle headlights current intensity (0 = off, 1 = full intensity).
+      name: LIGHT HEADLIGHT INTENSITY
+      units: Percent Over 100
+
+    - #Light switch state for landing light.
+      name: LIGHT LANDING
+      units: Bool
+
+    - #Light switch state for logo light.
+      name: LIGHT LOGO
+      units: Bool
+
+    - #Light switch state for the NAV light.
+      name: LIGHT NAV
+      units: Bool
+
+    - #Light switch state of the panel light.
+      name: LIGHT PANEL
+      units: Bool
+
+    - #Whether or not the Light switch for the Pedestal is enabled.
+      name: LIGHT PEDESTRAL
+      units: Bool
+
+    - #Light switch state for the recognition light.
+      name: LIGHT RECOGNITION
+      units: Bool
+
+    - #Light switch state for the strobe lights.
+      name: LIGHT STROBE
+      units: Bool
+
+    - #Light switch state for the taxi light.
+      name: LIGHT TAXI
+      units: Bool
+
+    - #Light switch state for the wing lights.
+      name: LIGHT WING
+      units: Bool

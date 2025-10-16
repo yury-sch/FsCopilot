@@ -1,0 +1,190 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FsCopilot.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:FsCopilot.ViewModels"
+        xmlns:viewModels1="clr-namespace:FsCopilot.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        MinWidth="600"
+        MaxWidth="600"
+        MinHeight="800"
+        MaxHeight="800"
+        x:Class="FsCopilot.Views.MainWindow"
+        x:DataType="viewModels1:MainWindowViewModel"
+        Icon="/Assets/fscopilot.ico"
+        Title="FS Copilot"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Window.Styles>
+        <StyleInclude Source="./MainWindowStyles.axaml" />
+    </Window.Styles>
+
+    <Window.Resources>
+        <viewModels1:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBool"/>
+        <viewModels1:StringEmptyToBoolConverter x:Key="StringEmptyToBool"/>
+    </Window.Resources>
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <viewModels1:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+
+        <Grid Classes="Wrapper" RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+            <Border Grid.Row="0"
+                    Classes="Card">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right"
+                               Classes="Name"
+                               Text="FS Copilot" />
+                    <Border DockPanel.Dock="Left" Classes="MainIcon">
+                        <PathIcon Data="{StaticResource airplane_regular}">
+                            <PathIcon.RenderTransform>
+                                <RotateTransform Angle="-45" />
+                            </PathIcon.RenderTransform>
+                        </PathIcon>
+                    </Border>
+                    <DockPanel DockPanel.Dock="Left">
+                        <SelectableTextBlock Classes="SessionCode"
+                                             DockPanel.Dock="Bottom"
+                                             Text="{Binding SessionCode}" />
+                        <TextBlock Classes="SessionCode"
+                                   DockPanel.Dock="Top"
+                                   Text="Your Code" />
+                    </DockPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Classes="Card">
+                <StackPanel Spacing="10">
+                    <DockPanel>
+                        <PathIcon Classes="CardTitle"
+                                  Data="{StaticResource plug_disconnected_regular}" />
+                        <TextBlock Classes="CardTitle"
+                                   Text="Join" />
+                    </DockPanel>
+
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Classes="Connect"
+                                Content="Connect"
+                                Command="{Binding ConnectCommand}"/>
+                        <TextBox Classes="Connect"
+                                 Watermark="Client session code...."
+                                 Text="{Binding ConnectionCode}" />
+                    </DockPanel>
+                    <TextBlock Classes="Note"
+                               Text="Note: Make sure that all clients see each other after connecting." />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Classes="Card">
+                <StackPanel Spacing="10">
+                    <DockPanel>
+                        <PathIcon Classes="CardTitle"
+                                  Data="{StaticResource settings_regular}" />
+                        <TextBlock Classes="CardTitle"
+                                   Text="Configure" />
+                    </DockPanel>
+
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Classes="TakeControl"
+                                Content="Take Control"
+                                IsEnabled="{Binding ShowTakeControl}"
+                                Command="{Binding TakeControlCommand}"/>
+                        <TextBlock Classes="Aircraft"
+                                   Text="{Binding Aircraft}" />
+                        <!-- <ComboBox Classes="Aircraft"  -->
+                        <!--           ItemsSource="{Binding Configurations}" -->
+                        <!--           SelectedItem="{Binding SelectedConfiguration}" /> -->
+                    </DockPanel>
+                    <TextBlock Classes="Note ErrorNote"
+                               IsVisible="{Binding NotSupported}"
+                               Text="Aircraft is not supported." />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="3"
+                    Classes="Card Connections">
+                <DockPanel>
+
+                    <DockPanel Classes="ConnectionsCardTitle"
+                               DockPanel.Dock="Top">
+                        <PathIcon DockPanel.Dock="Left" 
+                                  Classes="CardTitle"
+                                  Data="{StaticResource person_board_regular}" />
+                        <TextBlock DockPanel.Dock="Left"
+                                   Classes="CardTitle"
+                                   Text="Connections" />
+                    </DockPanel>
+
+                    <ScrollViewer Classes="Connections"
+                                  DockPanel.Dock="Bottom">
+                        <ItemsControl ItemsSource="{Binding Connections}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Vertical" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <DockPanel>
+                                                <!-- <Button DockPanel.Dock="Right" -->
+                                                <!--         Content="Disconnect" /> -->
+                                                <SelectableTextBlock DockPanel.Dock="Top"
+                                                                     Text="{Binding PeerId}"
+                                                                     Foreground="#8ec6ff"
+                                                                     FontSize="16" />
+                                                <TextBlock DockPanel.Dock="Bottom"
+                                                           Foreground="#94a3b8"
+                                                           Text="{Binding Rtt, StringFormat='Latency ~{0} ms'}" />
+                                            </DockPanel>
+                                        </DockPanel>
+                                        <Separator IsVisible="{Binding HasSeparatorAfter}" />
+                                        <!-- <Border Height="1" Background="#94a3b8" Margin="0,10,0,10" /> -->
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                </DockPanel>
+            </Border>
+
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringEmptyToBool}}" 
+                    Grid.Row="4"
+                    Classes="Card Badge Success">
+                <TextBlock Text="FS Copilot is ready to use. Have a nice flight." />
+            </Border>
+
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBool}}" 
+                    Grid.Row="4"
+                    Classes="Card Badge Error">
+                <TextBlock Text="{Binding ErrorMessage}" />
+            </Border>
+
+        </Grid>
+
+    </Panel>
+</Window>

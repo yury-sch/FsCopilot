@@ -1,0 +1,29 @@
+include:
+  - default.yaml
+  - modules/WT_G1000_NXi.yaml
+
+shared:
+  sim_vars:
+  - # FUEL PUMP
+    name: GENERAL ENG FUEL PUMP SWITCH EX1:1 #Equivalent to GENERAL ENG FUEL PUMP SWITCH but differentiates between ON and AUTO
+    units: Bool
+   
+  - # Magneto
+    name: GENERAL ENG STARTER:1 #The indexed engine starter on/off state. (Not Settable? But it works)
+    units: Bool
+    #event: MAGNETO_START #Set all engine magnetos on and toggle starters
+  - 
+    name: RECIP ENG LEFT MAGNETO:1 #Left magneto state for the indexed engine
+    units: Bool 
+  - 
+    name: RECIP ENG RIGHT MAGNETO:1 #The indexed engine right magneto state
+    units: Bool
+    
+  - # TRIM
+    name: ELEVATOR TRIM PCT #Percent elevator trim. Percent Over 100 (Not Settable). The unit description 'percent over 100' means that the units are calculated as a percentage value divided by 100, such that the progression of values always falls within the range of 0 and 1.
+    units: Percent scaler 16k
+    event: ELEVATOR_TRIM_SET:0 #[0]: Trim position (-16383 to 16384). Sets the elevator trim position.
+    modify: "(value - 0.5) * 32768"
+    #multiply_by: -1 #Просто скопировано из оригинала, чтобы не забыть, что тут какая-то хуита
+    
+  

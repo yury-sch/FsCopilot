@@ -1,0 +1,148 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!-- Add Controls for Previewer Here -->
+        </Border>
+    </Design.PreviewWith>
+
+    <Style Selector="SelectableTextBlock">
+        <Setter Property="SelectionBrush" Value="#7F000000" />
+        <Setter Property="SelectionForegroundBrush" Value="#8ec6ff" />
+        <Setter Property="FontFamily" Value="Courier New"></Setter>
+    </Style>
+
+    <Style Selector="Grid.Wrapper">
+        <Setter Property="Margin" Value="10, 40, 10, 10"></Setter>
+        <Setter Property="RowSpacing" Value="10"></Setter>
+    </Style>
+
+    <Style Selector="Border.Card">
+        <Setter Property="Background" Value="#7F000000"></Setter>
+        <Setter Property="CornerRadius" Value="10"></Setter>
+        <Setter Property="ClipToBounds" Value="True"></Setter>
+        <Setter Property="Padding" Value="20"></Setter>
+    </Style>
+
+    <Style Selector="PathIcon.CardTitle">
+        <Setter Property="Foreground" Value="#8ec6ff"></Setter>
+        <Setter Property="Width" Value="15"></Setter>
+        <Setter Property="Height" Value="15"></Setter>
+        <Setter Property="Margin" Value="0,0,10,0"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.CardTitle">
+        <Setter Property="Foreground" Value="AliceBlue"></Setter>
+        <Setter Property="FontWeight" Value="Bold"></Setter>
+        <Setter Property="FontSize" Value="16"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.Name">
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+        <Setter Property="FontSize" Value="20"></Setter>
+        <Setter Property="Foreground" Value="White"></Setter>
+    </Style>
+
+    <Style Selector="TextBox.Connect">
+        <Setter Property="BorderThickness" Value="0"></Setter>
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+    </Style>
+
+    <Style Selector="Button.Connect">
+        <Setter Property="Background" Value="#8ec6ff"></Setter>
+        <Setter Property="Foreground" Value="Black"></Setter>
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+        <Setter Property="Margin" Value="10,0,00,0"></Setter>
+    </Style>
+    
+    <Style Selector="Button.Connect:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#5facfc"></Setter>
+        <Setter Property="Foreground" Value="Black"></Setter>
+    </Style>
+
+    <Style Selector="Button.TakeControl">
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+        <Setter Property="Margin" Value="10,0,00,0"></Setter>
+        <Setter Property="Foreground" Value="White"></Setter>
+    </Style>
+
+    <Style Selector="Border.MainIcon">
+        <Setter Property="Background" Value="Gray"></Setter>
+        <Setter Property="CornerRadius" Value="9"></Setter>
+        <Setter Property="Padding" Value="5"></Setter>
+        <Setter Property="Margin" Value="0,0,10,0"></Setter>
+    </Style>
+
+    <Style Selector="Border.MainIcon > PathIcon">
+        <Setter Property="Width" Value="30"></Setter>
+        <Setter Property="Height" Value="30"></Setter>
+        <Setter Property="Foreground" Value="White"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.SessionCode">
+        <Setter Property="Foreground" Value="Gray"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.SessionCode">
+        <Setter Property="Foreground" Value="Gray"></Setter>
+    </Style>
+
+    <Style Selector="SelectableTextBlock.SessionCode">
+        <Setter Property="Foreground" Value="#8ec6ff"></Setter>
+        <Setter Property="FontSize" Value="16"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.Note">
+        <Setter Property="Foreground" Value="#94a3b8"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.ErrorNote">
+        <Setter Property="Foreground" Value="#7Fff6d6d"></Setter>
+    </Style>
+
+    <Style Selector="Border.Badge">
+        <Setter Property="Padding" Value="20, 10"></Setter>
+    </Style>
+
+    <Style Selector="Border.Success">
+        <Setter Property="Background" Value="DarkSeaGreen"></Setter>
+    </Style>
+
+    <Style Selector="Border.Error">
+        <Setter Property="Background" Value="#7Fff6d6d"></Setter>
+    </Style>
+
+    <Style Selector="Separator">
+        <Setter Property="Background" Value="Black"></Setter>
+        <Setter Property="Margin" Value="10"></Setter>
+    </Style>
+
+    <Style Selector="Border.Connections">
+        <Setter Property="Padding" Value="0, 20"></Setter>
+    </Style>
+
+    <Style Selector="DockPanel.ConnectionsCardTitle">
+        <Setter Property="Margin" Value="20, 0, 20, 20"></Setter>
+    </Style>
+
+    <Style Selector="ScrollViewer.Connections">
+        <Setter Property="AllowAutoHide" Value="True"></Setter>
+        <Setter Property="Padding" Value="20, 0"></Setter>
+    </Style>
+    
+    <Style Selector="ComboBox.Aircraft">
+        <Setter Property="BorderThickness" Value="0"></Setter>
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+        <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.Aircraft">
+        <Setter Property="Foreground" Value="Gray"></Setter>
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+</Styles>

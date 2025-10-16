@@ -1,0 +1,5 @@
+include:
+  - modules/lights.yaml
+  - modules/engine.yaml
+  - modules/batteries.yaml
+  - modules/trim.yaml

@@ -1,0 +1,17 @@
+include:
+  - default.yaml
+  - modules/WT_G1000_NXi.yaml
+    
+shared:
+  sim_vars:
+    - #The current panel light power setting. Requires the panel lightdef index.
+      name: LIGHT PANEL POWER SETTING
+      units: Percent
+      event: PANEL_LIGHTS_SET:0
+    
+    -
+      name: RECIP ENGINE SWITCH MASTER:0
+      units: Bool
+      event: ENGINE_MASTER_SET:0
+
+    

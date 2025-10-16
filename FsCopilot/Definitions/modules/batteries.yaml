@@ -1,0 +1,35 @@
+master:
+  sim_vars:
+    - #Battery bus voltage
+      name: ELECTRICAL BATTERY BUS VOLTAGE
+      units: Volts
+
+    - #The load handled by the battery (negative values mean the battery is receiving current). Use a battery index when referencing.
+      name: ELECTRICAL BATTERY LOAD
+      units: Amperes
+
+    - #The battery voltage. Use a battery index when referencing.
+      name: ELECTRICAL BATTERY VOLTAGE
+      units: Volts
+
+    - #Current available when battery switch is turned off
+      name: ELECTRICAL HOT BATTERY BUS AMPS
+      units: Amperes
+
+    - #Voltage available when battery switch is turned off
+      name: ELECTRICAL HOT BATTERY BUS VOLTAGE
+      units: Volts
+
+shared:
+  sim_vars:
+#    - #This will be true if the battery breaker is pulled. Requires a BUS LOOKUP INDEX and a battery index.
+#      name: BATTERY BREAKER PULLED
+#      units: Bool
+    
+    - #Battery bus current
+      name: ELECTRICAL BATTERY BUS AMPS
+      units: Bool
+    
+    - #The battery switch position, true if the switch is ON. Use a battery index when referencing.
+      name: ELECTRICAL MASTER BATTERY
+      units: Bool

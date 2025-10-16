@@ -1,0 +1,41 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsCopilot", "FsCopilot\FsCopilot.csproj", "{3C93AC66-9953-0E65-2C01-37A19D87E9FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FsCopilot.Discovery", "FsCopilot.Discovery\FsCopilot.Discovery.csproj", "{E036F019-CD27-4E49-A1B3-85111E5BF75E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Debug|x64.ActiveCfg = Debug|x64
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Debug|x64.Build.0 = Debug|x64
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Release|Any CPU.ActiveCfg = Release|x64
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Release|x64.ActiveCfg = Release|x64
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Release|x64.Build.0 = Release|x64
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C93AC66-9953-0E65-2C01-37A19D87E9FB}.Release|x64.Deploy.0 = Release|x64
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Debug|x64.Build.0 = Debug|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Release|x64.ActiveCfg = Release|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Release|x64.Build.0 = Release|Any CPU
+		{E036F019-CD27-4E49-A1B3-85111E5BF75E}.Release|x64.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B6F119E7-D840-40BA-AC60-CA2CB78977DD}
+	EndGlobalSection
+EndGlobal
