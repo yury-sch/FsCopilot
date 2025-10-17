@@ -1,7 +1,10 @@
 namespace FsCopilot.Simulation;
 
 using System.Collections;
-using DynamicExpresso;
+using System.Reflection;
+using Jint;
+using Jint.Native;
+// using DynamicExpresso;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -18,6 +21,16 @@ public class Definitions : IReadOnlyCollection<Definition>
     private Definitions(Definition[] links)
     {
         _links = links;
+    }
+
+    public static DefinitionNode LoadTree(string path)
+    {
+        var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')]));
+        var cfg = Deserializer.Deserialize<Config>(cfgFile);
+        var includes = cfg.Include.Select(LoadTree).ToArray();
+        return new(path, includes,
+            cfg.Master.Select(m => new Definition(false, m.Name, m.Units, m.Event, m.Transform)).ToArray(),
+            cfg.Shared.Select(m => new Definition(true, m.Name, m.Units, m.Event, m.Transform)).ToArray());
     }
 
     public static Definitions Load(string name)
@@ -54,10 +67,7 @@ public class Definitions : IReadOnlyCollection<Definition>
     {
         public string[] Include { get; set; } = [];
         public Link[] Shared { get; set; } = [];
-
         public Link[] Master { get; set; } = [];
-        // public Map[] Server { get; set; } = [];
-        // public string[] Ignore { get; set; } = [];
 
         public class Link
         {
@@ -74,6 +84,8 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     public int Count { get; }
 }
+
+public record DefinitionNode(string Path, DefinitionNode[] Include, Definition[] Master, Definition[] Shared);
 
 public class Definition(bool shared, string name, string units, string? @event, string? transform)
 {
@@ -96,10 +108,12 @@ public class Definition(bool shared, string name, string units, string? @event, 
         {
             try
             {
-                var expr = eventName.Replace("'", "\"");
-                eventName = new Interpreter()
-                    .ParseAsDelegate<Func<object, string>>(expr, "value")
-                    .Invoke(value);
+                var engine = new Jint.Engine().SetValue("value", value);
+                eventName = engine.Evaluate(eventName).AsString();
+                // var expr = eventName.Replace("'", "\"");
+                // eventName = new Interpreter()
+                //     .ParseAsDelegate<Func<object, string>>(expr, "value")
+                //     .Invoke(value);
             }
             catch (Exception e)
             {
@@ -131,9 +145,19 @@ public class Definition(bool shared, string name, string units, string? @event, 
 
         try
         {
-            return new Interpreter()
-                .ParseAsDelegate<Func<object, object>>(transform, "value")
-                .Invoke(value);
+            var engine = new Jint.Engine().SetValue("value", value);
+            return engine.Evaluate(transform).ToObject()!;
+            
+            // typeof(JsValueExtensions).GetMethod(nameof(JsValueExtensions.TryCast),
+            //         BindingFlags.Public | BindingFlags.Static)!
+            //     .MakeGenericMethod(clrType)
+            //     .Invoke(sim, [(DEF)nextId]);    
+            //
+            //     .TryCast<>()
+            
+            // return new Interpreter()
+            //     .ParseAsDelegate<Func<object, object>>(transform, "value")
+            //     .Invoke(value);
         }
         catch (Exception e)
         {

@@ -1,0 +1,41 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!-- Add Controls for Previewer Here -->
+        </Border>
+    </Design.PreviewWith>
+
+    <Style Selector="Grid.Wrapper">
+        <Setter Property="Margin" Value="10, 40, 10, 10"></Setter>
+        <Setter Property="RowSpacing" Value="10"></Setter>
+    </Style>
+
+    <Style Selector="Border.Card">
+        <Setter Property="Background" Value="#7F000000"></Setter>
+        <Setter Property="CornerRadius" Value="10"></Setter>
+        <Setter Property="ClipToBounds" Value="True"></Setter>
+        <Setter Property="Padding" Value="20"></Setter>
+    </Style>
+
+    <Style Selector="Border.Badge">
+        <Setter Property="Padding" Value="20, 10"></Setter>
+    </Style>
+
+    <Style Selector="Border.Tree">
+        <Setter Property="Padding" Value="0, 20"></Setter>
+    </Style>
+
+    <Style Selector="ScrollViewer.Tree">
+        <Setter Property="AllowAutoHide" Value="True"></Setter>
+        <Setter Property="Padding" Value="20, 0"></Setter>
+    </Style>
+    
+    <Style Selector="TextBlock.Line">
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+
+    <Style Selector="Button.Push">
+        <Setter Property="Margin" Value="0, 0, 10, 0"></Setter>
+    </Style>
+</Styles>

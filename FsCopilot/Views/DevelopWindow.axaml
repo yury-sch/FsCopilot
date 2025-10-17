@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FsCopilot.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:FsCopilot.ViewModels"
+        xmlns:viewModels1="clr-namespace:FsCopilot.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="FsCopilot.Views.DevelopWindow"
+        x:DataType="viewModels1:DevelopWindowViewModel"
+        Width="600"
+        Height="800"
+        Icon="/Assets/fscopilot.ico"
+        Title="FS Copilot"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Window.Styles>
+        <StyleInclude Source="./DevelopWindowStyles.axaml" />
+    </Window.Styles>
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <viewModels1:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+        
+
+        <Grid Classes="Wrapper" RowDefinitions="*,Auto">
+            <Border Grid.Row="0"
+                    Classes="Card Tree">
+                <ScrollViewer Classes="Tree"
+                              DockPanel.Dock="Bottom">
+                    <TreeView ItemsSource="{Binding Nodes}">
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate ItemsSource="{Binding SubNodes}">
+                                <DockPanel>
+                                    <Button IsVisible="{Binding IsVariable}" 
+                                            Classes="Push"
+                                            Content="Push"
+                                            Command="{Binding PushCommand}"/>
+                                    <TextBlock Classes="Line"
+                                               Text="{Binding Title}"/>
+                                </DockPanel>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Classes="Card Badge">
+                <TextBlock Text="{Binding Loaded, StringFormat='Loaded {0}'}" />
+            </Border>
+
+        </Grid>
+
+    </Panel>
+</Window>

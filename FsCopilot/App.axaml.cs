@@ -21,11 +21,6 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         DeployModuleToCommunity();
-        var peer2Peer = new Peer2Peer("p2p.fscopilot.com", 0);
-        var simConnect = new SimConnectClient("FS Copilot");
-        var control = new MasterSwitch(simConnect, peer2Peer);
-        
-        var coordinator = new Coordinator(simConnect, peer2Peer, control);
         // var configuration = new Configuration();
         
         // var sc = new ServiceCollection()
@@ -36,13 +31,33 @@ public partial class App : Application
         
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            var args = desktop.Args ?? [];
+            bool dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
+            
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow
+
+            if (!dev)
             {
-                DataContext = new MainWindowViewModel(peer2Peer, simConnect, control, coordinator)
-            };
+                
+                var peer2Peer = new Peer2Peer("p2p.fscopilot.com", 0);
+                var simConnect = new SimConnectClient("FS Copilot");
+                var control = new MasterSwitch(simConnect, peer2Peer);
+                var coordinator = new Coordinator(simConnect, peer2Peer, control);
+                desktop.MainWindow = new MainWindow
+                {
+                    DataContext = new MainWindowViewModel(peer2Peer, simConnect, control, coordinator)
+                };
+            }
+            else
+            {
+                var simConnect = new SimConnectClient("FS Copilot Develop");
+                desktop.MainWindow = new DevelopWindow
+                {
+                    DataContext = new DevelopWindowViewModel(simConnect)
+                };
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
