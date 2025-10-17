@@ -63,6 +63,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Community\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Microsoft.FlightSimulator.SimConnect">
       <HintPath>Microsoft.FlightSimulator.SimConnect.dll</HintPath>
     </Reference>

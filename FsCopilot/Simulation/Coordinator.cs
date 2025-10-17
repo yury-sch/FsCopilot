@@ -1,8 +1,10 @@
 namespace FsCopilot.Simulation;
 
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text.RegularExpressions;
 using Connection;
 using Network;
 using Serilog;
@@ -24,11 +26,20 @@ public class Coordinator : IDisposable
         _peer2Peer = peer2Peer;
         _masterSwitch = masterSwitch;
         _simConnect = simConnect;
-        peer2Peer.RegisterPacket<SimVarUpdate, SimVarUpdate.Codec>();
+        peer2Peer.RegisterPacket<Update, Update.Codec>();
 
-        simConnect.AddDataDefinition<Aircraft>();
         _d.Add(simConnect.Stream<Aircraft>()
-            .Subscribe(Load));
+            // .StartWith(Unit.Default)
+            .SelectMany(_ => Observable.FromAsync(() => _simConnect.SystemState<string>("AircraftLoaded")))
+            .Subscribe(path =>
+            {
+                var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)");
+                if (match.Success) path = match.Groups[1].Value;
+                Load(path);
+            }));
+
+        // _d.Add(simConnect.Stream<Aircraft>()
+        //     .Subscribe(Load));
 
         AddLink<Physics, Physics.Codec>(master: true);
         AddLink<Control, Control.Codec>(master: true);
@@ -42,9 +53,9 @@ public class Coordinator : IDisposable
         _cSubs.Dispose();
     }
 
-    private void Load(Aircraft aircraft)
+    private void Load(string name)
     {
-        _aircraft.OnNext(aircraft.Title);
+        _aircraft.OnNext(name);
         _configured.OnNext(null);
         if (!_cSubs.IsDisposed) _cSubs.Dispose();
         _cSubs = new();
@@ -52,7 +63,7 @@ public class Coordinator : IDisposable
         Definitions definitions;
         try
         {
-            definitions = Definitions.Load(aircraft.Title);
+            definitions = Definitions.Load(name);
             _configured.OnNext(true);
         }
         catch (Exception e)
@@ -62,7 +73,7 @@ public class Coordinator : IDisposable
             return;
         }
 
-        foreach (var simVar in definitions.SimVars) AddLink(simVar, !simVar.Shared);
+        foreach (var def in definitions) AddLink(def);
     }
 
     // private void AddLink<TPacket, TCodec, TInterpolator>(bool master) 
@@ -95,7 +106,6 @@ public class Coordinator : IDisposable
         where TPacket : struct where TCodec : IPacketCodec<TPacket>, new()
     {
         _peer2Peer.RegisterPacket<TPacket, TCodec>();
-        _simConnect.AddDataDefinition<TPacket>();
 
         _d.Add(_simConnect.Stream<TPacket>()
             .Where(_ => !master || _masterSwitch.IsMaster)
@@ -108,44 +118,42 @@ public class Coordinator : IDisposable
         }));
     }
 
-    private void AddLink(SimVarDefinition simVar, bool master)
+    private void AddLink(Definition def)
     {
+        var master = !def.Shared;
         var throttle = DateTime.MinValue;
-
-        _simConnect.AddDataDefinition(simVar.Name, simVar.Units);
-        _cSubs.Add(_simConnect.Stream(simVar.Name).Subscribe(val =>
+        _cSubs.Add(_simConnect.Stream(def.Name, def.Units).Subscribe(val =>
         {
             if (master && !_masterSwitch.IsMaster) return;
             if (DateTime.Now <= throttle) return;
-            _peer2Peer.SendAll(new SimVarUpdate(simVar.Name, val));
-            Log.Information("[PACKET] SENT {Name} {Value}", simVar.Name, val);
+            _peer2Peer.SendAll(new Update(def.Name, val));
+            Log.Information("[PACKET] SENT {Name} {Value}", def.Name, val);
         }));
 
-        _cSubs.Add(_peer2Peer.Subscribe<SimVarUpdate>(update =>
+        _cSubs.Add(_peer2Peer.Subscribe<Update>(update =>
         {
             var datumName = update.Name;
             var value = update.Value;
-            if (datumName != simVar.Name) return;
+            if (datumName != def.Name) return;
             if (master && _masterSwitch.IsMaster) return;
-            Log.Information("[PACKET] RECEIVE {Name} {Value}", simVar.Name, value);
-            if (!simVar.TryGetEvent(value, out var eventName, out var paramIx))
+            Log.Information("[PACKET] RECEIVE {Name} {Value}", def.Name, value);
+            if (!def.TryGetEvent(value, out var eventName, out var paramIx))
             {
-                _simConnect.SetDataOnSimObject(datumName, value);
+                _simConnect.Set(datumName, value);
                 return;
             }
 
-            value = simVar.TransformValue(value);
+            value = def.TransformValue(value);
             throttle = DateTime.UtcNow + TimeSpan.FromMilliseconds(100);
             _simConnect.TransmitClientEvent(eventName, value, paramIx);
-        }));
+        })); 
     }
 
-
-    private record SimVarUpdate(string Name, object Value)
+    private record Update(string Name, object Value)
     {
-        public class Codec : IPacketCodec<SimVarUpdate>
+        public class Codec : IPacketCodec<Update>
         {
-            public void Encode(SimVarUpdate packet, BinaryWriter bw)
+            public void Encode(Update packet, BinaryWriter bw)
             {
                 bw.Write(packet.Name);
                 var v = packet.Value;
@@ -198,7 +206,7 @@ public class Coordinator : IDisposable
                 }
             }
 
-            public SimVarUpdate Decode(BinaryReader br)
+            public Update Decode(BinaryReader br)
             {
                 var name = br.ReadString();
                 var t = (TypeCode)br.ReadByte();

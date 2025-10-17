@@ -15,6 +15,8 @@ public sealed class SimConnectHeadless : IDisposable
     private readonly ReplaySubject<Unit> _opened = new(1);
     private readonly Subject<SIMCONNECT_RECV_SIMOBJECT_DATA> _simObjectData = new();
     private readonly Subject<SIMCONNECT_RECV_EVENT> _event = new();
+    private readonly Subject<SIMCONNECT_RECV_SYSTEM_STATE> _systemState = new();
+    private readonly Subject<SIMCONNECT_RECV_CLIENT_DATA> _clientData = new();
     private readonly ConcurrentDictionary<string, uint> _definitions = new();
     private readonly List<Action<SimConnect>> _preConfigure = [];
     private readonly string _appName;
@@ -32,6 +34,8 @@ public sealed class SimConnectHeadless : IDisposable
     public IObservable<Unit> Loaded => _opened;
     public IObservable<SIMCONNECT_RECV_SIMOBJECT_DATA> SimObjectData => _simObjectData;
     public IObservable<SIMCONNECT_RECV_EVENT> Event => _event;
+    public Subject<SIMCONNECT_RECV_SYSTEM_STATE> SystemState => _systemState;
+    public IObservable<SIMCONNECT_RECV_CLIENT_DATA> ClientData => _clientData;
 
     public SimConnectHeadless(string appName)
     {
@@ -66,6 +70,8 @@ public sealed class SimConnectHeadless : IDisposable
                     };
                     _sim.OnRecvSimobjectData += (_, data) => _simObjectData.OnNext(data);
                     _sim.OnRecvEvent += (_, data) => _event.OnNext(data);
+                    _sim.OnRecvSystemState += (_, state) => _systemState.OnNext(state);
+                    _sim.OnRecvClientData += (_, data) => _clientData.OnNext(data);
                     _sim.OnRecvQuit += (_, _) => CleanupSim();
                     _sim.OnRecvException += (_, _) => { /* todo add logs */ };
                 } 

@@ -1,0 +1,15 @@
+{
+  "dependencies": [],
+  "content_type": "MISC",
+  "title": "fscopilot",
+  "manufacturer": "",
+  "creator": "HABI",
+  "package_version": "0.1.00",
+  "minimum_game_version": "1.19.8",
+  "release_notes": {
+    "neutral": {
+      "LastUpdate": "",
+      "OlderHistory": ""
+    }
+  }
+}

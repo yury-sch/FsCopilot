@@ -1,18 +1,17 @@
 shared:
-  sim_vars:
-    - #Equivalent to GENERAL ENG FUEL PUMP SWITCH but differentiates between ON and AUTO
-      name: GENERAL ENG FUEL PUMP SWITCH EX1:1
-      units: Bool
+  - #Equivalent to GENERAL ENG FUEL PUMP SWITCH but differentiates between ON and AUTO
+    name: GENERAL ENG FUEL PUMP SWITCH EX1:1
+    units: Bool
 
-    - #The indexed engine starter on/off state. (Not Settable? But it works)
-      name: GENERAL ENG STARTER:1 
-      units: Bool
-      #event: MAGNETO_START #Set all engine magnetos on and toggle starters
-    
-    - #Left magneto state for the indexed engine
-      name: RECIP ENG LEFT MAGNETO:1
-      units: Bool
-    
-    - #The indexed engine right magneto state
-      name: RECIP ENG RIGHT MAGNETO:1
-      units: Bool
+  - #The indexed engine starter on/off state. (Not Settable? But it works)
+    name: GENERAL ENG STARTER:1 
+    units: Bool
+    #event: MAGNETO_START #Set all engine magnetos on and toggle starters
+  
+  - #Left magneto state for the indexed engine
+    name: RECIP ENG LEFT MAGNETO:1
+    units: Bool
+  
+  - #The indexed engine right magneto state
+    name: RECIP ENG RIGHT MAGNETO:1
+    units: Bool

@@ -1,22 +1,23 @@
 namespace FsCopilot.Simulation;
 
+using System.Collections;
 using DynamicExpresso;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-public class Definitions
+public class Definitions : IReadOnlyCollection<Definition>
 {
     private static readonly IDeserializer Deserializer = new DeserializerBuilder()
         .WithNamingConvention(UnderscoredNamingConvention.Instance)
         // .IgnoreUnmatchedProperties() 
         .Build();
 
-    public SimVarDefinition[] SimVars { get; }
+    private readonly Definition[] _links;
 
-    private Definitions(SimVarDefinition[] simVars)
+    private Definitions(Definition[] links)
     {
-        SimVars = simVars;
+        _links = links;
     }
 
     public static Definitions Load(string name)
@@ -26,9 +27,9 @@ public class Definitions
             : "default.yaml";
 
         var cfg = LoadRecursive(cfgName);
-        var simVars = cfg.Master.SimVars.Select(v => (Shared: false, Var: v))
-            .Concat(cfg.Shared.SimVars.Select(v => (Shared: true, Var: v)))
-            .Select(v => new SimVarDefinition(v.Shared, v.Var.Name, v.Var.Units, v.Var.Event, v.Var.Transform))
+        var simVars = cfg.Master.Select(v => (Shared: false, Var: v))
+            .Concat(cfg.Shared.Select(v => (Shared: true, Var: v)))
+            .Select(v => new Definition(v.Shared, v.Var.Name, v.Var.Units, v.Var.Event, v.Var.Transform))
             .ToArray();
         return new(simVars);
     }
@@ -42,8 +43,8 @@ public class Definitions
         foreach (var include in cfg.Include)
         {
             var innerCfg = LoadRecursive(include.Split('/'));
-            cfg.Shared.SimVars = innerCfg.Shared.SimVars.Concat(cfg.Shared.SimVars).ToArray();
-            cfg.Master.SimVars = innerCfg.Master.SimVars.Concat(cfg.Master.SimVars).ToArray();
+            cfg.Shared = innerCfg.Shared.Concat(cfg.Shared).ToArray();
+            cfg.Master = innerCfg.Master.Concat(cfg.Master).ToArray();
         }
 
         return cfg;
@@ -52,28 +53,29 @@ public class Definitions
     private class Config
     {
         public string[] Include { get; set; } = [];
-        public Level Shared { get; set; } = new();
+        public Link[] Shared { get; set; } = [];
 
-        public Level Master { get; set; } = new();
+        public Link[] Master { get; set; } = [];
         // public Map[] Server { get; set; } = [];
         // public string[] Ignore { get; set; } = [];
 
-        public class Level
-        {
-            public SimVar[] SimVars { get; set; } = [];
-        }
-
-        public class SimVar
+        public class Link
         {
             public string Name { get; set; }
-            public string Units { get; set; }
+            public string Units { get; set; } = string.Empty;
             public string? Event { get; set; }
             public string? Transform { get; set; }
         }
     }
+
+    public IEnumerator<Definition> GetEnumerator() => _links.AsReadOnly().GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public int Count { get; }
 }
 
-public class SimVarDefinition(bool shared, string name, string units, string? @event, string? transform)
+public class Definition(bool shared, string name, string units, string? @event, string? transform)
 {
     public bool Shared => shared;
     public string Name => name;
