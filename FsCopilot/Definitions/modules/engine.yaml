@@ -1,17 +1,15 @@
 shared:
-  - #Equivalent to GENERAL ENG FUEL PUMP SWITCH but differentiates between ON and AUTO
-    name: GENERAL ENG FUEL PUMP SWITCH EX1:1
-    units: Bool
-
-  - #The indexed engine starter on/off state. (Not Settable? But it works)
-    name: GENERAL ENG STARTER:1 
-    units: Bool
-    #event: MAGNETO_START #Set all engine magnetos on and toggle starters
-  
-  - #Left magneto state for the indexed engine
-    name: RECIP ENG LEFT MAGNETO:1
-    units: Bool
-  
-  - #The indexed engine right magneto state
-    name: RECIP ENG RIGHT MAGNETO:1
-    units: Bool
+  - #	The indexed engine starter on/off state. (Not Settable? But it works)
+    var: A:GENERAL ENG STARTER:1, Bool
+    evt: (>K:SET_STARTER1_HELD)
+#    evt: MAGNETO_START #Set all engine magnetos on and toggle starters
+  - #	Left magneto state for the indexed engine
+    var: A:RECIP ENG LEFT MAGNETO:1, Bool
+  - #	The indexed engine right magneto state
+    var: A:RECIP ENG RIGHT MAGNETO:1, Bool
+  - #	Whether or not the Engine Master switch is active on an indexed engine (see note).
+    var: A:RECIP ENG ENGINE MASTER SWITCH:1, Bool
+    evt: (>K:ENGINE_MASTER_1_SET)
+  - #	Whether or not the Engine Master switch is active on an indexed engine (see note).
+    var: A:RECIP ENG ENGINE MASTER SWITCH:2, Bool
+    evt: (>K:ENGINE_MASTER_2_SET)

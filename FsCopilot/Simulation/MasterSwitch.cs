@@ -8,7 +8,7 @@ using Network;
 
 public class MasterSwitch : IDisposable
 {
-    private readonly SimConnectClient _simConnect;
+    private readonly SimClient _sim;
     private readonly Peer2Peer _peer2Peer;
     private readonly BehaviorSubject<bool> _master = new(false);
     private readonly CompositeDisposable _d = new();
@@ -16,9 +16,9 @@ public class MasterSwitch : IDisposable
     public bool IsMaster => _master.Value;
     public IObservable<bool> Master => _master;
 
-    public MasterSwitch(SimConnectClient simConnect, Peer2Peer peer2Peer)
+    public MasterSwitch(SimClient sim, Peer2Peer peer2Peer)
     {
-        _simConnect = simConnect;
+        _sim = sim;
         _peer2Peer = peer2Peer;
 
         _peer2Peer.RegisterPacket<SetMaster, SetMaster.Codec>();
@@ -37,7 +37,7 @@ public class MasterSwitch : IDisposable
 
         // _d.Add(Observable.Interval(TimeSpan.FromMilliseconds(500))
         //     .Subscribe(_ => UpdateFreeze()));
-        _d.Add(_simConnect.Stream<Physics>()
+        _d.Add(_sim.Stream<Physics>()
             .Window(TimeSpan.FromSeconds(1))
             .Where(_ => !IsMaster)
             .Subscribe(_ => UpdateFreeze()));
@@ -90,9 +90,9 @@ public class MasterSwitch : IDisposable
 
     private void UpdateFreeze()
     {
-        _simConnect.TransmitClientEvent("FREEZE_LATITUDE_LONGITUDE_SET", !IsMaster, 0);
-        _simConnect.TransmitClientEvent("FREEZE_ALTITUDE_SET", !IsMaster, 0);
-        _simConnect.TransmitClientEvent("FREEZE_ATTITUDE_SET", !IsMaster, 0);
+        _sim.Call("K:FREEZE_LATITUDE_LONGITUDE_SET", !IsMaster);
+        _sim.Call("K:FREEZE_ALTITUDE_SET", !IsMaster);
+        _sim.Call("K:FREEZE_ATTITUDE_SET", !IsMaster);
     }
 
     public void TakeControl()

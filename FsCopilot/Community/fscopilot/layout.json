@@ -1,9 +1,19 @@
 {
   "content": [
     {
-      "path": "modules/HABI.wasm",
+      "path": "html_ui/FsCopilot/Main.js",
+      "size": 9632,
+      "date": 134055913811697763
+    },
+    {
+      "path": "html_ui/Pages/VCockpit/Core/VCockpit.js",
+      "size": 23301,
+      "date": 134056128604542122
+    },
+    {
+      "path": "modules/FsCopilot.wasm",
       "size": 52566,
-      "date": 132869286938741845
+      "date": 134050891065698519
     }
   ]
 }

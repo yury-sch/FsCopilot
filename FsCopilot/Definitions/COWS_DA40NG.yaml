@@ -1,17 +1,91 @@
 include:
-  - default.yaml
-  - modules/WT_G1000_NXi.yaml
+  - modules/fuel.yaml
+  - modules/engine.yaml
+  - modules/batteries.yaml
+  - modules/G1000_NXi.yaml
+  - modules/radios.yaml
+  - modules/lights.yaml
+  
+master:
+  - var: L:INPUT_TRIM_AXIS # The built-in trimmer event doesn't work for some reason
     
 shared:
-  - #The current panel light power setting. Requires the panel lightdef index.
-    name: LIGHT PANEL POWER SETTING
-    units: Percent
-    event: PANEL_LIGHTS_SET:0
-  
-  -
-    name: RECIP ENGINE SWITCH MASTER:0
-    units: Bool
-    event: ENGINE_MASTER_SET:0
-    
-  - name: L:MASTER_COVER:1
-  - name: L:EMERGENCY_BATT_COVER
+  - #	Main door  
+    var: A:INTERACTIVE POINT GOAL:2, Bool
+    evt: 3 (>K:TOGGLE_AIRCRAFT_EXIT)
+  - #	Back door
+    var: A:INTERACTIVE POINT GOAL:3, Bool
+    evt: 4 (>K:TOGGLE_AIRCRAFT_EXIT_FAST
+  - #	Left window
+    var: A:INTERACTIVE POINT GOAL:6, Bool
+    evt: 7 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
+  - #	Right window
+    var: A:INTERACTIVE POINT GOAL:7, Bool
+    evt: 8 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
+  - #	Avionics master
+    var: A:CIRCUIT SWITCH ON:32, Bool
+    evt: 32 (>K:ELECTRICAL_CIRCUIT_TOGGLE)
+  - #	Pitot
+    var: A:PITOT HEAT SWITCH:1, Bool
+    evt: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
+  - #	Instrument
+    var: A:LIGHT PANEL:1, Percent over 100
+    evt: (>B:LIGHTING_PANEL_1_Set)
+  - #	Flood
+    var: A:LIGHT GLARESHIELD:1, Percent over 100
+    evt: (>B:LIGHTING_GLARESHIELD_1_Set)
+
+  - var: L:MASTER_COVER:1
+    evt: (>H:AS1000_PFD_SOFTKEYS_12)
+  - var: L:EMERGENCY_BATT_COVER
+  - var: L:EMERGENCY_BATT
+  - var: L:ECU_VOTER:1
+  - var: L:ECU_TEST:1_IsDown
+  - var: L:INPUT_PARK # The built-in brakes event doesn't work for some reason
+  - var: L:FUEL_SELECTOR
+  - var: L:FUEL_WIRE_IsDown
+  - var: L:ENGINE_ALTERNATE_AIR
+  - var: L:KOHLSMAN SETTING HG:2
+  - var: L:ATT_CAGE_IsDown
+  - var: L:XFER_SWITCH # Fuel trans
+
+  #	EECU BUS
+  - var: L:CB_ECA
+  - var: L:CB_ECB
+  - var: L:CB_FPA
+  - var: L:CB_FPB
+
+#	ESSENTIAL BUS
+  - var: L:CB_HOR
+  - var: L:CB_AHR
+  - var: L:CB_ADC
+  - var: L:CB_CM1
+  - var: L:CB_GP1
+  - var: L:CB_ENG
+  - var: L:CB_XPR
+  - var: L:CB_FLP
+  - var: L:CB_PIT
+  - var: L:CB_FLD
+  - var: L:CB_LDL
+  - var: L:CB_PFD
+  - var: L:CB_MTC
+  - var: L:CB_ESS
+
+#	MAIN BUS
+  - var: L:CB_MAN
+  - var: L:CB_PWR
+  - var: L:CB_MFD
+  - var: L:CB_STB
+  - var: L:CB_POS
+  - var: L:CB_AVN
+  - var: L:CB_AVF
+  - var: L:CB_STR
+  - var: L:CB_TXM
+  - var: L:CB_INT
+  - var: L:CB_XFR
+
+#	AVIONICS BUS
+  - var: L:CB_CM2
+  - var: L:CB_GP2
+  - var: L:CB_AUD
+  - var: L:CB_AFC

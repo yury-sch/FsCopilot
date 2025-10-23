@@ -1,6 +1,5 @@
 namespace FsCopilot.Connection;
 
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Subjects;
@@ -17,8 +16,8 @@ public sealed class SimConnectHeadless : IDisposable
     private readonly Subject<SIMCONNECT_RECV_EVENT> _event = new();
     private readonly Subject<SIMCONNECT_RECV_SYSTEM_STATE> _systemState = new();
     private readonly Subject<SIMCONNECT_RECV_CLIENT_DATA> _clientData = new();
-    private readonly ConcurrentDictionary<string, uint> _definitions = new();
     private readonly List<Action<SimConnect>> _preConfigure = [];
+    private readonly Lock _preCfgLock = new();
     private readonly string _appName;
     private readonly CancellationTokenSource _cts = new();
     private readonly Channel<Action<SimConnect>> _queue = Channel.CreateUnbounded<Action<SimConnect>>();
@@ -26,7 +25,6 @@ public sealed class SimConnectHeadless : IDisposable
 
     private SimConnect? _sim;
     private AutoResetEvent? _evt;
-    private uint _defId;
 
     private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(2);
 
@@ -62,7 +60,7 @@ public sealed class SimConnectHeadless : IDisposable
 
                     _sim.OnRecvOpen += (_, _) =>
                     {
-                        foreach (var action in _preConfigure)
+                        lock (_preCfgLock) foreach (var action in _preConfigure)
                             try { action(_sim); } catch (Exception e) { Log.Error(e, "An error occurred when receiving data from simconnect"); }
                         wasOpen = true;
                         SetConnected(true);
@@ -149,18 +147,30 @@ public sealed class SimConnectHeadless : IDisposable
         _queue.Writer.TryWrite(action);
     }
     
-    public uint Configure(string key, Action<SimConnect, uint> action)
+    public IDisposable Configure(
+        Action<SimConnect> configure,
+        Action<SimConnect> deconfigure)
     {
-        var nextId = Interlocked.Increment(ref _defId);
-        Post(sim =>
+        lock (_preCfgLock) _preConfigure.Add(configure);
+        Post(configure);
+
+        return new ActionDisposable(() =>
         {
-            action(sim, nextId);
-            _preConfigure.Add(s => { action(s, nextId); });
+            lock (_preCfgLock) _preConfigure.Remove(configure);
+            Post(deconfigure);
         });
-        return _definitions.AddOrUpdate(key, nextId, (_, _) => nextId);
     }
 
-    public bool TrGetDefineId(string key, out uint defId) => _definitions.TryGetValue(key, out defId);
+    private sealed class ActionDisposable(Action dispose) : IDisposable
+    {
+        private Action? _dispose = dispose;
+
+        public void Dispose()
+        {
+            // Make thread-safe and idempotent.
+            Interlocked.Exchange(ref _dispose, null)?.Invoke();
+        }
+    }
 
     public void Dispose()
     {

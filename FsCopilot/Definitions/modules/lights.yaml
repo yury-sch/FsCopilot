@@ -1,60 +1,68 @@
 shared:
-  - #Light switch state.
-    name: LIGHT BEACON
-    units: Bool
+  - #	Light switch state for landing light.
+    var: A:LIGHT LANDING, Bool
+  - #	Light switch state for the taxi light.
+    var: A:LIGHT TAXI, Bool
+  - #	Light switch state for the NAV light.
+    var: A:LIGHT NAV, Bool
+  - #	Light switch state for the strobe lights.
+    var: A:LIGHT STROBE, Bool
+  - #	Light switch state.
+    var: A:LIGHT BEACON, Bool
+
+  - #	Light switch state.
+    var: A:LIGHT CABIN:1, Bool
+  - var: A:LIGHT CABIN:2, Bool
+  - var: A:LIGHT CABIN:3, Bool
+
+#  - #	Light switch state of the panel light.
+#    var: A:LIGHT PANEL
+#    units: Bool
+#  - #	Whether or not the Light switch for the Glareshield is enabled.
+#    var: A:LIGHT GLARESHIELD
+#    units: Bool
   
-  - #Vehicle backlights current intensity (0 = off, 1 = full intensity).
-    name: LIGHT BACKLIGHT INTENSITY
-    units: Percent Over 100
+#  - var: A:LIGHT POTENTIOMETER:2
+#    units: Percent
+#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 2)`"
 
-  - #Light switch state.
-    name: LIGHT CABIN
-    units: Bool
-  
-  - #Whether or not the Light switch for the Glareshield is enabled.
-    name: LIGHT GLARESHIELD
-    units: Bool
+#  - # PANEL LIGHT 
+#    var: A:LIGHT POTENTIOMETER:3
+#    units: Percent
+#    evt: "`K:LIGHT_POTENTIOMETER_SET(3, ${value})`"
+#
+#  - var: A:LIGHT POTENTIOMETER:4
+#    units: Percent
+#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 4)`"
+#
+#  - var: A:LIGHT POTENTIOMETER:5
+#    units: Percent
+#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 5)`"
 
-  - #Vehicle gyrolights current intensity (0 = off, 1 = full intensity).
-    name: LIGHT GYROLIGHT INTENSITY
-    units: Percent Over 100
-
-  - #Vehicle headlights current intensity (0 = off, 1 = full intensity).
-    name: LIGHT HEADLIGHT INTENSITY
-    units: Percent Over 100
-
-  - #Light switch state for landing light.
-    name: LIGHT LANDING
-    units: Bool
-
-  - #Light switch state for logo light.
-    name: LIGHT LOGO
-    units: Bool
-
-  - #Light switch state for the NAV light.
-    name: LIGHT NAV
-    units: Bool
-
-  - #Light switch state of the panel light.
-    name: LIGHT PANEL
-    units: Bool
-
-  - #Whether or not the Light switch for the Pedestal is enabled.
-    name: LIGHT PEDESTRAL
-    units: Bool
-
-  - #Light switch state for the recognition light.
-    name: LIGHT RECOGNITION
-    units: Bool
-
-  - #Light switch state for the strobe lights.
-    name: LIGHT STROBE
-    units: Bool
-
-  - #Light switch state for the taxi light.
-    name: LIGHT TAXI
-    units: Bool
-
-  - #Light switch state for the wing lights.
-    name: LIGHT WING
-    units: Bool
+#  - #Vehicle backlights current intensity (0 = off, 1 = full intensity).
+#    var: A:LIGHT BACKLIGHT INTENSITY
+#    units: Percent Over 100
+#
+#  - #Vehicle gyrolights current intensity (0 = off, 1 = full intensity).
+#    var: A:LIGHT GYROLIGHT INTENSITY
+#    units: Percent Over 100
+#
+#  - #Vehicle headlights current intensity (0 = off, 1 = full intensity).
+#    var: A:LIGHT HEADLIGHT INTENSITY
+#    units: Percent Over 100
+#
+#  - #Light switch state for logo light.
+#    var: A:LIGHT LOGO
+#    units: Bool
+#
+#  - #Whether or not the Light switch for the Pedestal is enabled.
+#    var: A:LIGHT PEDESTRAL
+#    units: Bool
+#
+#  - #Light switch state for the recognition light.
+#    var: A:LIGHT RECOGNITION
+#    units: Bool
+#
+#  - #Light switch state for the wing lights.
+#    var: A:LIGHT WING
+#    units: Bool

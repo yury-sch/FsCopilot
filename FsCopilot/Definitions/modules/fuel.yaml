@@ -1,0 +1,10 @@
+shared:
+  #Equivalent to GENERAL ENG FUEL PUMP SWITCH but differentiates between ON and AUTO
+  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool
+    evt: (>K:ELECT_FUEL_PUMP1_SET)
+  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:2, Enum
+    evt: (>K:ELECT_FUEL_PUMP2_SET)
+  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:3, Enum
+    evt: (>K:ELECT_FUEL_PUMP3_SET)
+  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:4, Enum
+    evt: (>K:ELECT_FUEL_PUMP4_SET)

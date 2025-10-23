@@ -69,7 +69,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     // }
 
     public MainWindowViewModel(Peer2Peer peer2Peer, 
-        SimConnectClient simConnect, 
+        SimClient sim, 
         MasterSwitch masterSwitch, 
         Coordinator coordinator)
     {
@@ -90,7 +90,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             .TakeUntil(_unsubscribe)
             .Subscribe(configured => Dispatcher.UIThread.Post(() => NotSupported = configured == false));
         
-        simConnect.Connected
+        sim.Connected
             .Sample(TimeSpan.FromMilliseconds(250))
             .TakeUntil(_unsubscribe)
             // .ObserveOn(AvaloniaScheduler.Instance)

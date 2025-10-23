@@ -9,6 +9,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>FsCopilot</RootNamespace>
         <ApplicationIcon>Assets/fscopilot.ico</ApplicationIcon>
+        <Version>1.0-beta</Version>
 
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <Platforms>x64;AnyCPU</Platforms>
@@ -43,6 +44,7 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
         <PackageReference Include="System.Reactive" Version="6.1.0"/>
+        <PackageReference Include="WatsonWebsocket" Version="4.1.7" />
         <PackageReference Include="YamlDotNet" Version="16.3.0"/>
     </ItemGroup>
 

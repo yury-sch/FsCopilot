@@ -1,33 +1,13 @@
 master:
-  - #Battery bus voltage
-    name: ELECTRICAL BATTERY BUS VOLTAGE
-    units: Volts
-
-  - #The load handled by the battery (negative values mean the battery is receiving current). Use a battery index when referencing.
-    name: ELECTRICAL BATTERY LOAD
-    units: Amperes
-
-  - #The battery voltage. Use a battery index when referencing.
-    name: ELECTRICAL BATTERY VOLTAGE
-    units: Volts
-
-  - #Current available when battery switch is turned off
-    name: ELECTRICAL HOT BATTERY BUS AMPS
-    units: Amperes
-
-  - #Voltage available when battery switch is turned off
-    name: ELECTRICAL HOT BATTERY BUS VOLTAGE
-    units: Volts
+  - var: A:ELECTRICAL BATTERY BUS VOLTAGE, Volts # Battery bus voltage
+  - var: A:ELECTRICAL BATTERY LOAD, Amperes # The load handled by the battery (negative values mean the battery is receiving current). Use a battery index when referencing.
+  - var: A:ELECTRICAL BATTERY VOLTAGE, Volts # The battery voltage. Use a battery index when referencing.
+  - var: A:ELECTRICAL HOT BATTERY BUS AMPS, Amperes # Current available when battery switch is turned off
+  - var: A:ELECTRICAL HOT BATTERY BUS VOLTAGE, Volts #V oltage available when battery switch is turned off
 
 shared:
-#    - #This will be true if the battery breaker is pulled. Requires a BUS LOOKUP INDEX and a battery index.
-#      name: BATTERY BREAKER PULLED
-#      units: Bool
-  
-  - #Battery bus current
-    name: ELECTRICAL BATTERY BUS AMPS
-    units: Bool
-  
-  - #The battery switch position, true if the switch is ON. Use a battery index when referencing.
-    name: ELECTRICAL MASTER BATTERY
-    units: Bool
+  - var: A:ELECTRICAL BATTERY BUS AMPS, Bool # Battery bus current
+  - var: A:ELECTRICAL MASTER BATTERY:1, Bool # The battery switch position, true if the switch is ON. Use a battery index when referencing.    
+#  - #This will be true if the battery breaker is pulled. Requires a BUS LOOKUP INDEX and a battery index.
+#    var: BATTERY BREAKER PULLED
+#    units: Bool

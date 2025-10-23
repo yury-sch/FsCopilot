@@ -1,0 +1,243 @@
+shared:
+  - # ADF
+    var: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32
+    evt: (>K:ADF_ACTIVE_SET)
+  -
+    var: A:ADF ACTIVE FREQUENCY:2, Frequency ADF BCD32
+    evt: (>K:ADF2_ACTIVE_SET)
+  -
+    var: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32
+    evt: (>K:ADF_STBY_SET)
+  -
+    var: A:ADF STANDBY FREQUENCY:2, Frequency ADF BCD32
+    evt: (>K:ADF2_STBY_SET)
+  -
+    var: A:ADF SOUND:1, Bool
+    evt: (>K:RADIO_ADF_IDENT_SET)
+  -
+    var: A:ADF SOUND:2, Bool
+    evt: (>K:RADIO_ADF2_IDENT_SET)
+#  -
+#    var: A:ADF VOLUME:1
+#    units: Percent
+#    evt: "value > current ? `K:ADF_VOLUME_INC(${value - current})` : `K:ADF_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+#  -
+#    var: A:ADF VOLUME:2
+#    units: Percent
+#    evt: "value > current ? `K:ADF2_VOLUME_INC(${value - current})` : `K:ADF2_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+
+  - # COM
+    var: A:COM ACTIVE FREQUENCY:1, Hz
+    evt: (>K:COM_RADIO_SET_HZ)
+  -
+    var: A:COM ACTIVE FREQUENCY:2, Hz
+    evt: (>K:COM2_RADIO_SET_HZ)
+  -
+    var: A:COM ACTIVE FREQUENCY:3, Hz
+    evt: (>K:COM3_RADIO_SET_HZ)
+  -
+    var: A:COM STANDBY FREQUENCY:1, Hz
+    evt: (>K:COM_STBY_RADIO_SET_HZ)
+  -
+    var: A:COM STANDBY FREQUENCY:2, Hz
+    evt: (>K:COM2_STBY_RADIO_SET_HZ)
+  -
+    var: A:COM STANDBY FREQUENCY:3, Hz
+    evt: (>K:COM3_STBY_RADIO_SET_HZ)
+  -
+    var: A:COM1 STORED FREQUENCY, Hz
+    evt: (>K:COM1_STORED_FREQUENCY_SET_HZ)
+  -
+    var: A:COM2 STORED FREQUENCY, Hz
+    evt: (>K:COM2_STORED_FREQUENCY_SET_HZ)
+  -
+    var: A:COM3 STORED FREQUENCY, Hz
+    evt: (>K:COM3_STORED_FREQUENCY_SET_HZ)
+  -
+    var: A:COM VOLUME:1, Percent
+    evt: (>K:COM1_VOLUME_SET)
+  -
+    var: A:COM VOLUME:2, Percent
+    evt: (>K:COM2_VOLUME_SET)
+  -
+    var: A:COM VOLUME:3, Percent
+    evt: (>K:COM3_VOLUME_SET)
+  -
+    var: A:COM TEST:1, Bool
+    evt: (>K:RADIO_COMMNAV1_TEST_TOGGLE)
+  -
+    var: A:COM TEST:2, Bool
+    evt: (>K:RADIO_COMMNAV2_TEST_TOGGLE)
+  -
+    var: A:COM TEST:3, Bool
+    evt: (>K:RADIO_COMMNAV3_TEST_TOGGLE)
+  -
+    var: A:COM SPACING MODE:1, Enum
+    evt: (>K:COM_1_SPACING_MODE_SWITCH)
+  -
+    var: A:COM SPACING MODE:2, Enum
+    evt: (>K:COM_2_SPACING_MODE_SWITCH)
+  -
+    var: A:COM SPACING MODE:3, Enum
+    evt: (>K:COM_3_SPACING_MODE_SWITCH)
+  -
+    var: A:COM RECEIVE ALL, Bool
+    evt: (>K:COM_RECEIVE_ALL_SET)
+  -
+    var: A:COM RECEIVE EX1:1, Bool
+    evt: (>K:COM1_RECEIVE_SELECT)
+  -
+    var: A:COM RECEIVE EX1:2, Bool
+    evt: (>K:COM2_RECEIVE_SELECT)
+  -
+    var: A:COM RECEIVE EX1:3, Bool
+    evt: (>K:COM3_RECEIVE_SELECT)
+
+  - # DME
+    var: A:DME SOUND:1, Bool
+    evt: (>K:RADIO_DME1_IDENT_SET)
+  -
+    var: A:DME SOUND:1, Bool
+    evt: (>K:RADIO_DME1_IDENT_TOGGLE)
+  -
+    var: A:DME SOUND:2, Bool
+    evt: (>K:RADIO_DME2_IDENT_SET)
+  -
+    var: A:DME SOUND:2, Bool
+    evt: (>K:RADIO_DME2_IDENT_TOGGLE)
+
+  - # NAV
+    var: A:NAV ACTIVE FREQUENCY:1, Hz
+    evt: (>K:NAV1_RADIO_SET_HZ)
+  -
+    var: A:NAV ACTIVE FREQUENCY:2, Hz
+    evt: (>K:NAV2_RADIO_SET_HZ)
+  -
+    var: A:NAV ACTIVE FREQUENCY:3, Hz
+    evt: (>K:NAV3_RADIO_SET_HZ)
+  -
+    var: A:NAV ACTIVE FREQUENCY:4, Hz
+    evt: (>K:NAV4_RADIO_SET_HZ)
+  -
+    var: A:NAV STANDBY FREQUENCY:1, Hz
+    evt: (>K:NAV1_STBY_SET_HZ)
+  -
+    var: A:NAV STANDBY FREQUENCY:2, Hz
+    evt: (>K:NAV2_STBY_SET_HZ)
+  -
+    var: A:NAV STANDBY FREQUENCY:3, Hz
+    evt: (>K:NAV3_STBY_SET_HZ)
+  -
+    var: A:NAV STANDBY FREQUENCY:4, Hz
+    evt: (>K:NAV4_STBY_SET_HZ)
+  -
+    var: A:NAV SOUND:1, Bool
+    evt: (>K:RADIO_VOR1_IDENT_SET)
+  -
+    var: A:NAV SOUND:1, Bool
+    evt: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  -
+    var: A:NAV SOUND:2, Bool
+    evt: (>K:RADIO_VOR2_IDENT_SET)
+  -
+    var: A:NAV SOUND:2, Bool
+    evt: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  -
+    var: A:NAV SOUND:3, Bool
+    evt: (>K:RADIO_VOR3_IDENT_SET)
+  -
+    var: A:NAV SOUND:3, Bool
+    evt: (>K:RADIO_VOR3_IDENT_TOGGLE)
+  -
+    var: A:NAV SOUND:4, Bool
+    evt: (>K:RADIO_VOR4_IDENT_SET)
+  -
+    var: A:NAV SOUND:4, Bool
+    evt: (>K:RADIO_VOR4_IDENT_TOGGLE)
+#  -
+#    var: A:NAV VOLUME:1
+#    units: Percent
+#    evt: "value > current ? `K:NAV1_VOLUME_INC(${value - current})` : `K:NAV1_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+#  -
+#    var: A:NAV VOLUME:2
+#    units: Percent
+#    evt: "value > current ? `K:NAV2_VOLUME_INC(${value - current})` : `K:NAV2_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+#  -
+#    var: A:NAV VOLUME:3
+#    units: Percent
+#    evt: "value > current ? `K:NAV3_VOLUME_INC(${value - current})` : `K:NAV3_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+#  -
+#    var: A:NAV VOLUME:4
+#    units: Percent
+#    evt: "value > current ? `K:NAV4_VOLUME_INC(${value - current})` : `K:NAV4_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+
+  - # TACAN
+    var: A:TACAN ACTIVE CHANNEL:1, Number
+    evt: (>K:TACAN1_ACTIVE_CHANNEL_SET)
+  -
+    var: A:TACAN ACTIVE CHANNEL:2, Number
+    evt: (>K:TACAN2_ACTIVE_CHANNEL_SET)
+  -
+    var: A:TACAN STANDBY CHANNEL:1, Number
+    evt: (>K:TACAN1_STANDBY_CHANNEL_SET)
+  -
+    var: A:TACAN STANDBY CHANNEL:2, Number
+    evt: (>K:TACAN2_STANDBY_CHANNEL_SET)
+  -
+    var: A:TACAN ACTIVE MODE:1, Bool
+    evt: (>K:TACAN1_ACTIVE_MODE_SET)
+  -
+    var: A:TACAN ACTIVE MODE:2, Bool
+    evt: (>K:TACAN2_ACTIVE_MODE_SET)
+  -
+    var: A:TACAN STANDBY MODE:1, Bool
+    evt: (>K:TACAN1_STANDBY_MODE_SET)
+  -
+    var: A:TACAN STANDBY MODE:2, Bool
+    evt: (>K:TACAN2_STANDBY_MODE_SET)
+#  -
+#    var: A:TACAN VOLUME:1
+#    units: Percent
+#    evt: "value > current ? `K:TACAN1_VOLUME_INC(${value - current})` : `K:TACAN1_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+#  -
+#    var: A:TACAN VOLUME:2
+#    units: Percent
+#    evt: "value > current ? `K:TACAN2_VOLUME_INC(${value - current})` : `K:TACAN2_VOLUME_DEC(${current - value})`"
+#    increment_by: 2
+
+#  - # Audio Panel
+#    var: A:AUDIO PANEL VOLUME
+#    units: Percent
+#    evt: "value > current ? `K:AUDIO_PANEL_VOLUME_INC(${value - current})` : `K:AUDIO_PANEL_VOLUME_DEC(${current - value})`"
+#    increment_by: 1
+  -
+    var: A:PILOT TRANSMITTER TYPE, Enum
+    evt: (>K:PILOT_TRANSMITTER_SET)
+  -
+    var: A:COPILOT TRANSMITTER TYPE, Enum
+    evt: (>K:COPILOT_TRANSMITTER_SE)
+  -
+    var: A:SPEAKER ACTIVE, Bool
+    evt: (>K:TOGGLE_SPEAKER)
+  -
+    var: A:INTERCOM SYSTEM ACTIVE, Bool
+    evt: (>K:TOGGLE_ICS)
+  -
+    var: A:INTERCOM MODE, Enum
+    evt: (>K:INTERCOM_MODE_SET)
+  -
+    var: A:MARKER SOUND:1, Bool
+    evt: (>K:MARKER_SOUND_TOGGLE)
+  -
+    var: A:MARKER BEACON TEST MUTE, Enum
+    evt: (>K:MARKER_BEACON_TEST_MUTE)
+  -
+    var: A:MARKER BEACON SENSITIVITY HIGH, Enum
+    evt: (>K:MARKER_BEACON_SENSITIVITY_HIGH)

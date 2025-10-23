@@ -1,5 +1,0 @@
-shared:
-  - # Autopilot
-    name: AUTOPILOT BACKCOURSE HOLD
-    units: Bool
-    event: "value ? 'AP_BC_HOLD_ON' : 'AP_BC_HOLD_OFF'"

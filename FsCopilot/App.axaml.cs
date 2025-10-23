@@ -10,6 +10,7 @@ using Network;
 using Simulation;
 using ViewModels;
 using Views;
+using WatsonWebsocket;
 
 public partial class App : Application
 {
@@ -40,9 +41,8 @@ public partial class App : Application
 
             if (!dev)
             {
-                
                 var peer2Peer = new Peer2Peer("p2p.fscopilot.com", 0);
-                var simConnect = new SimConnectClient("FS Copilot");
+                var simConnect = new SimClient("FS Copilot");
                 var control = new MasterSwitch(simConnect, peer2Peer);
                 var coordinator = new Coordinator(simConnect, peer2Peer, control);
                 desktop.MainWindow = new MainWindow
@@ -52,7 +52,7 @@ public partial class App : Application
             }
             else
             {
-                var simConnect = new SimConnectClient("FS Copilot Develop");
+                var simConnect = new SimClient("FS Copilot Develop");
                 desktop.MainWindow = new DevelopWindow
                 {
                     DataContext = new DevelopWindowViewModel(simConnect)
@@ -123,7 +123,7 @@ public partial class App : Application
         Debug.WriteLine("Deploying module to Community");
         try
         {
-            var source = Path.Combine(AppContext.BaseDirectory, "Community", "fscopilot");
+            var source = Path.Combine(AppContext.BaseDirectory, "Community", "FsCopilot");
             if (!Directory.Exists(source))
             {
                 Debug.WriteLine("Missing FS copilot module. Skipped");
@@ -136,7 +136,7 @@ public partial class App : Application
             if (!Directory.Exists(community)) Directory.CreateDirectory(community);
             Debug.WriteLine("Found community folder: {0}", community);
 
-            var target = Path.Combine(community, "fscopilot");
+            var target = Path.Combine(community, "FsCopilot");
 
             if (!Directory.Exists(target))
             {

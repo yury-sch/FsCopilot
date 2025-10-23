@@ -22,6 +22,10 @@
         <Setter Property="Padding" Value="20, 10"></Setter>
     </Style>
 
+    <Style Selector="TextBlock.Badge">
+        <Setter Property="Foreground" Value="white"></Setter>
+    </Style>
+
     <Style Selector="Border.Tree">
         <Setter Property="Padding" Value="0, 20"></Setter>
     </Style>
@@ -33,9 +37,11 @@
     
     <Style Selector="TextBlock.Line">
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
+        <Setter Property="Foreground" Value="white"></Setter>
     </Style>
 
     <Style Selector="Button.Push">
         <Setter Property="Margin" Value="0, 0, 10, 0"></Setter>
+        <Setter Property="Foreground" Value="white"></Setter>
     </Style>
 </Styles>

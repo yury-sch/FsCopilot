@@ -1,6 +1,7 @@
 ﻿namespace FsCopilot;
 
 using Serilog;
+using Serilog.Events;
 
 sealed class Program
 {
@@ -10,8 +11,11 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
+        
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
+            .WriteTo.Console()
             .WriteTo.File(
                 path: "log",
                 rollingInterval: RollingInterval.Infinite,
@@ -19,9 +23,9 @@ sealed class Program
                 shared: true,
                 retainedFileCountLimit: null,
                 fileSizeLimitBytes: null,
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+                outputTemplate: "[{Timestamp:HH:mm:ss}] {Message:lj}{NewLine}{Exception}",
+                restrictedToMinimumLevel: isDev ? LogEventLevel.Debug : LogEventLevel.Information
             )
-            .WriteTo.Console()
             .CreateLogger();
 
         try

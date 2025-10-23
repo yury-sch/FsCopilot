@@ -2,6 +2,7 @@ namespace FsCopilot.Simulation;
 
 using System.Collections;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Jint;
 using Jint.Native;
 // using DynamicExpresso;
@@ -27,10 +28,22 @@ public class Definitions : IReadOnlyCollection<Definition>
     {
         var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')]));
         var cfg = Deserializer.Deserialize<Config>(cfgFile);
-        var includes = cfg.Include.Select(LoadTree).ToArray();
-        return new(path, includes,
-            cfg.Master.Select(m => new Definition(false, m.Name, m.Units, m.Event, m.Transform)).ToArray(),
-            cfg.Shared.Select(m => new Definition(true, m.Name, m.Units, m.Event, m.Transform)).ToArray());
+        var master = cfg.Master.Select(m => new Definition(false, m.Var, m.Evt)).ToArray();
+        var shared = cfg.Shared.Select(m => new Definition(true, m.Var, m.Evt)).ToArray();
+        
+        var includes = new List<DefinitionNode>();
+        foreach (var i in cfg.Include)
+        {
+            try
+            {
+                includes.Add(LoadTree(i));
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error loading module {Module}", i);
+            }
+        }
+        return new(path, includes.ToArray(), master, shared);
     }
 
     public static Definitions Load(string name)
@@ -40,9 +53,9 @@ public class Definitions : IReadOnlyCollection<Definition>
             : "default.yaml";
 
         var cfg = LoadRecursive(cfgName);
-        var simVars = cfg.Master.Select(v => (Shared: false, Var: v))
-            .Concat(cfg.Shared.Select(v => (Shared: true, Var: v)))
-            .Select(v => new Definition(v.Shared, v.Var.Name, v.Var.Units, v.Var.Event, v.Var.Transform))
+        var simVars = cfg.Master.Select(def => (Shared: false, Link: def))
+            .Concat(cfg.Shared.Select(def => (Shared: true, Link: def)))
+            .Select(v => new Definition(v.Shared, v.Link.Var, v.Link.Evt))
             .ToArray();
         return new(simVars);
     }
@@ -71,10 +84,8 @@ public class Definitions : IReadOnlyCollection<Definition>
 
         public class Link
         {
-            public string Name { get; set; }
-            public string Units { get; set; } = string.Empty;
-            public string? Event { get; set; }
-            public string? Transform { get; set; }
+            public string Var { get; set; }
+            public string? Evt { get; set; }
         }
     }
 
@@ -87,84 +98,94 @@ public class Definitions : IReadOnlyCollection<Definition>
 
 public record DefinitionNode(string Path, DefinitionNode[] Include, Definition[] Master, Definition[] Shared);
 
-public class Definition(bool shared, string name, string units, string? @event, string? transform)
+public class Definition(bool shared, string var, string? evt)
 {
     public bool Shared => shared;
-    public string Name => name;
-    public string Units => units;
 
-    public bool TryGetEvent(object value, out string eventName, out int paramIx)
+    public string GetVar(out string units)
     {
-        if (@event == null)
-        {
-            paramIx = 0;
-            eventName = string.Empty;
-            return false;
-        }
+        units = string.Empty;
+        if (string.IsNullOrEmpty(var)) return string.Empty;
+        
+        var parts = var.Split(',');
+        if (parts.Length > 1)
+            units = parts[1].Trim();
+        return parts[0].Trim();
+    }
 
-        eventName = @event.Trim();
-        paramIx = 0;
-        if (eventName.Contains(' '))
+    public bool TryGetEvent(object value, object current, out string eventName, 
+        out object? value0, out object? value1, out object? value2, out object? value3, out object? value4)
+    {
+        eventName = string.Empty;
+        value0 = null;
+        value1 = null;
+        value2 = null;
+        value3 = null;
+        value4 = null;
+        
+        if (evt == null) return false;
+        eventName = evt.Trim();
+        if (eventName.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
         {
             try
             {
-                var engine = new Jint.Engine().SetValue("value", value);
+                var engine = new Jint.Engine().SetValue("value", value).SetValue("current", current);
                 eventName = engine.Evaluate(eventName).AsString();
-                // var expr = eventName.Replace("'", "\"");
-                // eventName = new Interpreter()
-                //     .ParseAsDelegate<Func<object, string>>(expr, "value")
-                //     .Invoke(value);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse event {Name}", eventName);
+                Log.Error(e, "Unable to parse event expression {Name}", eventName);
                 return false;
             }
         }
+        
+        var rx = new Regex(@"^(?<args>.*?)\s*\(>\s*(?<name>[^)]+)\)$", RegexOptions.CultureInvariant);
+        // var rx = new Regex(@"^([A-Z]):([^(:]+)(?:\(([^)]*)\))?$", RegexOptions.CultureInvariant);
 
-        if (!eventName.Contains(':')) return true;
+        var m = rx.Match(eventName);
+        if (!m.Success) return false;
 
-        var parts = eventName.Split(':', 2);
-        if (parts.Length == 2 && int.TryParse(parts[1], out var n))
-        {
-            eventName = parts[0];
-            paramIx = n;
-        }
-        else
-        {
-            Log.Error("Unable to parse event {Name}", eventName);
-            return false;
-        }
+        // value = TransformValue(value);
+
+        eventName = m.Groups["name"].Value.Trim();
+        var pars = m.Groups["args"].Value
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim())
+            .Select(ParseParam)
+            .ToArray();
+        if (pars.Length == 0) value0 = value;
+        if (pars.Length >= 1) value0 = pars[0];
+        if (pars.Length >= 2) value1 = pars[1];
+        if (pars.Length >= 3) value2 = pars[2];
+        if (pars.Length >= 4) value3 = pars[3];
+        if (pars.Length >= 5) value4 = pars[4];
 
         return true;
+
+        object? ParseParam(string p) => uint.TryParse(p, out var ui) 
+            ? ui 
+            : int.TryParse(p, out var i) 
+                ? i 
+                : double.TryParse(p, out var d) 
+                    ? d 
+                    : p;
     }
 
-    public object TransformValue(object value)
-    {
-        if (transform == null) return value;
-
-        try
-        {
-            var engine = new Jint.Engine().SetValue("value", value);
-            return engine.Evaluate(transform).ToObject()!;
-            
-            // typeof(JsValueExtensions).GetMethod(nameof(JsValueExtensions.TryCast),
-            //         BindingFlags.Public | BindingFlags.Static)!
-            //     .MakeGenericMethod(clrType)
-            //     .Invoke(sim, [(DEF)nextId]);    
-            //
-            //     .TryCast<>()
-            
-            // return new Interpreter()
-            //     .ParseAsDelegate<Func<object, object>>(transform, "value")
-            //     .Invoke(value);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Unable to modify {Name} value {Value} with expression {Expression}", Name, value, transform);
-            return value;
-        }
-    }
+    // private object TransformValue(object value)
+    // {
+    //     if (transform == null) return value;
+    //
+    //     try
+    //     {
+    //         var engine = new Jint.Engine().SetValue("value", value);
+    //         return engine.Evaluate(transform).ToObject()!;
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         Log.Error(e, "Unable to modify {Name} value {Value} with expression {Expression}", Name, value, transform);
+    //         return value;
+    //     }
+    // }
 }
 
 // public class YcDefinition

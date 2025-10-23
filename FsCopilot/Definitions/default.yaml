@@ -1,5 +1,7 @@
 include:
   - modules/lights.yaml
+  - modules/fuel.yaml
   - modules/engine.yaml
   - modules/batteries.yaml
-  - modules/trim.yaml
+  - modules/radios.yaml
+#  - modules/trim.yaml

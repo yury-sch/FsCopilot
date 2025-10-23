@@ -8,8 +8,8 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FsCopilot.Views.DevelopWindow"
         x:DataType="viewModels1:DevelopWindowViewModel"
-        Width="600"
-        Height="800"
+        Width="800"
+        Height="1200"
         Icon="/Assets/fscopilot.ico"
         Title="FS Copilot"
         TransparencyLevelHint="AcrylicBlur"
@@ -44,6 +44,12 @@
                 <ScrollViewer Classes="Tree"
                               DockPanel.Dock="Bottom">
                     <TreeView ItemsSource="{Binding Nodes}">
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).IsExpanded}"></Setter>
+                            </Style>
+                        </TreeView.Styles>
+                        
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate ItemsSource="{Binding SubNodes}">
                                 <DockPanel>
@@ -62,7 +68,8 @@
 
             <Border Grid.Row="1"
                     Classes="Card Badge">
-                <TextBlock Text="{Binding Loaded, StringFormat='Loaded {0}'}" />
+                <TextBlock Classes="Badge" 
+                           Text="{Binding Loaded}" />
             </Border>
 
         </Grid>
