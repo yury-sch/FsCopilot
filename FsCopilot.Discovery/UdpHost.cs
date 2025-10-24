@@ -7,6 +7,8 @@ using System.Text;
 
 public class UdpHost : BackgroundService
 {
+    private static readonly byte[] HostProtocolVersion = Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         const int udpPort = 3478;
@@ -33,6 +35,9 @@ public class UdpHost : BackgroundService
                 using var br = new BinaryReader(msr, Encoding.UTF8, true);
 
                 var requestType = br.ReadByte();
+                var version = br.ReadBytes(16);
+                if (!version.SequenceEqual(HostProtocolVersion)) continue;
+                
                 if (requestType == 0) // HELLO
                 {
                     var peerId = br.ReadString();

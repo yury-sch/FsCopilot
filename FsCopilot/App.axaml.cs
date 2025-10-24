@@ -33,7 +33,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var args = desktop.Args ?? [];
-            bool dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
+            var dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
             
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
@@ -41,7 +41,7 @@ public partial class App : Application
 
             if (!dev)
             {
-                var peer2Peer = new Peer2Peer("p2p.fscopilot.com", 0);
+                var peer2Peer = new Peer2Peer("p2p.fscopilot.ru", 0);
                 var simConnect = new SimClient("FS Copilot");
                 var control = new MasterSwitch(simConnect, peer2Peer);
                 var coordinator = new Coordinator(simConnect, peer2Peer, control);

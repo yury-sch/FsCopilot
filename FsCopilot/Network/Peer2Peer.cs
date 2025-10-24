@@ -14,6 +14,7 @@ using Serilog;
 public class Peer2Peer : IAsyncDisposable
 {
     private const int MaxBufferSize = 60000;
+    private static readonly byte[] HostProtocolVersion = Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
     
     private readonly CancellationTokenSource _cts = new();
     private readonly string _host;
@@ -140,6 +141,7 @@ public class Peer2Peer : IAsyncDisposable
 
             Send(SystemPacketTypes.DISCOVER, bw =>
             {
+                bw.Write(HostProtocolVersion);
                 var local = GetLocalCandidates(((IPEndPoint)_sock.LocalEndPoint!).Port).ToArray();
                 bw.Write(local.Length);
                 foreach (var lep in local)
@@ -275,6 +277,7 @@ public class Peer2Peer : IAsyncDisposable
                         _connectionLost.OnNext(connection.Value);
                         Send(SystemPacketTypes.CONNECT, bw =>
                         {
+                            bw.Write(HostProtocolVersion);
                             bw.Write(PeerId);
                             bw.Write(connection.Key);
                         }, _discoveryHost);
