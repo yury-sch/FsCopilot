@@ -77,14 +77,14 @@ public partial class DevelopWindowViewModel : ViewModelBase
         var master = new ObservableCollection<Node>();
         var shared = new ObservableCollection<Node>();
         
-        foreach (var i in node.Include) include.Add(new(i.Path, new(PopulateTree(i, d))));
+        foreach (var i in node.Include) include.Add(new(i.Path, new(PopulateTree(i, d)), false));
         foreach (var def in node.Master) master.Add(VarNode(def));
         foreach (var def in node.Shared) shared.Add(VarNode(def));
 
         var nodes = new List<Node>();
-        if (include.Count > 0) nodes.Add(new("Include", include));
-        if (master.Count > 0) nodes.Add(new("Master", master));
-        if (shared.Count > 0) nodes.Add(new("Shared", shared));
+        if (include.Count > 0) nodes.Add(new("Include", include, true));
+        if (master.Count > 0) nodes.Add(new("Master", master, true));
+        if (shared.Count > 0) nodes.Add(new("Shared", shared, true));
         return nodes.ToArray();
 
         Node VarNode(Definition def)
@@ -111,21 +111,21 @@ public partial class Node : ObservableObject, IDisposable
     public bool IsVariable { get; }
     public bool IsExpanded { get; } = true;
 
-    private Node(string title)
+    private Node(string title, bool isExpanded)
     {
         // Name = name;
         Title = title;
+        IsExpanded = isExpanded;
     }
 
-    public Node(string title, ObservableCollection<Node> subNodes) : this(title)
+    public Node(string title, ObservableCollection<Node> subNodes, bool isExpanded) : this(title, isExpanded)
     {
         SubNodes = subNodes;
     }
 
-    public Node(SimClient sim, Definition def) : this(string.Empty)
+    public Node(SimClient sim, Definition def) : this(string.Empty, false)
     {
         _sim = sim;
-        IsExpanded = false;
         SubNodes = [];
         
         var name = def.GetVar(out var units);
@@ -143,7 +143,7 @@ public partial class Node : ObservableObject, IDisposable
             }));
     }
 
-    private Node(SimClient sim, Definition def, object value, object prevValue) : this(string.Empty)
+    private Node(SimClient sim, Definition def, object value, object prevValue) : this(string.Empty, false)
     {
         // Name =  $"{def.Name}_{DateTime.Now:O}_{Convert.ToString(value, CultureInfo.InvariantCulture)}"
         // Title = $"{DateTime.Now:HH:mm:ss}: {value}"
@@ -152,7 +152,6 @@ public partial class Node : ObservableObject, IDisposable
         Value = value;
         PrevValueValue = prevValue;
         IsVariable = true;
-        IsExpanded = false;
         if (def.TryGetEvent(value, prevValue, out var eventName, out var val0, out var val1, out var val2, out var val3, out var val4))
         {
             if (val0 != null) Title += $"{Convert.ToString(val0, CultureInfo.InvariantCulture)} ";
@@ -174,7 +173,6 @@ public partial class Node : ObservableObject, IDisposable
     // {
     //     _rawJson = raw;
     //     IsVariable = true;
-    //     IsExpanded = false;
     //     Title = raw;
     //     // var json = x.JSON;
     //     // if (json.TryGetProperty("key", out var key) &&
