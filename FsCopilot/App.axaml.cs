@@ -77,45 +77,40 @@ public partial class App : Application
     }
     
     /// Finds InstalledPackagesPath from UserCfg.opt (MS Store or Steam).
-    private static string? GetInstalledPackagesPath()
+    private static IEnumerable<string> GetInstalledPackagesPath()
     {
-        // MS Store location
-        var msStore = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Packages", "Microsoft.FlightSimulator_8wekyb3d8bbwe", "LocalCache", "UserCfg.opt");
-
-        //AppData\Roaming\Microsoft Flight Simulator 2024\Packages\Community
-        // Steam location
-        var steam = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            @"Microsoft Flight Simulator", "UserCfg.opt");
-        
-        // Steam location
-        var steam24 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
-            "Microsoft Flight Simulator 2024", "UserCfg.opt");
-
-        var cfgPath = File.Exists(msStore) 
-            ? msStore 
-            : File.Exists(steam) 
-                ? steam 
-                : File.Exists(steam24) 
-                    ? steam24 
-                    : null;
-        if (cfgPath == null)
+        var cfgPaths = new List<string>()
         {
-            Debug.WriteLine("Failed to detect installed simulator");
-            return null;
-        }
-        Debug.WriteLine("Detected configuration path: {0}", cfgPath);
+            // MS Store location
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Packages", "Microsoft.FlightSimulator_8wekyb3d8bbwe", "LocalCache", "UserCfg.opt"),
+            // MS Store 2024 location
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Packages", "Microsoft.Limitless_8wekyb3d8bbwe", "LocalCache", "UserCfg.opt"),
+            // Steam location
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Microsoft Flight Simulator", "UserCfg.opt"),
+            // Steam 2024 location
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Microsoft Flight Simulator 2024", "UserCfg.opt")
+        };
 
-        foreach (var line in File.ReadAllLines(cfgPath))
+        foreach (var path in cfgPaths.Where(File.Exists))
         {
-            if (!line.TrimStart().StartsWith("InstalledPackagesPath", StringComparison.OrdinalIgnoreCase)) continue;
-            var m = Regex.Match(line, "\"([^\"]+)\"");
-            if (m.Success) return Path.GetFullPath(Environment.ExpandEnvironmentVariables(m.Groups[1].Value));
+            Debug.WriteLine("Detected configuration path: {0}", path);
+            foreach (var line in File.ReadAllLines(path))
+            {
+                if (!line.TrimStart().StartsWith("InstalledPackagesPath", StringComparison.OrdinalIgnoreCase)) continue;
+                var m = Regex.Match(line, "\"([^\"]+)\"");
+                if (m.Success)
+                {
+                    yield return Path.GetFullPath(Environment.ExpandEnvironmentVariables(m.Groups[1].Value));
+                    break;
+                }
+            }
         }
-        
-        Debug.WriteLine("Failed to execute installed packages path");
-        return null;
     }
     
     private static void DeployModuleToCommunity()
@@ -130,22 +125,23 @@ public partial class App : Application
                 return;
             }
 
-            var basePath = GetInstalledPackagesPath();
-            if (string.IsNullOrWhiteSpace(basePath)) return;
-            var community = Path.Combine(basePath, "Community");
-            if (!Directory.Exists(community)) Directory.CreateDirectory(community);
-            Debug.WriteLine("Found community folder: {0}", community);
-
-            var target = Path.Combine(community, "FsCopilot");
-
-            if (!Directory.Exists(target))
+            var basePaths = GetInstalledPackagesPath();
+            foreach (var basePath in basePaths)
             {
-                CopyDirectory(source, target, overwrite: true);
+                var community = Path.Combine(basePath, "Community");
+                if (!Directory.Exists(community)) Directory.CreateDirectory(community);
+                Debug.WriteLine("Found community folder: {0}", community);
+                var target = Path.Combine(community, "FsCopilot");
+                if (!Directory.Exists(target))
+                {
+                    CopyDirectory(source, target, overwrite: true);
+                }
+                else
+                {
+                    CopyDirectory(Path.Combine(source, "html_ui"), Path.Combine(target, "html_ui"), overwrite: true);
+                    CopyDirectory(Path.Combine(source, "modules"), Path.Combine(target, "modules"), overwrite: true);
+                }
                 Debug.WriteLine("FS copilot module has been deployed to community");
-            }
-            else
-            {
-                Debug.WriteLine("FS copilot module already deployed. Skipping deployment.");
             }
         }
         catch (Exception e)
@@ -156,7 +152,7 @@ public partial class App : Application
 
     private static void CopyDirectory(string sourceDir, string destDir, bool overwrite)
     {
-        Directory.CreateDirectory(destDir);
+        if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
 
         foreach (var file in Directory.GetFiles(sourceDir))
         {
