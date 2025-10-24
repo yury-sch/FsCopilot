@@ -25,23 +25,21 @@ class FsCopilotHandler {
     }
 
     startCall() {
-        this.net.startAttemptConnection(this.instrumentName)
+        this.net.startAttemptConnection()
     }
 
     onMessage(data) {
         switch (data.type) {
             case 'input': {
-                this.events.setInput(document.getElementById(data.id), data.value)
+                FsCopilotHTMLTrigger.setInput(document.getElementById(data.key), data.value);
                 break;
             }
             case 'interaction': {
-                if (this.canProcess())
-                {
-                    this.instrument.onInteractionEvent([data.key])
-                }
+                this.instrument.onInteractionEvent([data.key]);
                 break;
             }
             case 'button': {
+                FsCopilotHTMLTrigger.setPanel(data.key, data.instrument);
                 break;
             }
         }
@@ -59,106 +57,7 @@ class FsCopilotHandler {
     }
 
     onInput(elementId, value) {
-        console.log(`${this.instrumentName} (onButton) ${elementId} : ${value}`);
-        this.net.sendInputEvent(elementId, value)
-    }
-
-    onButton(elementId) {
-        console.log(`${this.instrumentName} (onButton) ${elementId}`);
-        this.net.sendButtonEvent(elementId)
-    }
-
-    onInteraction(args) {
-        if (this.canProcess()) { // Only one gauge should send interaction button events
-            console.log(`${this.instrumentName} (onInteraction) ${args}`);
-            this.net.sendInteractionEvent(args[0]);
-        }
-        // // Panel event
-        // if (args[0].startsWith('YCB')) {
-        //     this.events.setPanel(args[0].substring(3), this.instrumentName)
-        //     return false
-        // } else if (args[0].startsWith('YCH')) {
-        //     args[0] = args[0].substring(3)
-        // } else if (this.canProcess()) { // Only one gauge should send interaction button events
-        //     this.net.sendInteractionEvent('H:YCH' + args[0]);
-        // }
-        return true
-    }
-}
-
-class FsCopilotNetwork {
-    constructor(onMessageCallback, connectedCallback, disconnectedCallback, canConnect) {
-        this.socket = null;
-        this.socketConnected = false;
-        this.instrumentName = ''
-
-        this.onMessageCallback = onMessageCallback ? onMessageCallback : () => { };
-        this.connectedCallback = connectedCallback ? connectedCallback : () => { };
-        this.disconnectedCallback = disconnectedCallback ? disconnectedCallback : () => { };
-        this.canConnect = canConnect ? canConnect : () => false;
-    }
-
-    connectWebsocket() {
-        if (this.socket !== null) this.socket.close();
-        
-        this.socket = new WebSocket('ws://localhost:8870/bridge/');
-        this.socket.addEventListener('open', this.onConnected.bind(this));
-        this.socket.addEventListener('close', this.onConnectionLost.bind(this));
-        this.socket.addEventListener('error', this.onConnectionError.bind(this));
-        this.socket.addEventListener('message', this.onSocketMessage.bind(this));
-    }
-
-    onConnectionLost() {
-        delete this.socket
-        this.socket = null
-        this.socketConnected = false
-        this.disconnectedCallback()
-    }
-
-    onConnectionError() {
-        this.socket.close()
-    }
-
-    // isFsCopilotRunning() {
-    //     return SimVar.GetSimVarValue('L:FsCopilotStarted', 'Boolean') == true
-    // }
-
-    startAttemptConnection(instrumentName) {
-        this.instrumentName = instrumentName
-        setInterval(this.attemptConnection.bind(this), 4000)
-    }
-
-    attemptConnection() {
-        // if (this.socketConnected || !this.canConnect() || !this.isFsCopilotRunning()) {
-        //     return
-        // }
-        if (this.socketConnected || !this.canConnect()) return;
-        this.connectWebsocket()
-    }
-
-    sendObjectAsJSON(message) {
-        if (this.socket === null || this.socket.readyState != 1) return
-        this.socket.send(JSON.stringify(message))
-    }
-
-    sendInteractionEvent(eventName) {
-        this.sendObjectAsJSON({
-            instrument: this.instrumentName,
-            type: 'interaction',
-            key: eventName
-        });
-    }
-
-    sendButtonEvent(eventName) {
-        this.sendObjectAsJSON({
-            instrument: this.instrumentName,
-            type: 'button',
-            key: eventName
-        });
-    }
-
-    sendInputEvent(elementId, value) {
-        this.sendObjectAsJSON({
+        this.net.send({
             instrument: this.instrumentName,
             type: 'input',
             key: elementId,
@@ -166,28 +65,84 @@ class FsCopilotNetwork {
         })
     }
 
-    onConnected() {
-        console.log('FsCopilot websocket connected.')
+    onButton(elementId) {
+        this.net.send({
+            instrument: this.instrumentName,
+            type: 'button',
+            key: elementId
+        });
+    }
+
+    onInteraction(args) {
+        if (this.canProcess()) return; // Only one gauge should send interaction button events
+        this.net.send({
+            type: 'interaction',
+            key: args[0]
+        });
+    }
+}
+
+class FsCopilotNetwork {
+    constructor(onMessageCallback, connectedCallback, disconnectedCallback, canConnect) {
+        this.socket = null;
+        this.socketConnected = false;
+
+        this.onMessageCallback = onMessageCallback ? onMessageCallback : () => { };
+        this.connectedCallback = connectedCallback ? connectedCallback : () => { };
+        this.disconnectedCallback = disconnectedCallback ? disconnectedCallback : () => { };
+        this.canConnect = canConnect ? canConnect : () => false;
+    }
+
+    startAttemptConnection() {
+        setInterval(this.connectWebsocket.bind(this), 4000)
+    }
+
+    // isFsCopilotRunning() {
+    //     return SimVar.GetSimVarValue('L:FsCopilotStarted', 'Boolean') == true
+    // }
+
+    connectWebsocket() {
+        // if (this.socketConnected || !this.canConnect() || !this.isFsCopilotRunning()) return;
+        if (this.socketConnected || !this.canConnect()) return;
+        if (this.socket !== null) this.socket.close();
+        
+        this.socket = new WebSocket('ws://localhost:8870/bridge/');
+        this.socket.addEventListener('open', this.onOpen.bind(this));
+        this.socket.addEventListener('close', this.onClose.bind(this));
+        this.socket.addEventListener('error', this.onError.bind(this));
+        this.socket.addEventListener('message', this.onMessage.bind(this));
+    }
+
+    onOpen() {
+        console.log('[FsCopilot] websocket connected.')
         this.socketConnected = true
         this.connectedCallback()
     }
 
-    onSocketMessage(event) {
+    onClose() {
+        delete this.socket
+        this.socket = null
+        this.socketConnected = false
+        this.disconnectedCallback()
+    }
+
+    onError() {
+        this.socket.close()
+    }
+
+    onMessage(event) {
+        console.log(`[FsCopilot] (recv) ${event.data}`);
         let data = JSON.parse(event.data)
         this.onMessageCallback(data)
     }
-}
 
-const clickEvents = ['click', 'mouseup', 'mousedown'].map(eventType => {
-    let evt = new MouseEvent(eventType, {
-        cancelable: true,
-        bubbles: true
-    })
-    evt.FsCopilot = true
-    return evt
-})
-const inputEvent = new Event('input', { bubbles: true });
-const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    send(data) {
+        if (this.socket === null || this.socket.readyState != 1) return
+        let message = JSON.stringify(data)
+        console.log(`[FsCopilot] (send) ${message}`);
+        this.socket.send(message)
+    }
+}
 
 class FsCopilotHTMLEvents {
     constructor(buttonCallback, inputCallback) {
@@ -331,14 +286,29 @@ class FsCopilotHTMLEvents {
         this.stopDocumentListener()
         this.stopMouseUpListener()
     }
+}
 
-    setInput(element, value) {
+const clickEvents = ["click", "mouseup", "mousedown"].map(eventType => {
+    let evt = new MouseEvent(eventType, {
+        cancelable: true,
+        bubbles: true
+    })
+    evt.FsCopilot = true
+    return evt
+})
+const inputEvent = new Event('input', {
+    bubbles: true
+});
+const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set
+
+class FsCopilotHTMLTrigger {
+    static setInput(element, value) {
         nativeInputSetter.call(element, value);
         element.dispatchEvent(inputEvent);
     }
 
-    setPanel(eventName, instrumentName) {
-        const split = eventName.indexOf('#')
+    static setPanel(eventName, instrumentName) {
+        const split = eventName.indexOf("#")
         const targetInstrumentName = eventName.substring(0, split)
 
         if (targetInstrumentName != instrumentName) {
@@ -353,8 +323,8 @@ class FsCopilotHTMLEvents {
         });
     }
 
-    // static processInput(element, value) {
-    //     FsCopilotHTMLTrigger.nativeInputSetter.call(element, value);
-    //     element.dispatchEvent(inputEvent);
-    // }
+    static processInput(element, value) {
+        FsCopilotHTMLTrigger.nativeInputSetter.call(element, value);
+        element.dispatchEvent(inputEvent);
+    }
 }
