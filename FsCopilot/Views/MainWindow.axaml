@@ -111,7 +111,7 @@
                                 IsEnabled="{Binding ShowTakeControl}"
                                 Command="{Binding TakeControlCommand}"/>
                         <TextBlock Classes="Aircraft"
-                                   Text="{Binding Aircraft}" />
+                                   Text="{Binding Aircraft, StringFormat='Loaded 0} aircraft'}" />
                         <!-- <ComboBox Classes="Aircraft"  -->
                         <!--           ItemsSource="{Binding Configurations}" -->
                         <!--           SelectedItem="{Binding SelectedConfiguration}" /> -->

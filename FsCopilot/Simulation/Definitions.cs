@@ -48,9 +48,10 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     public static Definitions Load(string name)
     {
-        var cfgName = File.Exists(Path.Combine(AppContext.BaseDirectory, "Definitions", $"{name}.yaml"))
-            ? $"{name}.yaml"
-            : "default.yaml";
+        // var cfgName = File.Exists(Path.Combine(AppContext.BaseDirectory, "Definitions", $"{name}.yaml"))
+        //     ? $"{name}.yaml"
+        //     : "default.yaml";
+        var cfgName = $"{name}.yaml";
 
         var cfg = LoadRecursive(cfgName);
         var simVars = cfg.Master.Select(def => (Shared: false, Link: def))
