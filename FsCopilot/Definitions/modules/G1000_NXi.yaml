@@ -13,12 +13,12 @@ shared:
     var: A:AUTOPILOT HEADING LOCK DIR:1, Degrees
   - #	Altitude hold active
     var: A:AUTOPILOT ALTITUDE LOCK, Bool
-    evt: (>K:AP_ALT_HOLD)
+    evt: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
   - #	Set or get the slot index which the altitude hold mode will track when captured. See alt_mode_slot_index for more information.
     var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet
   - #	True if autopilot vertical hold applied
     var: A:AUTOPILOT VERTICAL HOLD, Bool
-    evt: (>K:AP_VS_HOLD)
+    evt: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
   - #	Selected vertical speed
     var: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute
   - #	Boolean, toggles the autopilot Flight Level Change mode

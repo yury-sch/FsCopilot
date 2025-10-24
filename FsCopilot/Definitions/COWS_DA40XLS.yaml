@@ -2,10 +2,10 @@ include:
   - modules/G1000_NXi.yaml
   - modules/radios.yaml
   - modules/lights.yaml
-  
+
 master:
-  - var: L:INPUT_TRIM_AXIS # Trim
-    
+  - var: L:INPUT_TRIM_AXIS # The built-in trimmer event doesn't work for some reason
+
 shared:
   - var: A:INTERACTIVE POINT GOAL:2, Bool # Main door
     evt: 3 (>K:TOGGLE_AIRCRAFT_EXIT)
@@ -27,71 +27,65 @@ shared:
   - var: L:ATT_CAGE_IsDown # Attitude cage
   - var: L:KOHLSMAN SETTING HG:2 # Altimeter
 
-  - var: L:MASTER_COVER:1 # Engine cover
-  - var: A:RECIP ENG ENGINE MASTER SWITCH:1, Bool # Engine master
-    evt: (>K:ENGINE_MASTER_1_SET)
-  - var: L:ECU_VOTER:1 # Voter
-  - var: L:ECU_TEST:1_IsDown # ECU test
-  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
-    evt: (>K:ELECT_FUEL_PUMP1_SET
-  
   - var: L:ESS_BUS_SWITCH # ESS bus
   - var: A:CIRCUIT SWITCH ON:32, Bool # Avionics master
     evt: 32 (>K:ELECTRICAL_CIRCUIT_TOGGLE)
-
-  - var: A:ELECTRICAL MASTER BATTERY:1, Bool # Electric master
-  - var: A:GENERAL ENG STARTER:1, Bool # Starter
-    evt: (>K:SET_STARTER1_HELD)
-  - var: L:XFER_SWITCH # Fuel trans
+  - var: A:GENERAL ENG MASTER ALTERNATOR:1, Bool
+    evt: "`${value} 1 (>K:ALTERNATOR_SET)`"
+  - var: A:ELECTRICAL MASTER BATTERY:1, Bool
+  
+  - var: L:STARTER_SWITCH # Magneto
+  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
+    evt: (>K:ELECT_FUEL_PUMP1_SET)
   - var: A:PITOT HEAT SWITCH:1, Bool # Pitot
     evt: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
-
+    
+  # Defrost and cabin heat is not functional 
   - var: L:INPUT_PARK # Parking brake
-  # Defrost and cabin heat is not functional
+  - var: L:INPUT_PROPELLER # Propeller RPM
+  - var: L:INPUT_MIXTURE # Mixture
   - var: L:FUEL_SELECTOR # Fuel valve
-  - var: L:FUEL_WIRE_IsDown # Fuel wire
 
   - var: A:ALTERNATE STATIC SOURCE OPEN, Bool # Alternate static
     evt: (>K:TOGGLE_ALTERNATE_STATIC)
   - var: L:ENGINE_ALTERNATE_AIR # Alternate air
-
-#	EECU BUS
-  - var: L:CB_ECA
-  - var: L:CB_ECB
-  - var: L:CB_FPA
-  - var: L:CB_FPB
-
-#	ESSENTIAL BUS
+  
+  #	ESSENTIAL BUS
   - var: L:CB_HOR
-  - var: L:CB_AHR
   - var: L:CB_ADC
+  - var: L:CB_AHR
+  - var: L:CB_PFD
+  - var: L:CB_PIT
+  - var: L:CB_FLP
+  - var: L:CB_AUD
   - var: L:CB_CM1
   - var: L:CB_GP1
-  - var: L:CB_ENG
   - var: L:CB_XPR
-  - var: L:CB_FLP
-  - var: L:CB_PIT
-  - var: L:CB_FLD
   - var: L:CB_LDL
-  - var: L:CB_PFD
-  - var: L:CB_MTC
+  - var: L:CB_FLD
+  - var: L:CB_BAT
   - var: L:CB_ESS
-
-#	MAIN BUS
+  - var: L:CB_MTC
+  - var: L:CB_ENG
+  - var: L:CB_STR
+  
+  #	MAIN BUS
   - var: L:CB_MAN
-  - var: L:CB_PWR
   - var: L:CB_MFD
+  - var: L:CB_FAN
+  - var: L:CB_FUP
+  - var: L:CB_ALT
+  - var: L:CB_ACN
+  - var: L:CB_APT
+  - var: L:CB_INT
   - var: L:CB_STB
   - var: L:CB_POS
-  - var: L:CB_AVN
-  - var: L:CB_AVF
-  - var: L:CB_STR
   - var: L:CB_TXM
-  - var: L:CB_INT
-  - var: L:CB_XFR
-
-#	AVIONICS BUS
+  - var: L:CB_AVF
+  - var: L:CB_AVN
+  
+  #	AVIONICS BUS
   - var: L:CB_CM2
   - var: L:CB_GP2
-  - var: L:CB_AUD
+  - var: L:CB_TAS
   - var: L:CB_AFC

@@ -15,6 +15,12 @@ public struct Control
 
     [SimVar("RUDDER POSITION", "Position 16k", 3)]
     public double RudPos;
+    
+    [SimVar("YOKE X POSITION", "Position 16k", 4)]
+    public double YokeX;
+    
+    [SimVar("YOKE Y POSITION", "Position 16k", 5)]
+    public double YokeY;
 
     public class Codec : IPacketCodec<Control>
     {
@@ -23,6 +29,8 @@ public struct Control
             bw.Write(packet.AilPos);
             bw.Write(packet.ElevPos);
             bw.Write(packet.RudPos);
+            bw.Write(packet.YokeX);
+            bw.Write(packet.YokeY);
         }
 
         public Control Decode(BinaryReader br)
@@ -31,7 +39,9 @@ public struct Control
             {
                 AilPos = br.ReadDouble(),
                 ElevPos = br.ReadDouble(),
-                RudPos = br.ReadDouble()
+                RudPos = br.ReadDouble(),
+                YokeX = br.ReadDouble(),
+                YokeY = br.ReadDouble()
             };
             return aircraft;
         }
