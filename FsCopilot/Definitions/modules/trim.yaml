@@ -1,6 +1,0 @@
-shared:
-  - #	Percent elevator trim. Percent Over 100 (Not Settable). The unit description 'percent over 100' means that the units are calculated as a percentage value divided by 100, such that the progression of values always falls within the range of 0 and 1., Percent scaler 16k
-    var: A:ELEVATOR TRIM PCT
-    evt: (>K:ELEVATOR_TRIM_SET) #[0]: Trim position (-16383 to 16384). Sets the elevator trim position.
-#    evt: "`K:ELEVATOR_TRIM_SET({value / 16384})`" #[0]: Trim position (-16383 to 16384). Sets the elevator trim position.
-    #multiply_by: -1 #Просто скопировано из оригинала, чтобы не забыть, что тут какая-то хуита

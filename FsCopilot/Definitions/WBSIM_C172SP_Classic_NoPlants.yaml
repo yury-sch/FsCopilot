@@ -1,4 +1,0 @@
-include:
-  - default.yaml
-  - modules/WT_G1000_NXi.yaml
-  
