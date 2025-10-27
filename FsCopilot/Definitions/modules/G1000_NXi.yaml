@@ -3,42 +3,28 @@
 #    var: A:AUTOPILOT PITCH HOLD REF, Degrees
 
 shared:
-  - #	On/off flag
-    var: A:AUTOPILOT MASTER, Bool
-    evt: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
-  - #	Returns whether the autopilot heading lock is enabled (1, TRUE) or not (0, FALSE).
-    var: A:AUTOPILOT HEADING LOCK, Bool
-    evt: "value ? '(>K:AP_HDG_HOLD_ON)' : '(>K:AP_HDG_HOLD_OFF)'"
-  - #	Specifies / Returns the locked in heading for the autopilot.
-    var: A:AUTOPILOT HEADING LOCK DIR:1, Degrees
-  - #	Altitude hold active
-    var: A:AUTOPILOT ALTITUDE LOCK, Bool
-    evt: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
-  - #	Set or get the slot index which the altitude hold mode will track when captured. See alt_mode_slot_index for more information.
-    var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet
-  - #	True if autopilot vertical hold applied
-    var: A:AUTOPILOT VERTICAL HOLD, Bool
-    evt: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
-  - #	Selected vertical speed
-    var: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute
-  - #	Boolean, toggles the autopilot Flight Level Change mode
-    var: A:AUTOPILOT FLIGHT LEVEL CHANGE, Bool
-  - #	Returns the target holding airspeed for the autopilot.
-    var: A:AUTOPILOT AIRSPEED HOLD VAR:1, Knots
-    evt: (>K:AP_SPD_VAR_SET)
-#    when: A:AUTOPILOT MANAGED SPEED IN MACH == false
-  - #	4-digit code.
-    var: A:TRANSPONDER CODE:1, BCO16
-    evt: (>K:XPNDR_SET)
-  - #	Transponder State
-    var: A:TRANSPONDER STATE:1, Enum
-  - #	This can set the Ident transponder using the KEY_XPNDR_IDENT_SET, KEY_XPNDR_IDENT_TOGGLE, KEY_XPNDR_IDENT_ON or KEY_XPNDR_IDENT_OFF Event IDs (see XPNDR (Transponder) section for more information). When set to true, it will automatically turn false after 18 seconds.
-    var: A:TRANSPONDER IDENT:1, Bool
-    evt: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
-  - #	The value for the given altimeter index in millibars.
-    var: A:KOHLSMAN SETTING MB:0, Millibars
-    evt: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
-
+# PFD
+  - var: A:NAV VOLUME:1, Percent # VOL
+    evt: "`${Math.round(value)} (>K:NAV1_VOLUME_SET_EX1)`"
+  - var: A:NAV VOLUME:2, Percent # VOL
+    evt: "`${Math.round(value)} (>K:NAV2_VOLUME_SET_EX1)`"
+  - var: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
+    evt: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
+  - var: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
+    evt: (>K:NAV1_RADIO_SET_HZ)
+  - var: A:NAV ACTIVE FREQUENCY:2, Hz # NAV2 ACTIVE
+    evt: (>K:NAV2_RADIO_SET_HZ)
+  - var: A:NAV STANDBY FREQUENCY:1, Hz # NAV1 STANDBY
+    evt: (>K:NAV1_STBY_SET_HZ)
+  - var: A:NAV STANDBY FREQUENCY:2, Hz # NAV2 STANDBY
+    evt: (>K:NAV2_STBY_SET_HZ)
+  - var: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG
+#  - var: A:AUTOPILOT ALTITUDE SLOT INDEX, Number
+#    evt: (>K:AP_ALTITUDE_SLOT_INDEX_SET)
+  - var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # hack for not initialized ALT
+    evt: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : ''"
+  - var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALT
+    
   - var: H:AS1000_PFD_SOFTKEYS_1
   - var: H:AS1000_PFD_SOFTKEYS_2
   - var: H:AS1000_PFD_SOFTKEYS_3
@@ -51,12 +37,47 @@ shared:
   - var: H:AS1000_PFD_SOFTKEYS_10
   - var: H:AS1000_PFD_SOFTKEYS_11
   - var: H:AS1000_PFD_SOFTKEYS_12
+  - var: L:PFD_CDI_Source # CDI
+    evt: (>K:AP_NAV_SELECT_SET)
+    skp: H:AS1000_PFD_SOFTKEYS_6
+  - var: A:GPS DRIVES NAV1, Bool # CDI
+    evt: (>K:TOGGLE_GPS_DRIVES_NAV1)
+  - var: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32 # ADF ACTIVE
+    evt: (>K:ADF_ACTIVE_SET)
+  - var: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32 # ADF STANDBY
+    evt: (>K:ADF_STBY_SET)
+  - var: A:ADF SOUND:1, Bool # ADF SOUND
+    evt: (>K:RADIO_ADF_IDENT_SET)
+  - var: A:TRANSPONDER STATE:1, Enum # XPDR StandBy/On/Alt
+  - var: A:TRANSPONDER CODE:1, BCO16 # XPDR Code
+    evt: (>K:XPNDR_SET)
+  - var: A:TRANSPONDER IDENT:1, Bool # Ident
+    evt: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
+    skp: H:AS1000_PFD_SOFTKEYS_9
+    
+  - var: A:COM VOLUME:1, Percent # VOL
+    evt: "`${Math.round(value)} (>K:COM1_VOLUME_SET)`"
+  - var: A:COM VOLUME:2, Percent # VOL
+    evt: "`${Math.round(value)} (>K:COM2_VOLUME_SET)`"
+  - var: L:AS1000_PFD_SelectedComIndex # COM 1/2
+    evt: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
+  - var: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
+    evt: (>K:COM_RADIO_SET_HZ)
+  - var: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
+    evt: (>K:COM2_RADIO_SET_HZ)
+  - var: A:COM STANDBY FREQUENCY:1, Hz # COM1 STANDBY
+    evt: (>K:COM_STBY_RADIO_SET_HZ)
+  - var: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
+    evt: (>K:COM2_STBY_RADIO_SET_HZ)
+  - var: A:KOHLSMAN SETTING MB:0, Millibars # BARO
+    evt: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
   - var: H:AS1000_PFD_CLR
   - var: H:AS1000_PFD_ENT_Push
   - var: H:AS1000_PFD_PPL_Push
   - var: H:AS1000_PFD_PROC_Push
   - var: H:AS1000_PFD_DIRECTTO
   - var: H:AS1000_PFD_MENU_Push
+  - var: H:AS1000_PFD_JOYSTICK_PUSH
   - var: H:AS1000_PFD_JOYSTICK_LEFT
   - var: H:AS1000_PFD_JOYSTICK_RIGHT
   - var: H:AS1000_PFD_JOYSTICK_UP
@@ -66,18 +87,67 @@ shared:
   - var: H:AS1000_PFD_FMS_Upper_INC
   - var: H:AS1000_PFD_FMS_Upper_DEC
   - var: H:AS1000_PFD_FMS_Upper_PUSH
+    
+    #  - var: A:NAV OBS:1, Degrees # CRS CTR 
+    #    evt: (>K:VOR1_SET)
+    #  - var: A:NAV OBS:2, Degrees # CRS CTR
+    #    evt: (>K:VOR2_SET)
+    #  - var: A:GPS OBS ACTIVE, Bool # CRS CTR
+    #  - var: A:GPS OBS VALUE, Degrees # CRS CTR
+    #    evt: (>K:GPS_OBS_SET)
+    #  - var: L:CRS_FIX_1 # CRS CTR
 
-#  - var: H:AS1000_MID_NAV_1_Push
-#  - var: H:AS1000_MID_NAV_2_Push
-#  - var: H:AS1000_MID_DME_Push
-#  - var: H:AS1000_MID_MKR_Mute_Push
-#  - var: H:AS1000_MID_HI_SENS_Push
-#  - var: H:AS1000_MID_COM_3_Push
-#  - var: H:AS1000_MID_COM_Mic_3_Push
-#  - var: H:AS1000_MID_COM_2_Push
-#  - var: H:AS1000_MID_COM_Mic_2_Push
-#  - var: H:AS1000_MID_COM_1_Push
-#  - var: H:AS1000_MID_COM_Mic_1_Push
+#  - var: L:AS1000_PFD_STATE
+#  - var: L:AS1000_PFD_Brightness
+#  #    cancel_h_events: true
+#  - var: L:AS1000_PFD_Brightness_IsAuto
+
+# MID 
+  - var: A:COM TRANSMIT:1, Bool # COM1 MIC
+    evt: "value ? '0 (>K:PILOT_TRANSMITTER_SET)' : '1 (>K:PILOT_TRANSMITTER_SET)'"
+  - var: A:COM TRANSMIT:1, Bool # COM1 MIC
+    evt: "value ? '0 (>K:COPILOT_TRANSMITTER_SET)' : '1 (>K:COPILOT_TRANSMITTER_SET)'"
+  - var: A:COM RECEIVE:1, Bool # COM1
+    evt: (>K:COM1_RECEIVE_SELECT)
+  - var: A:COM RECEIVE:2, Bool # COM2
+    evt: (>K:COM2_RECEIVE_SELECT)
+  - var: A:MARKER BEACON TEST MUTE, Bool # MKR MUTE
+    evt: (>K:MARKER_BEACON_TEST_MUTE)
+  - var: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI SENS
+    evt: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
+  - var: A:DME SOUND, Bool # DME
+    evt: (>K:RADIO_DME1_IDENT_TOGGLE)
+  - var: A:NAV SOUND:1, Bool # NAV1
+    evt: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - var: A:ADF SOUND, Bool # ADF
+    evt: (>K:RADIO_ADF_IDENT_TOGGLE)
+  - var: A:NAV SOUND:2, Bool # NAV2
+    evt: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - var: L:G1000_REV_FORCE # Display backup  
+
+# MFD
+  - var: A:AUTOPILOT MASTER, Bool # On/off flag
+    evt: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
+  - var: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
+    evt: "0 (>K:TOGGLE_FLIGHT_DIRECTOR)"
+  - var: A:AUTOPILOT HEADING LOCK, Bool # HDG
+    evt: "value ? '(>K:AP_HDG_HOLD_ON)' : '(>K:AP_HDG_HOLD_OFF)'"
+  - var: A:AUTOPILOT NAV1 LOCK, Bool # NAV
+    evt: (>K:AP_NAV1_HOLD)
+  - var: A:AUTOPILOT APPROACH HOLD, Bool # APR
+    evt: (>K:AP_APR_HOLD)
+#  - var: A:AUTOPILOT GLIDESLOPE HOLD, Bool # APR
+#    evt: (>K:AP_LOC_HOLD)
+  - var: A:AUTOPILOT ALTITUDE LOCK, Bool # ALT
+    evt: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
+  - var: L:XMLVAR_VNAVButtonValue # VNV
+  - var: A:AUTOPILOT VERTICAL HOLD, Bool # VS
+    evt: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
+  - var: A:AUTOPILOT FLIGHT LEVEL CHANGE, Bool # FLC
+    evt:  "value ? '(>K:FLIGHT_LEVEL_CHANGE_ON)' : '(>K:FLIGHT_LEVEL_CHANGE_OFF)'"
+  - var: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute # UP/DN
+  - var: A:AUTOPILOT AIRSPEED HOLD VAR:1, Knots # UP/DN
+    evt: (>K:AP_SPD_VAR_SET)
 
   - var: H:AS1000_MFD_SOFTKEYS_1
   - var: H:AS1000_MFD_SOFTKEYS_2
@@ -91,29 +161,166 @@ shared:
   - var: H:AS1000_MFD_SOFTKEYS_10
   - var: H:AS1000_MFD_SOFTKEYS_11
   - var: H:AS1000_MFD_SOFTKEYS_12
+
+  - var: H:AS1000_MFD_JOYSTICK_PUSH
+  - var: H:AS1000_MFD_JOYSTICK_LEFT
+  - var: H:AS1000_MFD_JOYSTICK_RIGHT
+  - var: H:AS1000_MFD_JOYSTICK_UP
+  - var: H:AS1000_MFD_JOYSTICK_DOWN
   - var: H:AS1000_MFD_CLR
   - var: H:AS1000_MFD_ENT_Push
   - var: H:AS1000_MFD_PPL_Push
   - var: H:AS1000_MFD_PROC_Push
   - var: H:AS1000_MFD_DIRECTTO
   - var: H:AS1000_MFD_MENU_Push
-  - var: H:AS1000_MFD_JOYSTICK_LEFT
-  - var: H:AS1000_MFD_JOYSTICK_RIGHT
-  - var: H:AS1000_MFD_JOYSTICK_UP
-  - var: H:AS1000_MFD_JOYSTICK_DOWN
   - var: H:AS1000_MFD_FMS_Lower_INC
   - var: H:AS1000_MFD_FMS_Lower_DEC
   - var: H:AS1000_MFD_FMS_Upper_INC
   - var: H:AS1000_MFD_FMS_Upper_DEC
   - var: H:AS1000_MFD_FMS_Upper_PUSH
 
+#  - var: L:AS1000_MFD_Brightness
+#  #      cancel_h_events: true
+#  #      unreliable: true
+#  - var: L:AS1000_MFD_Brightness_IsAuto
+#  - var: L:AS1000_MFD_SelectedNavIndex
+#  - var: L:AS1000_MFD_SelectedComIndex
+#ignore:
+## PFD
+#  - H:AS1000_PFD_VOL_1_INC
+#  - H:AS1000_PFD_VOL_1_DEC
+#  - H:AS1000_PFD_NAV_Switch
+#  - H:AS1000_PFD_NAV_Push
+#  - H:AS1000_PFD_NAV_Large_INC
+#  - H:AS1000_PFD_NAV_Large_DEC
+#  - H:AS1000_PFD_NAV_Small_INC
+#  - H:AS1000_PFD_NAV_Small_DEC
+#  - H:AP_KNOB_Up
+#  - H:AP_KNOB_Down
+#
+#  - H:AS1000_PFD_VOL_2_INC
+#  - H:AS1000_PFD_VOL_2_DEC
+#  - H:AS1000_PFD_COM_Switch
+#  - H:AS1000_PFD_COM_Push
+#  - H:AS1000_PFD_COM_Large_INC
+#  - H:AS1000_PFD_COM_Large_DEC
+#  - H:AS1000_PFD_COM_Small_INC
+#  - H:AS1000_PFD_COM_Small_DEC
+#  
+#  - H:AS1000_PFD_BARO_INC
+#  - H:AS1000_PFD_BARO_DEC
+#  - H:AS1000_PFD_CRS_PUSH
+## MID
+#  - H:AS1000_MID_COM_Mic_1_Push
+#  - H:AS1000_MID_COM_Mic_2_Push
+#  - H:AS1000_MID_COM_1_Push
+#  - H:AS1000_MID_COM_2_Push
+#  - H:AS1000_MID_MKR_Mute_Push
+#  - H:AS1000_MID_HI_SENS_Push
+#  
+#  - H:AS1000_MID_DME_Push
+#  - H:AS1000_MID_NAV_1_Push
+#  - H:AS1000_MID_ADF_Push
+#  - H:AS1000_MID_NAV_2_Push
+## MFD
+#  - H:AS1000_MFD_VOL_1_INC
+#  - H:AS1000_MFD_VOL_1_DEC
+#  - H:AS1000_MFD_NAV_Switch
+#  - H:AS1000_MFD_NAV_Push
+#  - H:AS1000_MFD_NAV_Large_INC
+#  - H:AS1000_MFD_NAV_Large_DEC
+#  - H:AS1000_MFD_NAV_Small_INC
+#  - H:AS1000_MFD_NAV_Small_DEC
+#  
+#  - H:Generic_Autopilot_Manual_Off
+#  
+#  - H:AS1000_MFD_VOL_2_INC
+#  - H:AS1000_MFD_VOL_2_DEC
+#  - H:AS1000_MFD_COM_Switch
+#  - H:AS1000_MFD_COM_Push
+#  - H:AS1000_MFD_COM_Large_INC
+#  - H:AS1000_MFD_COM_Large_DEC
+#  - H:AS1000_MFD_COM_Small_INC
+#  - H:AS1000_MFD_COM_Small_DEC
+#
+#  - H:AS1000_MFD_BARO_INC
+#  - H:AS1000_MFD_BARO_DEC
+#  - H:AS1000_MFD_CRS_PUSH
+
+#  - var: H:AS1000_PFD_SOFTKEYS_1
+#  - var: H:AS1000_PFD_SOFTKEYS_2
+#  - var: H:AS1000_PFD_SOFTKEYS_3
+#  - var: H:AS1000_PFD_SOFTKEYS_4
+#  - var: H:AS1000_PFD_SOFTKEYS_5
+#  - var: H:AS1000_PFD_SOFTKEYS_6
+#  - var: H:AS1000_PFD_SOFTKEYS_7
+#  - var: H:AS1000_PFD_SOFTKEYS_8
+#  - var: H:AS1000_PFD_SOFTKEYS_9
+#  - var: H:AS1000_PFD_SOFTKEYS_10
+#  - var: H:AS1000_PFD_SOFTKEYS_11
+#  - var: H:AS1000_PFD_SOFTKEYS_12
+#  - var: H:AS1000_PFD_CLR
+#  - var: H:AS1000_PFD_ENT_Push
+#  - var: H:AS1000_PFD_PPL_Push
+#  - var: H:AS1000_PFD_PROC_Push
+#  - var: H:AS1000_PFD_DIRECTTO
+#  - var: H:AS1000_PFD_MENU_Push
+#  - var: H:AS1000_PFD_JOYSTICK_LEFT
+#  - var: H:AS1000_PFD_JOYSTICK_RIGHT
+#  - var: H:AS1000_PFD_JOYSTICK_UP
+#  - var: H:AS1000_PFD_JOYSTICK_DOWN
+#  - var: H:AS1000_PFD_FMS_Lower_INC
+#  - var: H:AS1000_PFD_FMS_Lower_DEC
+#  - var: H:AS1000_PFD_FMS_Upper_INC
+#  - var: H:AS1000_PFD_FMS_Upper_DEC
+#  - var: H:AS1000_PFD_FMS_Upper_PUSH
+#
+##  - var: H:AS1000_MID_NAV_1_Push
+##  - var: H:AS1000_MID_NAV_2_Push
+##  - var: H:AS1000_MID_DME_Push
+##  - var: H:AS1000_MID_MKR_Mute_Push
+##  - var: H:AS1000_MID_HI_SENS_Push
+##  - var: H:AS1000_MID_COM_3_Push
+##  - var: H:AS1000_MID_COM_Mic_3_Push
+##  - var: H:AS1000_MID_COM_2_Push
+##  - var: H:AS1000_MID_COM_Mic_2_Push
+##  - var: H:AS1000_MID_COM_1_Push
+##  - var: H:AS1000_MID_COM_Mic_1_Push
+#
+#  - var: H:AS1000_MFD_SOFTKEYS_1
+#  - var: H:AS1000_MFD_SOFTKEYS_2
+#  - var: H:AS1000_MFD_SOFTKEYS_3
+#  - var: H:AS1000_MFD_SOFTKEYS_4
+#  - var: H:AS1000_MFD_SOFTKEYS_5
+#  - var: H:AS1000_MFD_SOFTKEYS_6
+#  - var: H:AS1000_MFD_SOFTKEYS_7
+#  - var: H:AS1000_MFD_SOFTKEYS_8
+#  - var: H:AS1000_MFD_SOFTKEYS_9
+#  - var: H:AS1000_MFD_SOFTKEYS_10
+#  - var: H:AS1000_MFD_SOFTKEYS_11
+#  - var: H:AS1000_MFD_SOFTKEYS_12
+#  - var: H:AS1000_MFD_CLR
+#  - var: H:AS1000_MFD_ENT_Push
+#  - var: H:AS1000_MFD_PPL_Push
+#  - var: H:AS1000_MFD_PROC_Push
+#  - var: H:AS1000_MFD_DIRECTTO
+#  - var: H:AS1000_MFD_MENU_Push
+#  - var: H:AS1000_MFD_JOYSTICK_LEFT
+#  - var: H:AS1000_MFD_JOYSTICK_RIGHT
+#  - var: H:AS1000_MFD_JOYSTICK_UP
+#  - var: H:AS1000_MFD_JOYSTICK_DOWN
+#  - var: H:AS1000_MFD_FMS_Lower_INC
+#  - var: H:AS1000_MFD_FMS_Lower_DEC
+#  - var: H:AS1000_MFD_FMS_Upper_INC
+#  - var: H:AS1000_MFD_FMS_Upper_DEC
+#  - var: H:AS1000_MFD_FMS_Upper_PUSH
+
 # BELOW HAS NOT BEEN TESTED YET
-  - var: A:AUTOPILOT BACKCOURSE HOLD, Bool
-    evt: "value ? '(>K:AP_BC_HOLD_ON)' : '(>K:AP_BC_HOLD_OFF)'"
-  - var: A:AUTOPILOT DISENGAGED, Bool
-    evt: (>K:AUTOPILOT_DISENGAGE_SET)
-  - var: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool
-    evt: 1 (>K:TOGGLE_FLIGHT_DIRECTOR)
+#  - var: A:AUTOPILOT BACKCOURSE HOLD, Bool
+#    evt: "value ? '(>K:AP_BC_HOLD_ON)' : '(>K:AP_BC_HOLD_OFF)'"
+#  - var: A:AUTOPILOT DISENGAGED, Bool
+#    evt: (>K:AUTOPILOT_DISENGAGE_SET)
+
 #    use_calculator: true
 #  -
 #    var: A:AUTOPILOT MACH HOLD VAR:1
@@ -128,21 +335,17 @@ shared:
 #      equals:
 #        Bool: true
 #    unreliable: true
-  - #
-    var: A:AUTOPILOT MANAGED SPEED IN MACH, Bool
-    evt: "value ? '(>K:AP_MANAGED_SPEED_IN_MACH_ON)' : '(>K:AP_MANAGED_SPEED_IN_MACH_OFF)'"
-  - var: A:AUTOPILOT MAX BANK ID, Number
-    evt: (>K:AP_MAX_BANK_SET)
-  - var: A:AUTOPILOT NAV1 LOCK, Bool
-    evt: (>K:AP_NAV1_HOLD)
-  - var: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
-    evt: (>K:AUTO_THROTTLE_TO_GA)
-  - var: A:AUTOPILOT WING LEVELER, Bool
-    evt: "value ? '(>K:AP_WING_LEVELER_ON)' : '(>K:AP_WING_LEVELER_OFF)'"
-  - var: A:AUTOPILOT YAW DAMPER, Bool
-    evt: "value ? '(>K:YAW_DAMPER_ON)' : '(>K:YAW_DAMPER_OFF)'"
-  - var: A:GPS DRIVES NAV1, Bool
-    evt: (>K:TOGGLE_GPS_DRIVES_NAV1)
+#  - #
+#    var: A:AUTOPILOT MANAGED SPEED IN MACH, Bool
+#    evt: "value ? '(>K:AP_MANAGED_SPEED_IN_MACH_ON)' : '(>K:AP_MANAGED_SPEED_IN_MACH_OFF)'"
+#  - var: A:AUTOPILOT MAX BANK ID, Number
+#    evt: (>K:AP_MAX_BANK_SET)
+#  - var: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
+#    evt: (>K:AUTO_THROTTLE_TO_GA)
+#  - var: A:AUTOPILOT WING LEVELER, Bool
+#    evt: "value ? '(>K:AP_WING_LEVELER_ON)' : '(>K:AP_WING_LEVELER_OFF)'"
+#  - var: A:AUTOPILOT YAW DAMPER, Bool
+#    evt: "value ? '(>K:YAW_DAMPER_ON)' : '(>K:YAW_DAMPER_OFF)'"
 
 #  - type: event
 #    evt: K:AP_ALT_HOLD
@@ -156,49 +359,3 @@ shared:
 #    evt: K:AUTO_THROTTLE_DISCONNECT
 #  - var: L:WT1000_ControlPad_Mode
 #  - var: L:WT1000_ControlPad_ModeInput_Inhibited
-#  - var: L:AS1000_PFD_STATE
-
-#ignore:
-#  - AP_UP
-#  - AP_DN
-#  - AP_BARO_Up
-#  - AP_BARO_Down
-#  - AP_KNOB_Up
-#  - AP_KNOB_Down
-#  - Generic_Autopilot_Manual_Off
-
-# BELOW EXTRACTED FROM SOURCE CODE OF G1000   
-#  - var: L:WTAP_Garmin_Nav_Mode_On; #Whether the autopilot NAV mode is on
-#  - var: L:WTAP_Garmin_Approach_Mode_On #Whether the autopilot approach mode is on.
-#  - var: L:WTGarmin_Nav_ActiveNavSource:1 #The active navigation source for the pilot
-#  - var: L:WTGarmin_Nav_ActiveNavSource:2 #The active navigation source for the copilot
-#  
-#  # SimVar names for Garmin external GPS steering command data.
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Is_Valid
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Is_Heading
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Course_To_Steer
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Track_Radius
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Dtk
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Xtk
-#  - var: L:1:WT_Garmin_External_GPS_Steer_Command_Tae
-#      
-#  # SimVar names for Garmin external VNAV guidance data.
-#  - var: L:1:WT_Garmin_External_VNav_State
-#  - var: L:1:WT_Garmin_External_VNav_Is_Active
-#  - var: L:1:WT_Garmin_External_VNav_Path_Mode
-#  - var: L:1:WT_Garmin_External_VNav_Armed_Climb_Mode
-#  - var: L:1:WT_Garmin_External_VNav_Should_Activate_Climb_Mode
-#  - var: L:1:WT_Garmin_External_VNav_Alt_Capture_Type
-#  - var: L:1:WT_Garmin_External_VNav_Should_Capture_Alt
-#  - var: L:1:WT_Garmin_External_VNav_Alt_To_Capture
-#  # SimVar names for Garmin external vertical path guidance data.
-#  - var: L:1:WT_Garmin_External_Vertical_Path_Is_Valid
-#  - var: L:1:WT_Garmin_External_Vertical_Path_Fpa
-#  - var: L:1:WT_Garmin_External_Vertical_Path_Deviation
-#  
-#  # SimVar names for Garmin external glidepath guidance data.
-#  - var: L:1:WT_Garmin_External_Glidepath_Approach_Has_Gp
-#  - var: L:1:WT_Garmin_External_Glidepath_Is_Valid
-#  - var: L:1:WT_Garmin_External_Glidepath_Can_Capture
-#  - var: L:1:WT_Garmin_External_VNav_Path_Fpa
-#  - var: L:1:WT_Garmin_External_VNav_Path_Deviation

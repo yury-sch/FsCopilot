@@ -1,7 +1,5 @@
 include:
   - modules/G1000_NXi.yaml
-  - modules/radios.yaml
-  - modules/lights.yaml
 
 master:
   - var: L:INPUT_TRIM_AXIS # The built-in trimmer event doesn't work for some reason
@@ -20,6 +18,12 @@ shared:
     evt: (>B:LIGHTING_PANEL_1_Set)
   - var: A:LIGHT GLARESHIELD:1, Percent over 100 # Flood light
     evt: (>B:LIGHTING_GLARESHIELD_1_Set)
+
+  - var: A:LIGHT LANDING, Bool # Light switch state for landing light.
+  - var: A:LIGHT TAXI, Bool # Light switch state for the taxi light.
+  - var: A:LIGHT NAV, Bool # Light switch state for the NAV light
+  - var: A:LIGHT STROBE, Bool # Light switch state for the strobe lights
+  - var: A:LIGHT BEACON, Bool # Light switch state
 
   - var: L:EMERGENCY_BATT_COVER # Emergency battery cover
   - var: L:EMERGENCY_BATT # Emergency battery
@@ -49,6 +53,11 @@ shared:
   - var: A:ALTERNATE STATIC SOURCE OPEN, Bool # Alternate static
     evt: (>K:TOGGLE_ALTERNATE_STATIC)
   - var: L:ENGINE_ALTERNATE_AIR # Alternate air
+
+  - #	Light switch state.
+    var: A:LIGHT CABIN:1, Bool
+  - var: A:LIGHT CABIN:2, Bool
+  - var: A:LIGHT CABIN:3, Bool
   
   #	ESSENTIAL BUS
   - var: L:CB_HOR

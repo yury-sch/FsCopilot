@@ -1,11 +1,11 @@
 shared:
-# M803
-  - var: H:M803_OAT_PRESS
-  - var: H:M803_OAT_RELEASE
-  - var: H:M803_SELECT_PRESS
-  - var: H:M803_SELECT_RELEASE  
-  - var: H:M803_CONTROL_PRESS
-  - var: H:M803_CONTROL_RELEASE
+## M803
+#  - var: H:M803_OAT_PRESS
+#  - var: H:M803_OAT_RELEASE
+#  - var: H:M803_SELECT_PRESS
+#  - var: H:M803_SELECT_RELEASE  
+#  - var: H:M803_CONTROL_PRESS
+#  - var: H:M803_CONTROL_RELEASE
     
   - var: A:AIRSPEED TRUE CALIBRATE, Degrees
     
@@ -15,12 +15,12 @@ shared:
   - var: A:KOHLSMAN SETTING MB:2, Millibars
     evt: "`${value * 16} 2 (>K:KOHLSMAN_SET)`"
     
-  - var: H:C172X_ANNUNCIATOR_TST
-  - var: H:C172X_ANNUNCIATOR_BRT
-  - var: H:C172X_ANNUNCIATOR_DIM
-
-  - var: H:MD41_NAVGPS_PRESS
-  - var: H:MD41_NAVGPS_RELEASE
+#  - var: H:C172X_ANNUNCIATOR_TST
+#  - var: H:C172X_ANNUNCIATOR_BRT
+#  - var: H:C172X_ANNUNCIATOR_DIM
+#
+#  - var: H:MD41_NAVGPS_PRESS
+#  - var: H:MD41_NAVGPS_RELEASE
 
   - var: A:NAV OBS:1, Degrees
     evt: (>K:VOR1_SET)

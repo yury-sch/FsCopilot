@@ -1,9 +1,10 @@
 include:
   - modules/G1000_NXi.yaml
-  - modules/radios.yaml
-  - modules/lights.yaml
   
 master:
+  #  - var: L:AILERON_ANIM
+  #  - var: L:ELEVATOR_ANIM
+  #  - var: L:ELEVATOR_STICK
   - var: L:INPUT_TRIM_AXIS # Trim
     
 shared:
@@ -20,7 +21,13 @@ shared:
     evt: (>B:LIGHTING_PANEL_1_Set)
   - var: A:LIGHT GLARESHIELD:1, Percent over 100 # Flood light
     evt: (>B:LIGHTING_GLARESHIELD_1_Set)
-
+  
+  - var: A:LIGHT LANDING, Bool # Light switch state for landing light.
+  - var: A:LIGHT TAXI, Bool # Light switch state for the taxi light.
+  - var: A:LIGHT NAV, Bool # Light switch state for the NAV light
+  - var: A:LIGHT STROBE, Bool # Light switch state for the strobe lights
+  - var: A:LIGHT BEACON, Bool # Light switch state
+  
   - var: L:EMERGENCY_BATT_COVER # Emergency battery cover
   - var: L:EMERGENCY_BATT # Emergency battery
 
@@ -33,7 +40,7 @@ shared:
   - var: L:ECU_VOTER:1 # Voter
   - var: L:ECU_TEST:1_IsDown # ECU test
   - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
-    evt: (>K:ELECT_FUEL_PUMP1_SET
+    evt: (>K:ELECT_FUEL_PUMP1_SET)
   
   - var: L:ESS_BUS_SWITCH # ESS bus
   - var: A:CIRCUIT SWITCH ON:32, Bool # Avionics master
@@ -54,6 +61,11 @@ shared:
   - var: A:ALTERNATE STATIC SOURCE OPEN, Bool # Alternate static
     evt: (>K:TOGGLE_ALTERNATE_STATIC)
   - var: L:ENGINE_ALTERNATE_AIR # Alternate air
+
+  - #	Light switch state.
+    var: A:LIGHT CABIN:1, Bool
+  - var: A:LIGHT CABIN:2, Bool
+  - var: A:LIGHT CABIN:3, Bool
 
 #	EECU BUS
   - var: L:CB_ECA
