@@ -109,6 +109,7 @@ public class Peer2Peer : IAsyncDisposable
                 foreach (var active in _connections.Where(c => c.Key != connection.PeerId))
                     Send(SystemPacketTypes.CONNECT, bw =>
                     {
+                        bw.Write(HostProtocolVersion);
                         bw.Write(active.Key);
                         bw.Write(connection.PeerId);
                     }, _discoveryHost);
@@ -433,6 +434,7 @@ public class Peer2Peer : IAsyncDisposable
         // ct.Register(() => _connectTcs.TrySetResult(false));
         Send(SystemPacketTypes.CONNECT, bw =>
         {
+            bw.Write(HostProtocolVersion);
             bw.Write(PeerId);
             bw.Write(target);
         }, _discoveryHost);

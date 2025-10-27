@@ -15,7 +15,7 @@ public class UdpHost : BackgroundService
         var peers = new ConcurrentDictionary<string, Peer>();
         using var udp = new UdpClient(new IPEndPoint(IPAddress.Any, udpPort));
         Console.WriteLine($"UDP echo/relay listening on port {udpPort}");
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -35,12 +35,12 @@ public class UdpHost : BackgroundService
                 using var br = new BinaryReader(msr, Encoding.UTF8, true);
 
                 var requestType = br.ReadByte();
+                var peerId = br.ReadString();
                 var version = br.ReadBytes(16);
                 if (!version.SequenceEqual(HostProtocolVersion)) continue;
                 
                 if (requestType == 0) // HELLO
                 {
-                    var peerId = br.ReadString();
                     var localCount = br.ReadInt32();
                     var localAddresses = new List<IPEndPoint>(localCount);
                     for (var i = 0; i < localCount; i++)
@@ -64,7 +64,6 @@ public class UdpHost : BackgroundService
                 }
                 else if (requestType == 1) // CONNECT
                 {
-                    var peerId = br.ReadString();
                     var sourceId = br.ReadString();
                     var targetId = br.ReadString();
 
