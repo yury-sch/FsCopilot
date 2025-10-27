@@ -42,6 +42,13 @@
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
         <Setter Property="FontSize" Value="20"></Setter>
         <Setter Property="Foreground" Value="White"></Setter>
+        <Setter Property="HorizontalAlignment" Value="Right"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.Version">
+        <Setter Property="HorizontalAlignment" Value="Right"></Setter>
+        <Setter Property="FontSize" Value="11"></Setter>
+        <Setter Property="Foreground" Value="Gray"></Setter>
     </Style>
 
     <Style Selector="TextBox.Connect">

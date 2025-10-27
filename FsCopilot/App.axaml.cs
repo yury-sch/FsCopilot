@@ -1,6 +1,7 @@
 namespace FsCopilot;
 
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
@@ -10,10 +11,15 @@ using Network;
 using Simulation;
 using ViewModels;
 using Views;
-using WatsonWebsocket;
 
 public partial class App : Application
 {
+    public static readonly string Version =
+        Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion
+            .Split('+')[0] ?? "unknown";
+    
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -41,7 +47,7 @@ public partial class App : Application
 
             if (!dev)
             {
-                var peer2Peer = new Peer2Peer("p2p.fscopilot.ru", 0);
+                var peer2Peer = new Peer2Peer("p2p.fscopilot.com", 0);
                 var simConnect = new SimClient("FS Copilot");
                 var control = new MasterSwitch(simConnect, peer2Peer);
                 var coordinator = new Coordinator(simConnect, peer2Peer, control);

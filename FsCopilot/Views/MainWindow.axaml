@@ -6,10 +6,10 @@
         xmlns:viewModels="clr-namespace:FsCopilot.ViewModels"
         xmlns:viewModels1="clr-namespace:FsCopilot.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        MinWidth="600"
-        MaxWidth="600"
-        MinHeight="800"
-        MaxHeight="800"
+        MinWidth="500"
+        MaxWidth="500"
+        MinHeight="700"
+        MaxHeight="700"
         x:Class="FsCopilot.Views.MainWindow"
         x:DataType="viewModels1:MainWindowViewModel"
         Icon="/Assets/fscopilot.ico"
@@ -45,13 +45,19 @@
         </ExperimentalAcrylicBorder>
 
         <Grid Classes="Wrapper" RowDefinitions="Auto,Auto,Auto,*,Auto">
-
             <Border Grid.Row="0"
                     Classes="Card">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Right"
-                               Classes="Name"
-                               Text="FS Copilot" />
+                    <StackPanel DockPanel.Dock="Right"
+                                Orientation="Vertical"
+                                VerticalAlignment="Center"
+                                Margin="0,0,8,0">
+                        <TextBlock Classes="Name"
+                                   Text="FS Copilot"  />
+                        <TextBlock Classes="Version"
+                                   Text="{Binding Version, StringFormat='v{0}'}" />
+                    </StackPanel>
+                    
                     <Border DockPanel.Dock="Left" Classes="MainIcon">
                         <PathIcon Data="{StaticResource airplane_regular}">
                             <PathIcon.RenderTransform>
@@ -111,7 +117,7 @@
                                 IsEnabled="{Binding ShowTakeControl}"
                                 Command="{Binding TakeControlCommand}"/>
                         <TextBlock Classes="Aircraft"
-                                   Text="{Binding Aircraft, StringFormat='Loaded 0} aircraft'}" />
+                                   Text="{Binding Aircraft, StringFormat='Loaded {0} aircraft'}" />
                         <!-- <ComboBox Classes="Aircraft"  -->
                         <!--           ItemsSource="{Binding Configurations}" -->
                         <!--           SelectedItem="{Binding SelectedConfiguration}" /> -->

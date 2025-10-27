@@ -22,6 +22,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isSimConnected;
     [ObservableProperty] private bool _showTakeControl;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private IPEndPoint? _address;
+    [ObservableProperty] private string _version = App.Version;
 
     public string ErrorMessage =>
         Address == null ? "No internet connection. Please check your network." :
@@ -35,7 +36,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private readonly Peer2Peer _peer2Peer;
     private readonly MasterSwitch _masterSwitch;
-    private readonly Coordinator _coordinator;
     private readonly Subject<bool> _unsubscribe = new();
 
     [RelayCommand]
@@ -75,7 +75,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _peer2Peer = peer2Peer;
         _masterSwitch = masterSwitch;
-        _coordinator = coordinator;
         // _configuration = configuration;
 
         SessionCode = peer2Peer.PeerId;
