@@ -39,6 +39,8 @@ public class Peer2Peer : IAsyncDisposable
 
     private IPEndPoint? _discoveryHost;
     private DateTime _lastDiscovery = DateTime.MinValue;
+    private string _schema = string.Empty;
+    private TaskCompletionSource<ConnectionResult>? _connectTcs;
 
     public string PeerId { get; }
     // public IPEndPoint? DiscoveredEndpoint { get; private set; }
@@ -77,6 +79,7 @@ public class Peer2Peer : IAsyncDisposable
         {
             [SystemPacketTypes.DISCOVER] = DiscoverHandle,
             [SystemPacketTypes.CONNECT] = ConnectHandle,
+            [SystemPacketTypes.MISMATCH] = MismatchHandle,
             [SystemPacketTypes.PUNCH] = PunchHandle,
             [SystemPacketTypes.HOLE] = HoleHandle,
             [SystemPacketTypes.PING] = PingHandle,
@@ -147,6 +150,7 @@ public class Peer2Peer : IAsyncDisposable
                 bw.Write(local.Length);
                 foreach (var lep in local)
                     bw.Write(lep.ToString());
+                bw.Write(_schema);
             }, _discoveryHost);
             await Task.Delay(20000, ct);
         }
@@ -327,12 +331,17 @@ public class Peer2Peer : IAsyncDisposable
 
         if (IPEndPoint.TryParse(udpSeen, out var remoteEp)) targets.Add(remoteEp);
 
-        // if (_punchCts != null) _punchCts.Cancel();
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
-        cts.CancelAfter(TimeSpan.FromSeconds(120));
-        _punches.AddOrUpdate(targetPeer, cts, (_, exist) =>
+        // var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+        // cts.CancelAfter(TimeSpan.FromSeconds(120));
+        // _punches.AddOrUpdate(targetPeer, cts, (_, exist) =>
+        // {
+        //     exist.Cancel();
+        //     return cts;
+        // });
+        var cts = _punches.GetOrAdd(targetPeer, _ =>
         {
-            exist.Cancel();
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token);
+            cts.CancelAfter(TimeSpan.FromSeconds(120));
             return cts;
         });
         
@@ -350,6 +359,14 @@ public class Peer2Peer : IAsyncDisposable
         }, cts.Token);
     }
 
+    private void MismatchHandle(string peerId, IPEndPoint from, BinaryReader br)
+    {
+        if (_punches.TryRemove(peerId, out _))
+        {
+            _connectTcs?.TrySetResult(ConnectionResult.VersionMismatch);
+        }
+    }
+
     private void PunchHandle(string peerId, IPEndPoint from, BinaryReader br)
     {
         var target = br.ReadString();
@@ -362,6 +379,7 @@ public class Peer2Peer : IAsyncDisposable
     {
         if (_punches.TryRemove(peerId, out var punchCts))
         {
+            _connectTcs?.TrySetResult(ConnectionResult.Success);
             punchCts.Cancel();
             var connection = new Connection(peerId, from, DateTime.UtcNow, 0);
             _connections.AddOrUpdate(peerId, _ =>
@@ -418,28 +436,29 @@ public class Peer2Peer : IAsyncDisposable
         }
     }
 
-    public Task Connect(string target)
+    public Task<ConnectionResult> Connect(string target, CancellationToken ct)
     {
-        if (_discoveryHost == null) return Task.CompletedTask;
+        if (_discoveryHost == null) return Task.FromResult(ConnectionResult.Cancelled);
         target = target.Trim().ToUpperInvariant();
-        // if (_connections.TryRemove(peerId, out var punchCts))
 
-        // _connections.GetOrAdd(target, (_) => {
-        //     var a = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        // });
-        // _connections.
-
-        // _connectTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        // ct.Register(() => _connectTcs.TrySetResult(false));
+        // var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _punches.AddOrUpdate(target, cts, (_, exist) =>
+        {
+            exist.Cancel();
+            return cts;
+        });
+        _connectTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        ct.Register(() => _connectTcs.TrySetResult(ConnectionResult.Cancelled));
+        
         Send(SystemPacketTypes.CONNECT, bw =>
         {
             bw.Write(HostProtocolVersion);
             bw.Write(PeerId);
             bw.Write(target);
         }, _discoveryHost);
-        // return _connectTcs.Task;
-        return Task.CompletedTask;
+        return _connectTcs.Task;
     }
 
     public void SendAll<TPacket>(TPacket packet)
@@ -461,6 +480,7 @@ public class Peer2Peer : IAsyncDisposable
         where TCodec : IPacketCodec<TPacket>, new()
     {
         _packetRegistry.RegisterPacket<TPacket, TCodec>();
+        _schema += SchemaFingerprint.For<TPacket>();
     }
 
     public IDisposable Subscribe<TPacket>(Action<TPacket> action)
@@ -508,6 +528,7 @@ public class Peer2Peer : IAsyncDisposable
     {
         DISCOVER = 0,
         CONNECT = 1,
+        MISMATCH = 3,
         PUNCH = 10,
         HOLE = 11,
         PING = 22,
@@ -517,3 +538,10 @@ public class Peer2Peer : IAsyncDisposable
 }
 
 public record struct Connection(string PeerId, IPEndPoint Ip, DateTime LastSeen, uint Rtt);
+
+public enum ConnectionResult : byte
+{
+    Success = 0,
+    Cancelled = 1,
+    VersionMismatch = 2,
+}

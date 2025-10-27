@@ -3,15 +3,14 @@
         xmlns:vm="using:FsCopilot.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:viewModels="clr-namespace:FsCopilot.ViewModels"
-        xmlns:viewModels1="clr-namespace:FsCopilot.ViewModels"
+        xmlns:li="using:LoadingIndicators.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         MinWidth="500"
         MaxWidth="500"
         MinHeight="700"
         MaxHeight="700"
         x:Class="FsCopilot.Views.MainWindow"
-        x:DataType="viewModels1:MainWindowViewModel"
+        x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/fscopilot.ico"
         Title="FS Copilot"
         TransparencyLevelHint="AcrylicBlur"
@@ -23,15 +22,14 @@
     </Window.Styles>
 
     <Window.Resources>
-        <viewModels1:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBool"/>
-        <viewModels1:StringEmptyToBoolConverter x:Key="StringEmptyToBool"/>
+        <vm:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBool"/>
+        <vm:StringEmptyToBoolConverter x:Key="StringEmptyToBool"/>
+        <vm:InverseBoolConverter x:Key="InverseBool"/>
     </Window.Resources>
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <viewModels1:MainWindowViewModel />
-    </Design.DataContext>
+    <!-- <Design.DataContext> -->
+    <!--     <vm:MainWindowViewModel /> -->
+    <!-- </Design.DataContext> -->
 
     <Panel>
         <ExperimentalAcrylicBorder IsHitTestVisible="False">
@@ -89,8 +87,17 @@
                     <DockPanel>
                         <Button DockPanel.Dock="Right"
                                 Classes="Connect"
-                                Content="Connect"
-                                Command="{Binding ConnectCommand}"/>
+                                Command="{Binding ConnectCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <li:LoadingIndicator IsActive="{Binding IsBusy}" 
+                                                     Mode="Arcs" 
+                                                     SpeedRatio="1.2" />
+                                <TextBlock IsVisible="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                           Text="Connect" />
+                            </StackPanel>
+                        </Button>
+                        
                         <TextBox Classes="Connect"
                                  Watermark="Client session code...."
                                  Text="{Binding ConnectionCode}" />

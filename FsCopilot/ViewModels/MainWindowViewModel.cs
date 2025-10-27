@@ -1,13 +1,10 @@
 ﻿namespace FsCopilot.ViewModels;
 
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
 using System.Net;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Avalonia.Data.Converters;
 using Avalonia.Threading;
 using Connection;
 using Network;
@@ -19,13 +16,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _aircraft;
     [ObservableProperty] private bool _notSupported;
     [ObservableProperty] private string _connectionCode = string.Empty;
+    [ObservableProperty] private bool _isBusy;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isSimConnected;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isConnectionTimeout;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isVersionMismatch;
     [ObservableProperty] private bool _showTakeControl;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private IPEndPoint? _address;
     [ObservableProperty] private string _version = App.Version;
 
     public string ErrorMessage =>
         Address == null ? "No internet connection. Please check your network." :
+        IsConnectionTimeout ? "Connection attempt timed out." :
+        IsVersionMismatch ? "Connection failed due to version mismatch." :
         !IsSimConnected ? "Microsoft Flight Simulator is not running!" :
         string.Empty;
 
@@ -38,12 +40,40 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly MasterSwitch _masterSwitch;
     private readonly Subject<bool> _unsubscribe = new();
 
-    [RelayCommand]
+    private bool CanConnect() => !IsBusy;
+    [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task Connect()
     {
-        await _masterSwitch.Join();
-        await _peer2Peer.Connect(ConnectionCode);
-        ConnectionCode = string.Empty;
+        IsConnectionTimeout = false;
+        IsVersionMismatch = false;
+        IsBusy = true;
+        ConnectionResult result;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+            await _masterSwitch.Join();
+            result = await _peer2Peer.Connect(ConnectionCode, cts.Token);
+            ConnectionCode = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+            ConnectCommand.NotifyCanExecuteChanged(); // re-enable button
+        }
+        
+        if (result == ConnectionResult.Cancelled)
+        {
+            IsConnectionTimeout = true;
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            IsConnectionTimeout = false;        
+        }
+        else if (result == ConnectionResult.VersionMismatch)
+        {
+            IsVersionMismatch = true;
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            IsVersionMismatch = false;
+        }
     }
 
     [RelayCommand]
@@ -158,26 +188,4 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             _rtt = rtt;
         }
     }
-}
-
-public class StringNotEmptyToBoolConverter : IValueConverter
-{
-    public static readonly StringNotEmptyToBoolConverter Instance = new();
-
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is string s && !string.IsNullOrWhiteSpace(s);
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotImplementedException();
-}
-
-public class StringEmptyToBoolConverter : IValueConverter
-{
-    public static readonly StringEmptyToBoolConverter Instance = new();
-
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => value is string s && string.IsNullOrWhiteSpace(s);
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        => throw new NotImplementedException();
 }

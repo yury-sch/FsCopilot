@@ -34,12 +34,12 @@ public class UdpHost : BackgroundService
                 using var msr = new MemoryStream(buffer);
                 using var br = new BinaryReader(msr, Encoding.UTF8, true);
 
-                var requestType = br.ReadByte();
+                var requestType = (SystemPacketTypes)br.ReadByte();
                 var peerId = br.ReadString();
                 var version = br.ReadBytes(16);
                 if (!version.SequenceEqual(HostProtocolVersion)) continue;
                 
-                if (requestType == 0) // HELLO
+                if (requestType == SystemPacketTypes.DISCOVER) // HELLO
                 {
                     var localCount = br.ReadInt32();
                     var localAddresses = new List<IPEndPoint>(localCount);
@@ -48,21 +48,22 @@ public class UdpHost : BackgroundService
                         var localAddrStr = br.ReadString();
                         if (IPEndPoint.TryParse(localAddrStr, out var localAdd)) localAddresses.Add(localAdd);
                     }
+                    var schema = br.ReadString();
 
                     // var a = IPEndPoint.TryParse(localAddr, out var local) ? local : new IPEndPoint();
 
-                    peers[peerId] = new(peerId, localAddresses.ToArray(), remote, DateTime.UtcNow);
+                    peers[peerId] = new(peerId, localAddresses.ToArray(), remote, schema, DateTime.UtcNow);
 
                     using var msw = new MemoryStream();
                     await using var bw = new BinaryWriter(msw, Encoding.UTF8, true);
-                    bw.Write(requestType); // HELLO RESP
+                    bw.Write((byte)requestType); // HELLO RESP
                     bw.Write(peerId);
                     bw.Write(remote.ToString());
                     bw.Flush();
                     var reply = msw.ToArray();
                     await udp.SendAsync(reply, reply.Length, remote);
                 }
-                else if (requestType == 1) // CONNECT
+                else if (requestType == SystemPacketTypes.CONNECT) // CONNECT
                 {
                     var sourceId = br.ReadString();
                     var targetId = br.ReadString();
@@ -74,11 +75,23 @@ public class UdpHost : BackgroundService
                         && sourceInfo.Timestamp >= window
                         && targetInfo.Timestamp >= window)
                     {
-                        var targetData = PreparePeerConnection(targetInfo);
-                        await udp.SendAsync(targetData, targetData.Length, sourceInfo.UdpSeen);
+                        if (sourceInfo.Schema.Equals(targetInfo.Schema))
+                        {
+                            var targetData = PreparePeerConnection(targetInfo);
+                            await udp.SendAsync(targetData, targetData.Length, sourceInfo.UdpSeen);
 
-                        var notify = PreparePeerConnection(sourceInfo);
-                        await udp.SendAsync(notify, notify.Length, targetInfo.UdpSeen);
+                            var notify = PreparePeerConnection(sourceInfo);
+                            await udp.SendAsync(notify, notify.Length, targetInfo.UdpSeen);    
+                        }
+                        else
+                        {
+                            using var msw = new MemoryStream();
+                            await using var bw = new BinaryWriter(msw, Encoding.UTF8, true);
+                            bw.Write((byte)SystemPacketTypes.MISMATCH);
+                            var reply = msw.ToArray();
+                            bw.Write(peerId);
+                            await udp.SendAsync(reply, reply.Length, remote);
+                        }   
                     }
                 }
                 // else if (requestType == byte.MaxValue) // RELAYTO
@@ -105,7 +118,7 @@ public class UdpHost : BackgroundService
     {
         using var msw = new MemoryStream();
         using var bw = new BinaryWriter(msw, Encoding.UTF8, true);
-        bw.Write((byte)1); // CONNECT RESP
+        bw.Write((byte)SystemPacketTypes.CONNECT); // CONNECT RESP
         bw.Write(peer.PeerId);
         bw.Write(peer.UdpSeen.ToString());
         bw.Write(peer.Local.Length);
@@ -116,5 +129,12 @@ public class UdpHost : BackgroundService
         return msw.ToArray();
     }
 
-    private record Peer(string PeerId, IPEndPoint[] Local, IPEndPoint UdpSeen, DateTime Timestamp);
+    private record Peer(string PeerId, IPEndPoint[] Local, IPEndPoint UdpSeen, string Schema, DateTime Timestamp);
+
+    private enum SystemPacketTypes : byte
+    {
+        DISCOVER = 0,
+        CONNECT = 1,
+        MISMATCH = 2,
+    }
 }
