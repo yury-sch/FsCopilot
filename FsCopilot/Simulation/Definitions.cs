@@ -1,11 +1,8 @@
 namespace FsCopilot.Simulation;
 
 using System.Collections;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Jint;
-using Jint.Native;
-// using DynamicExpresso;
 using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -19,17 +16,20 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     private readonly Definition[] _links;
 
-    private Definitions(Definition[] links)
+    public string[] Ignore { get; }
+
+    private Definitions(Definition[] links, string[] ignore)
     {
         _links = links;
+        Ignore = ignore;
     }
 
     public static DefinitionNode LoadTree(string path)
     {
         var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')]));
         var cfg = Deserializer.Deserialize<Config>(cfgFile);
-        var master = cfg.Master.Select(m => new Definition(false, m.Var, m.Evt)).ToArray();
-        var shared = cfg.Shared.Select(m => new Definition(true, m.Var, m.Evt)).ToArray();
+        var master = cfg.Master.Select(m => new Definition(false, m.Var.Trim(), m.Evt?.Trim(), m.Skp?.Trim())).ToArray();
+        var shared = cfg.Shared.Select(m => new Definition(true, m.Var.Trim(), m.Evt?.Trim(), m.Skp?.Trim())).ToArray();
         
         var includes = new List<DefinitionNode>();
         foreach (var i in cfg.Include)
@@ -43,38 +43,28 @@ public class Definitions : IReadOnlyCollection<Definition>
                 Log.Error(e, "Error loading module {Module}", i);
             }
         }
-        return new(path, includes.ToArray(), master, shared);
+
+        var ignore = cfg.Ignore.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
+        return new(path, includes.ToArray(), master, shared, ignore);
     }
 
     public static Definitions Load(string name)
     {
-        // var cfgName = File.Exists(Path.Combine(AppContext.BaseDirectory, "Definitions", $"{name}.yaml"))
-        //     ? $"{name}.yaml"
-        //     : "default.yaml";
-        var cfgName = $"{name}.yaml";
-
-        var cfg = LoadRecursive(cfgName);
-        var simVars = cfg.Master.Select(def => (Shared: false, Link: def))
-            .Concat(cfg.Shared.Select(def => (Shared: true, Link: def)))
-            .Select(v => new Definition(v.Shared, v.Link.Var, v.Link.Evt))
-            .ToArray();
-        return new(simVars);
+        var node = LoadTree($"{name}.yaml");
+        var master = new List<Definition>();
+        var shared = new List<Definition>();
+        var ignore = new List<string>();
+        Collect(node, master, shared, ignore);
+        var simVars = master.Concat(shared).ToArray();
+        return new(simVars, ignore.ToArray());
     }
 
-    private static Config LoadRecursive(params string[] path)
+    private static void Collect(DefinitionNode node, List<Definition> master, List<Definition> shared, List<string> ignore)
     {
-        var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path]));
-        var cfg = Deserializer.Deserialize<Config>(cfgFile);
-        if (cfg.Include.Length == 0) return cfg;
-
-        foreach (var include in cfg.Include)
-        {
-            var innerCfg = LoadRecursive(include.Split('/'));
-            cfg.Shared = innerCfg.Shared.Concat(cfg.Shared).ToArray();
-            cfg.Master = innerCfg.Master.Concat(cfg.Master).ToArray();
-        }
-
-        return cfg;
+        foreach (var child in node.Include) Collect(child, master, shared, ignore);
+        master.AddRange(node.Master);
+        shared.AddRange(node.Shared);
+        ignore.AddRange(node.Ignore);
     }
 
     private class Config
@@ -82,11 +72,13 @@ public class Definitions : IReadOnlyCollection<Definition>
         public string[] Include { get; set; } = [];
         public Link[] Shared { get; set; } = [];
         public Link[] Master { get; set; } = [];
+        public string[] Ignore { get; set; } = [];
 
         public class Link
         {
             public string Var { get; set; }
             public string? Evt { get; set; }
+            public string? Skp { get; set; }
         }
     }
 
@@ -97,11 +89,17 @@ public class Definitions : IReadOnlyCollection<Definition>
     public int Count { get; }
 }
 
-public record DefinitionNode(string Path, DefinitionNode[] Include, Definition[] Master, Definition[] Shared);
+public record DefinitionNode(
+    string Path,
+    DefinitionNode[] Include,
+    Definition[] Master,
+    Definition[] Shared,
+    string[] Ignore);
 
-public class Definition(bool shared, string var, string? evt)
+public class Definition(bool shared, string var, string? evt, string? skp)
 {
     public bool Shared => shared;
+    public string? Skip => skp;
 
     public string GetVar(out string units)
     {
@@ -171,22 +169,6 @@ public class Definition(bool shared, string var, string? evt)
                     ? d 
                     : p;
     }
-
-    // private object TransformValue(object value)
-    // {
-    //     if (transform == null) return value;
-    //
-    //     try
-    //     {
-    //         var engine = new Jint.Engine().SetValue("value", value);
-    //         return engine.Evaluate(transform).ToObject()!;
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         Log.Error(e, "Unable to modify {Name} value {Value} with expression {Expression}", Name, value, transform);
-    //         return value;
-    //     }
-    // }
 }
 
 // public class YcDefinition

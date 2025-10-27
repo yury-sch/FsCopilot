@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 namespace FsCopilot.Simulation;
 
+using System.Collections.Concurrent;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -19,6 +22,7 @@ public class Coordinator : IDisposable
     private readonly BehaviorSubject<bool?> _configured = new(null);
     public IObservable<string> Aircraft => _aircraft;
     public IObservable<bool?> Configured => _configured;
+    private readonly ConcurrentDictionary<string, DateTime> _throttle = new ();
 
     public Coordinator(SimClient sim, Peer2Peer peer2Peer, MasterSwitch masterSwitch)
     {
@@ -26,7 +30,7 @@ public class Coordinator : IDisposable
         _masterSwitch = masterSwitch;
         _sim = sim;
         peer2Peer.RegisterPacket<Update, Update.Codec>();
-        peer2Peer.RegisterPacket<ClientUpdate, ClientUpdate.Codec>();
+        peer2Peer.RegisterPacket<HUpdate, HUpdate.Codec>();
 
         _d.Add(sim.Stream<Aircraft>()
             // .StartWith(Unit.Default)
@@ -47,42 +51,6 @@ public class Coordinator : IDisposable
         AddLink<Fuel, Fuel.Codec>(master: true);
         AddLink<Payload, Payload.Codec>(master: false);
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
-        
-        // _d.Add(Observable
-        //     .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
-        //         h => socket.MessageReceived += h,
-        //         h => socket.MessageReceived -= h)
-        //     .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
-        //     .Select(json => (JSON: JsonDocument.Parse(json).RootElement, RAW: json))
-        //     // Allow time for other vars to sync before H event. 
-        //     // For example, changing the frequency of the G1000 radios would "cancel" the H events telling those vars to change, so we need those to be detected first.
-        //     .SelectMany(p => p.JSON.TryGetProperty("type", out var type) && type.ToString() == "interaction"
-        //         ? Observable.Timer(TimeSpan.FromMilliseconds(100)).Select(_ => p)
-        //         : Observable.Return(p))
-        //     .Subscribe(x =>
-        //     {
-        //         var json = x.JSON;
-        //         if (json.TryGetProperty("key", out var key) &&
-        //             json.TryGetProperty("instrument", out var instrument))
-        //         {
-        //             if (json.TryGetProperty("value", out var value)) Log.Information("[PACKET] SENT {Name} {Value} ({Instrument})", key.ToString(), value.ToString(), instrument);
-        //             else Log.Information("[PACKET] SENT {Name} ({Instrument})", key.ToString(), instrument);
-        //         }
-        //             
-        //         peer2Peer.SendAll(new ClientUpdate(x.RAW));
-        //     }));
-        //
-        // _d.Add(_peer2Peer.Subscribe<ClientUpdate>(update =>
-        // {
-        //     var json = JsonDocument.Parse(update.Payload).RootElement;
-        //     if (json.TryGetProperty("key", out var key) &&
-        //         json.TryGetProperty("instrument", out var instrument))
-        //     {
-        //         if (json.TryGetProperty("value", out var value)) Log.Information("[PACKET] RECEIVE {Name} {Value} ({Instrument})", key.ToString(), value.ToString(), instrument);
-        //         else Log.Information("[PACKET] RECEIVE {Name} ({Instrument})", key.ToString(), instrument);
-        //     }
-        //     _ = Task.WhenAll(socket.ListClients().Select(c => socket.SendAsync(c.Guid, update.Payload)));
-        // }));
     }
 
     public void Dispose()
@@ -112,6 +80,23 @@ public class Coordinator : IDisposable
         }
 
         foreach (var def in definitions) AddLink(def);
+        
+        // var ignoreEvents = definitions.Ignore.Where(i => i[0] == 'H').ToHashSet();
+        // _cSubs.Add(_sim.HEvents
+        //     .Delay(TimeSpan.FromMilliseconds(100))
+        //     .Subscribe(evt =>
+        //     {
+        //         evt = $"H:{evt}";
+        //         if (ignoreEvents.Contains(evt) || Throttled(evt)) return;
+        //         _peer2Peer.SendAll(new HUpdate(evt));
+        //         Log.Debug("[PACKET] Sent {Name}", evt);
+        //     }));
+        //
+        // _cSubs.Add(_peer2Peer.Subscribe<HUpdate>(update =>
+        // {
+        //     Log.Debug("[PACKET] RECEIVE {Name}", update.Evt);
+        //     _sim.Set(update.Evt, string.Empty);
+        // }));
     }
 
     // private void AddLink<TPacket, TCodec, TInterpolator>(bool master) 
@@ -159,40 +144,54 @@ public class Coordinator : IDisposable
     private void AddLink(Definition def)
     {
         var master = !def.Shared;
-        var throttle = DateTime.MinValue;
-        object? prevValue = null;
+        object? currentValue = null;
         var name = def.GetVar(out var units);
+        
         _cSubs.Add(_sim.Stream(name, units)
-            // .Sample(TimeSpan.FromMilliseconds(250))
+            .Delay(TimeSpan.FromMilliseconds(100))
             .Subscribe(val =>
             {
-                prevValue = val;
+                currentValue = val;
+                Debug.WriteLine($"{name} Current value updated with {currentValue}");
                 if (master && !_masterSwitch.IsMaster) return;
-                if (DateTime.UtcNow <= throttle) return;
+                if (Throttled(name)) return;
+                if (def.Skip != null) Throttle(def.Skip); 
                 _peer2Peer.SendAll(new Update(name, val));
                 Log.Debug("[PACKET] SENT {Name} {Value}", name, val);
             }));
 
         _cSubs.Add(_peer2Peer.Subscribe<Update>(update =>
         {
-            var datumName = update.Name;
-            var value = update.Value;
-            if (datumName != name) return;
+            if (update.Name != name) return;
+            var nextValue = update.Value;
+            Log.Debug("[PACKET] RECEIVE {Name} {Value}", name, nextValue);
             if (master && _masterSwitch.IsMaster) return;
-            Log.Debug("[PACKET] RECEIVE {Name} {Value}", name, value);
-            // if (prevValue == null) return;
-            if (!def.TryGetEvent(value, prevValue ?? value, out var eventName, out var val0, out var val1, out var val2, out var val3, out var val4))
+            if (name[0] != 'H' && nextValue.Equals(currentValue))
             {
-                if (prevValue == value) return;
-                prevValue = value;
-                throttle = DateTime.UtcNow + TimeSpan.FromMilliseconds(500);
-                _sim.Set(datumName, value);
+                Debug.WriteLine($"{name} value equals with {nextValue}. Skip update");
                 return;
             }
-            // throttle = DateTime.UtcNow + TimeSpan.FromMilliseconds(500);
-            _sim.Call(eventName, val0, val1, val2, val3, val4);
-        })); 
+            Debug.WriteLine($"{name} will be updated. Current value: {currentValue}. Next value: {nextValue}");
+            
+            if (def.TryGetEvent(nextValue, currentValue ?? nextValue, out var eventName, out var val0, out var val1,
+                    out var val2, out var val3, out var val4))
+            {
+                if (eventName[0] != 'H') Throttle(name);
+                _sim.Call(eventName, val0, val1, val2, val3, val4);
+            }
+            else
+            {
+                if (name[0] != 'H') Throttle(name);
+                _sim.Set(name, nextValue);
+            }
+        }));
     }
+
+    private void Throttle(string key) => _throttle.AddOrUpdate(key,
+        _ => DateTime.UtcNow + TimeSpan.FromMilliseconds(200),
+        (_, _) => DateTime.UtcNow + TimeSpan.FromMilliseconds(200));
+
+    private bool Throttled(string name) => _throttle.TryGetValue(name, out var throttle) && DateTime.UtcNow <= throttle;
 
     private record Update(string Name, object Value)
     {
@@ -202,7 +201,7 @@ public class Coordinator : IDisposable
             {
                 bw.Write(packet.Name);
                 var v = packet.Value;
-                TypeCode type = Type.GetTypeCode(packet.Value.GetType());
+                var type = Type.GetTypeCode(v.GetType());
                 bw.Write((byte)type);
                 switch (type)
                 {
@@ -279,19 +278,19 @@ public class Coordinator : IDisposable
         }
     }
     
-    private record ClientUpdate(string Payload)
+    private record HUpdate(string Evt)
     {
-        public class Codec : IPacketCodec<ClientUpdate>
+        public class Codec : IPacketCodec<HUpdate>
         {
-            public void Encode(ClientUpdate packet, BinaryWriter bw)
+            public void Encode(HUpdate packet, BinaryWriter bw)
             {
-                bw.Write(packet.Payload);
+                bw.Write(packet.Evt);
             }
-
-            public ClientUpdate Decode(BinaryReader br)
+    
+            public HUpdate Decode(BinaryReader br)
             {
-                var payload = br.ReadString();
-                return new(payload);
+                var evt = br.ReadString();
+                return new(evt);
             }
         }
     }

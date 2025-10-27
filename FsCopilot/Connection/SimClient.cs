@@ -27,6 +27,7 @@ public class SimClient : IDisposable
     private readonly WatsonWsServer _socket;
 
     public IObservable<bool> Connected => _headless.Connected;
+    public IObservable<string> HEvents => _hEvents;
 
     public SimClient(string appName)
     {
@@ -99,6 +100,13 @@ public class SimClient : IDisposable
                 }
                 
             });
+
+        // _headless.Configure(sim =>
+        // {
+        //     var nextId = (EVT)Interlocked.Increment(ref _defId);
+        //     sim.MapClientEventToSimEvent(nextId, "AXIS_AILERONS_SET");
+        //     sim.AddClientEventToNotificationGroup(GRP.INPUTS, nextId, false);
+        // }, _ => {});
     }
 
     public void Dispose()
@@ -106,6 +114,17 @@ public class SimClient : IDisposable
         _socket.Dispose();
         _headless.Dispose();
     }
+
+    // public void Freeze(bool on)
+    // {
+    //     _headless.Post(sim =>
+    //     {
+    //         sim.SetInputGroupState(GRP.INPUTS, (uint)(on ? SIMCONNECT_STATE.OFF : SIMCONNECT_STATE.ON));
+    //     });
+    //     Call("FREEZE_LATITUDE_LONGITUDE_SET", on);
+    //     Call("FREEZE_ALTITUDE_SET", on);
+    //     Call("FREEZE_ATTITUDE_SET", on);
+    // }
     
     public Task<T> SystemState<T>(string szState)
     {
@@ -164,7 +183,7 @@ public class SimClient : IDisposable
         var dwData4 = NormalizeValue(value4);
 
         _headless.Post(sim => sim.TransmitClientEvent_EX1(
-            SimConnect.SIMCONNECT_OBJECT_ID_USER, (EVT)eventId, GRP.Dummy,
+            SimConnect.SIMCONNECT_OBJECT_ID_USER, (EVT)eventId, GRP.DUMMY,
             SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY,
             dwData0 ?? 0, dwData1 ?? 0, dwData2 ?? 0, dwData3 ?? 0, dwData4 ?? 0));
         return;
@@ -507,7 +526,7 @@ public class SimClient : IDisposable
     private enum DEF;
     private enum REQ;
     private enum EVT;
-    private enum GRP { Dummy }
+    private enum GRP { DUMMY, INPUTS }
     
     // private enum MF_CLIENTDATA : uint { REQUEST = 1, RESPONSE = 2 }
     

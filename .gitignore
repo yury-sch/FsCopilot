@@ -267,3 +267,4 @@ __pycache__/
 # Vim swap file
 *.swp
 .azure
+.stfolder
