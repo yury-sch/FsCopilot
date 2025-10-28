@@ -24,8 +24,7 @@ public partial class DevelopWindowViewModel : ViewModelBase
         _sim = sim;
         var latestTree = new SerialDisposable();
         
-        sim.Stream<Aircraft>()
-            .SelectMany(_ => Observable.FromAsync(() => _sim.SystemState<string>("AircraftLoaded")))
+        sim.Aircraft
             .Subscribe(path => Dispatcher.UIThread.Post(() =>
             {
                 latestTree.Disposable = PopulateTreeAndAttach(path);

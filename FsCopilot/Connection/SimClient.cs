@@ -29,6 +29,8 @@ public class SimClient : IDisposable
     private readonly WatsonWsServer _socket;
 
     public IObservable<bool> Connected => _headless.Connected;
+    public IObservable<string> Aircraft => _headless.Aircraft;
+    
     public IObservable<string> HEvents => _hEvents;
 
     public SimClient(string appName)
@@ -129,34 +131,32 @@ public class SimClient : IDisposable
     //     Call("FREEZE_ATTITUDE_SET", on);
     // }
     
-    public Task<T> SystemState<T>(string szState)
-    {
-        var reqId = Interlocked.Increment(ref _requestId);
-        
-        var tcs = new TaskCompletionSource<T>();
-
-        _headless.SystemState.Where(e => e.dwRequestID == reqId).Take(1).Subscribe(data =>
-        {
-            // var match = Regex.Match(data.szString, @"SimObjects\\Airplanes\\([^\\]+)");
-            // if (match.Success)
-            // {
-            //     string folder = match.Groups[1].Value;
-            //     Console.WriteLine(folder);
-            // }
-            //
-            // Console.WriteLine($"aircraft.cfg path (raw): {path}");
-
-            if (typeof(T) == typeof(string))
-                tcs.SetResult((T)(object)data.szString);
-            else if (typeof(T) == typeof(float))
-                tcs.SetResult((T)(object)data.fFloat);
-            else if (typeof(T) == typeof(uint)) 
-                tcs.SetResult((T)(object)data.dwInteger);
-        });
-        
-        _headless.Post(sim => sim.RequestSystemState((REQ)reqId, szState));
-        return tcs.Task;
-    }
+    // public Task<T> SystemState<T>(string szState)
+    // {
+    //     var reqId = _defs.GetOrAdd($"SystemState:{szState}", _ =>
+    //     {
+    //         var nextId = (DEF)Interlocked.Increment(ref _defId);
+    //         return nextId;
+    //     });
+    //     
+    //     var tcs = new TaskCompletionSource<T>();
+    //
+    //     _headless.SystemState.Where(e => e.dwRequestID == (uint)reqId).Take(1).Subscribe(data =>
+    //     {
+    //         if (typeof(T) == typeof(string))
+    //             tcs.SetResult((T)(object)data.szString);
+    //         else if (typeof(T) == typeof(float))
+    //             tcs.SetResult((T)(object)data.fFloat);
+    //         else if (typeof(T) == typeof(uint)) 
+    //             tcs.SetResult((T)(object)data.dwInteger);
+    //     });
+    //     
+    //     _headless.Post(sim =>
+    //     {
+    //         sim.RequestSystemState((REQ)(uint)reqId, szState);
+    //     });
+    //     return tcs.Task;
+    // }
 
     public void Call(string eventName) =>
         Call(eventName, null, null, null, null, null);
@@ -296,6 +296,7 @@ public class SimClient : IDisposable
                 observer.OnError,
                 observer.OnCompleted);
 
+            Debug.WriteLine($"Subscribe {key}");
             var config = _headless.Configure(Initialize, Deinitialize);
 
             return () =>
@@ -306,7 +307,7 @@ public class SimClient : IDisposable
 
             void Initialize(SimConnect sim)
             {
-                Debug.WriteLine($"Initialize {key}");
+                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 sim.AddToDataDefinitionFromStruct<T>(defId);
                 sim.RegisterDataDefineStruct<T>(defId);
                 sim.RequestDataOnSimObject(reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -316,7 +317,7 @@ public class SimClient : IDisposable
 
             void Deinitialize(SimConnect sim)
             {
-                Debug.WriteLine($"Deinitialize {key}");
+                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
@@ -328,9 +329,9 @@ public class SimClient : IDisposable
     public IObservable<object> Stream(string datumName, string sUnits)
     {
         if (datumName.StartsWith("L:")) return LVar(datumName[2..]);
-        else if (datumName.StartsWith("A:")) return SimVar(datumName[2..], sUnits);
-        else if (datumName.StartsWith("H:")) return HVar(datumName[2..]);
-        // else if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
+        if (datumName.StartsWith("A:")) return SimVar(datumName[2..], sUnits);
+        if (datumName.StartsWith("H:")) return HVar(datumName[2..]);
+        // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
         return Observable.Empty<object>();
     }
 
@@ -347,7 +348,8 @@ public class SimClient : IDisposable
                 },
                 observer.OnError,
                 observer.OnCompleted);
-
+            
+            Debug.WriteLine($"Subscribe {key}");
             var config = _headless.Configure(Initialize, Deinitialize);
 
             return () =>
@@ -358,7 +360,7 @@ public class SimClient : IDisposable
 
             void Initialize(SimConnect sim)
             {
-                Debug.WriteLine($"Initialize {key}");
+                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 var datumType = SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
             
@@ -378,7 +380,7 @@ public class SimClient : IDisposable
 
             void Deinitialize(SimConnect sim)
             {
-                Debug.WriteLine($"Deinitialize {key}");
+                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
@@ -428,7 +430,7 @@ public class SimClient : IDisposable
 
             void Initialize(SimConnect sim, ushort offset)
             {
-                Debug.WriteLine($"Initialize {key}");
+                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 var reqId = (REQ)Interlocked.Increment(ref _requestId);
                 sim.AddToClientDataDefinition(defId, offset, sizeof(float), 0, 0);
                 sim.RegisterStruct<SIMCONNECT_RECV_CLIENT_DATA, float>(defId);
@@ -443,7 +445,7 @@ public class SimClient : IDisposable
             
             void Deinitialize(SimConnect sim)
             {
-                Debug.WriteLine($"Deinitialize {key}");
+                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
                 var reqId = (REQ)Interlocked.Increment(ref _requestId);
                 sim.RequestClientData(
                     CLIENT_DATA_ID.LVARS,
@@ -526,14 +528,14 @@ public class SimClient : IDisposable
     //     return () => sub.Dispose();
     // });
 
-    private enum DEF;
-    private enum REQ;
-    private enum EVT;
+    private enum DEF : uint;
+    private enum REQ : uint;
+    private enum EVT : uint;
     private enum GRP { DUMMY, INPUTS }
     
     // private enum MF_CLIENTDATA : uint { REQUEST = 1, RESPONSE = 2 }
     
-    private enum CLIENT_DATA_ID
+    private enum CLIENT_DATA_ID : uint
     {
         LVARS = 0,
         CMD = 1,

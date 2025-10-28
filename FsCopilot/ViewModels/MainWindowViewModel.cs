@@ -13,13 +13,13 @@ using Simulation;
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     [ObservableProperty] private string _sessionCode;
-    [ObservableProperty] private string _aircraft;
-    [ObservableProperty] private bool _notSupported;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private string _aircraft;
     [ObservableProperty] private string _connectionCode = string.Empty;
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isSimConnected;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isConnectionTimeout;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isVersionMismatch;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isNotSupported;
     [ObservableProperty] private bool _showTakeControl;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private IPEndPoint? _address;
     [ObservableProperty] private string _version = App.Version;
@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IsConnectionTimeout ? "Connection attempt timed out." :
         IsVersionMismatch ? "Connection failed due to version mismatch." :
         !IsSimConnected ? "Microsoft Flight Simulator is not running!" :
+        IsNotSupported ? $"{Aircraft} is not supported." :
         string.Empty;
 
     // public ObservableCollection<string> Configurations { get; set; } = [];
@@ -109,15 +110,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         SessionCode = peer2Peer.PeerId;
         
-        coordinator.Aircraft
-            .Sample(TimeSpan.FromMilliseconds(250))
+        sim.Aircraft
+            // .Sample(TimeSpan.FromMilliseconds(250))
             .TakeUntil(_unsubscribe)
-            .Subscribe(aircraft => Dispatcher.UIThread.Post(() => Aircraft = aircraft));
+            .Subscribe(aircraft => Dispatcher.UIThread.Post(() =>
+            {
+                Console.WriteLine("Aircraft " + aircraft);
+                Aircraft = aircraft;
+            }));
         
         coordinator.Configured
-            .Sample(TimeSpan.FromMilliseconds(250))
             .TakeUntil(_unsubscribe)
-            .Subscribe(configured => Dispatcher.UIThread.Post(() => NotSupported = configured == false));
+            .Subscribe(configured => Dispatcher.UIThread.Post(() => IsNotSupported = configured == false));
         
         sim.Connected
             .Sample(TimeSpan.FromMilliseconds(250))

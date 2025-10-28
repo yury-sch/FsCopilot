@@ -3,12 +3,11 @@
         xmlns:vm="using:FsCopilot.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:li="using:LoadingIndicators.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        MinWidth="500"
-        MaxWidth="500"
-        MinHeight="700"
-        MaxHeight="700"
+        Width="500"
+        Height="700"
+        CanResize="False"
+        RequestedThemeVariant="Dark"
         x:Class="FsCopilot.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/fscopilot.ico"
@@ -17,15 +16,20 @@
         Background="Transparent"
         ExtendClientAreaToDecorationsHint="True">
 
+    <Window.Resources>
+        <vm:StringNotEmptyToBoolConverter x:Key="NotEmpty"/>
+        <vm:StringEmptyToBoolConverter x:Key="Empty"/>
+        <vm:InverseBoolConverter x:Key="Inverse"/>
+        <vm:BoolToWaitConverter x:Key="Wait"/>
+    </Window.Resources>
+
     <Window.Styles>
         <StyleInclude Source="./MainWindowStyles.axaml" />
     </Window.Styles>
-
-    <Window.Resources>
-        <vm:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBool"/>
-        <vm:StringEmptyToBoolConverter x:Key="StringEmptyToBool"/>
-        <vm:InverseBoolConverter x:Key="InverseBool"/>
-    </Window.Resources>
+    
+    <Window.Cursor>
+        <Binding Path="IsBusy" Converter="{StaticResource Wait}"/>
+    </Window.Cursor>
 
     <!-- <Design.DataContext> -->
     <!--     <vm:MainWindowViewModel /> -->
@@ -42,7 +46,7 @@
             </ExperimentalAcrylicBorder.Material>
         </ExperimentalAcrylicBorder>
 
-        <Grid Classes="Wrapper" RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <Grid Classes="Wrapper" RowDefinitions="Auto,Auto,*,Auto">
             <Border Grid.Row="0"
                     Classes="Card">
                 <DockPanel>
@@ -86,19 +90,18 @@
 
                     <DockPanel>
                         <Button DockPanel.Dock="Right"
+                                Classes="TakeControl"
+                                Content="Take Control"
+                                IsEnabled="{Binding ShowTakeControl}"
+                                Command="{Binding TakeControlCommand}"/>
+                        <Button DockPanel.Dock="Right"
                                 Classes="Connect"
+                                Content="Connect"
                                 Command="{Binding ConnectCommand}"
-                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <li:LoadingIndicator IsActive="{Binding IsBusy}" 
-                                                     Mode="Arcs" 
-                                                     SpeedRatio="1.2" />
-                                <TextBlock IsVisible="{Binding IsBusy, Converter={StaticResource InverseBool}}"
-                                           Text="Connect" />
-                            </StackPanel>
-                        </Button>
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource Inverse}}" />
                         
                         <TextBox Classes="Connect"
+                                 IsEnabled="{Binding IsBusy, Converter={StaticResource Inverse}}"
                                  Watermark="Client session code...."
                                  Text="{Binding ConnectionCode}" />
                     </DockPanel>
@@ -107,35 +110,36 @@
                 </StackPanel>
             </Border>
 
+            <!-- <Border Grid.Row="2" -->
+            <!--         Classes="Card"> -->
+            <!--     <StackPanel Spacing="10"> -->
+            <!--         <DockPanel> -->
+            <!--             <PathIcon Classes="CardTitle" -->
+            <!--                       Data="{StaticResource settings_regular}" /> -->
+            <!--             <TextBlock Classes="CardTitle" -->
+            <!--                        Text="Configure" /> -->
+            <!--         </DockPanel> -->
+            <!-- -->
+            <!--         <DockPanel> -->
+            <!--             <Button DockPanel.Dock="Right" -->
+            <!--                     Classes="TakeControl" -->
+            <!--                     Content="Take Control" -->
+            <!--                     IsEnabled="{Binding ShowTakeControl}" -->
+            <!--                     Command="{Binding TakeControlCommand}"/> -->
+            <!--             <TextBlock Classes="Aircraft" -->
+            <!--                        IsVisible="{Binding Aircraft, Converter={StaticResource NotEmpty}}" -->
+            <!--                        Text="{Binding Aircraft, StringFormat='Loaded {0}'}" /> -->
+            <!--             ~1~ <ComboBox Classes="Aircraft"  @1@ -->
+            <!--             ~1~           ItemsSource="{Binding Configurations}" @1@ -->
+            <!--             ~1~           SelectedItem="{Binding SelectedConfiguration}" /> @1@ -->
+            <!--         </DockPanel> -->
+            <!--         <TextBlock Classes="Note ErrorNote" -->
+            <!--                    IsVisible="{Binding NotSupported}" -->
+            <!--                    Text="Aircraft is not supported." /> -->
+            <!--     </StackPanel> -->
+            <!-- </Border> -->
+
             <Border Grid.Row="2"
-                    Classes="Card">
-                <StackPanel Spacing="10">
-                    <DockPanel>
-                        <PathIcon Classes="CardTitle"
-                                  Data="{StaticResource settings_regular}" />
-                        <TextBlock Classes="CardTitle"
-                                   Text="Configure" />
-                    </DockPanel>
-
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right"
-                                Classes="TakeControl"
-                                Content="Take Control"
-                                IsEnabled="{Binding ShowTakeControl}"
-                                Command="{Binding TakeControlCommand}"/>
-                        <TextBlock Classes="Aircraft"
-                                   Text="{Binding Aircraft, StringFormat='Loaded {0} aircraft'}" />
-                        <!-- <ComboBox Classes="Aircraft"  -->
-                        <!--           ItemsSource="{Binding Configurations}" -->
-                        <!--           SelectedItem="{Binding SelectedConfiguration}" /> -->
-                    </DockPanel>
-                    <TextBlock Classes="Note ErrorNote"
-                               IsVisible="{Binding NotSupported}"
-                               Text="Aircraft is not supported." />
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Row="3"
                     Classes="Card Connections">
                 <DockPanel>
 
@@ -185,14 +189,14 @@
                 </DockPanel>
             </Border>
 
-            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringEmptyToBool}}" 
-                    Grid.Row="4"
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource Empty}}" 
+                    Grid.Row="3"
                     Classes="Card Badge Success">
                 <TextBlock Text="FS Copilot is ready to use. Have a nice flight." />
             </Border>
 
-            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBool}}" 
-                    Grid.Row="4"
+            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmpty}}" 
+                    Grid.Row="3"
                     Classes="Card Badge Error">
                 <TextBlock Text="{Binding ErrorMessage}" />
             </Border>

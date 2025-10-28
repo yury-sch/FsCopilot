@@ -149,7 +149,7 @@
     </Style>
 
     <Style Selector="TextBlock.Aircraft">
-        <Setter Property="Foreground" Value="Gray"></Setter>
+        <Setter Property="Foreground" Value="#94a3b8"></Setter>
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
     </Style>
 </Styles>

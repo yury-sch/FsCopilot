@@ -18,9 +18,9 @@ public class Coordinator : IDisposable
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
     private CompositeDisposable _cSubs = new();
-    private readonly BehaviorSubject<string> _aircraft = new(string.Empty);
+    // private readonly BehaviorSubject<string> _aircraft = new(string.Empty);
     private readonly BehaviorSubject<bool?> _configured = new(null);
-    public IObservable<string> Aircraft => _aircraft;
+    // public IObservable<string> Aircraft => _aircraft;
     public IObservable<bool?> Configured => _configured;
     private readonly ConcurrentDictionary<string, DateTime> _throttle = new ();
 
@@ -31,10 +31,8 @@ public class Coordinator : IDisposable
         _sim = sim;
         peer2Peer.RegisterPacket<Update, Update.Codec>();
         peer2Peer.RegisterPacket<HUpdate, HUpdate.Codec>();
-
-        _d.Add(sim.Stream<Aircraft>()
-            // .StartWith(Unit.Default)
-            .SelectMany(_ => Observable.FromAsync(() => _sim.SystemState<string>("AircraftLoaded")))
+        
+        _d.Add(sim.Aircraft
             .Subscribe(path =>
             {
                 var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)");
@@ -61,7 +59,6 @@ public class Coordinator : IDisposable
 
     private void Load(string name)
     {
-        _aircraft.OnNext(name);
         _configured.OnNext(null);
         if (!_cSubs.IsDisposed) _cSubs.Dispose();
         _cSubs = new();

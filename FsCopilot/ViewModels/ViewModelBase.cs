@@ -1,4 +1,6 @@
-﻿namespace FsCopilot.ViewModels;
+﻿using Avalonia.Input;
+
+namespace FsCopilot.ViewModels;
 
 using System.Globalization;
 using Avalonia.Data.Converters;
@@ -33,4 +35,12 @@ public sealed class InverseBoolConverter : IValueConverter
         => value is bool b ? !b : value;
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value is bool b ? !b : value;
+}
+
+public sealed class BoolToWaitConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is true ? new Cursor(StandardCursorType.Wait) : null;
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }
