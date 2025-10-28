@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace FsCopilot.Connection;
 
 using System.Collections.Concurrent;
@@ -76,8 +78,9 @@ public class SimClient : IDisposable
         Set("L:FsCopilotStarted", true);
         
         _socket = new(port: 8870);
-        _socket.Start();
-        
+        try { _socket.Start(); }
+        catch (Exception e) { Log.Error(e, "Failed to start socket"); }
+         
         Observable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
                 h => _socket.MessageReceived += h,
