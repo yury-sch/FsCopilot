@@ -115,7 +115,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             .TakeUntil(_unsubscribe)
             .Subscribe(aircraft => Dispatcher.UIThread.Post(() =>
             {
-                Console.WriteLine("Aircraft " + aircraft);
                 Aircraft = aircraft;
             }));
         

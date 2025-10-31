@@ -268,3 +268,6 @@ __pycache__/
 *.swp
 .azure
 .stfolder
+
+FsCopilot.Bridge/_PackageInt
+FsCopilot.Bridge/Packages

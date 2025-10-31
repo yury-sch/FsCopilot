@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<SimBase.Document Type="InGamePanels" version="1,0">
+
+	<Filename>fscopilot_panel.spb</Filename>
+
+	<InGamePanels.InGamePanelDefinition
+  		id="PANEL_FS_COPILOT"
+		Name="FS Copilot"
+		url="HTML_UI/Pages/InGamePanels/FsCopilot/panel.html"
+		icon="FSCOPILOT_TOOLBAR_ICON"
+		buttonVisible="true">
+	</InGamePanels.InGamePanelDefinition>
+
+</SimBase.Document>

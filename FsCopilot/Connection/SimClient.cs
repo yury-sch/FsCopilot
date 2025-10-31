@@ -4,11 +4,9 @@ namespace FsCopilot.Connection;
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Globalization;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Microsoft.FlightSimulator.SimConnect;
@@ -27,6 +25,7 @@ public class SimClient : IDisposable
     private uint _requestId = 100;
     private readonly Subject<string> _hEvents = new();
     private readonly WatsonWsServer _socket;
+    private readonly IObservable<JsonElement> _socketMessages;
 
     public IObservable<bool> Connected => _headless.Connected;
     public IObservable<string> Aircraft => _headless.Aircraft;
@@ -37,53 +36,13 @@ public class SimClient : IDisposable
     {
         _headless = new(appName);
         
-        _headless.Configure(sim =>
-        {
-            const int messageSize = 256;
-            
-            // register Client Data (for LVars)
-            sim.MapClientDataNameToID("HABI_WASM.LVars", CLIENT_DATA_ID.LVARS);
-            sim.CreateClientData(CLIENT_DATA_ID.LVARS, SimConnect.SIMCONNECT_CLIENTDATA_MAX_SIZE, SIMCONNECT_CREATE_CLIENT_DATA_FLAG.DEFAULT);
-
-            // register Client Data (for WASM Module Commands)
-            sim.MapClientDataNameToID("HABI_WASM.Command", CLIENT_DATA_ID.CMD);
-            sim.CreateClientData(CLIENT_DATA_ID.CMD, messageSize, SIMCONNECT_CREATE_CLIENT_DATA_FLAG.DEFAULT);
-            sim.AddToClientDataDefinition(CLIENTDATA_DEFINITION_ID.CMD, 0, messageSize, 0, 0);
-
-            // register Client Data (for LVar acknowledge)
-            sim.MapClientDataNameToID("HABI_WASM.Acknowledge", CLIENT_DATA_ID.ACK);
-            sim.CreateClientData(CLIENT_DATA_ID.ACK, (uint)Marshal.SizeOf<LVarAck>(), SIMCONNECT_CREATE_CLIENT_DATA_FLAG.DEFAULT);
-            sim.AddToClientDataDefinition(CLIENTDATA_DEFINITION_ID.ACK, 0, (uint)Marshal.SizeOf<LVarAck>(), 0, 0);
-            sim.RegisterStruct<SIMCONNECT_RECV_CLIENT_DATA, LVarAck>(CLIENTDATA_DEFINITION_ID.ACK);
-            sim.RequestClientData(
-                CLIENT_DATA_ID.ACK,
-                CLIENTDATA_REQUEST_ID.ACK,
-                CLIENTDATA_DEFINITION_ID.ACK,
-                SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET,
-                SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT,
-                0, 0, 0);
-
-            // register Client Data (for RESULT)
-            sim.MapClientDataNameToID("HABI_WASM.Result", CLIENT_DATA_ID.RESULT);
-            sim.CreateClientData(CLIENT_DATA_ID.RESULT, (uint)Marshal.SizeOf<Result>(), SIMCONNECT_CREATE_CLIENT_DATA_FLAG.DEFAULT);
-            sim.AddToClientDataDefinition(CLIENTDATA_DEFINITION_ID.RESULT, 0, (uint)Marshal.SizeOf<Result>(), 0, 0);
-            sim.RegisterStruct<SIMCONNECT_RECV_CLIENT_DATA, Result>(CLIENTDATA_DEFINITION_ID.RESULT);
-            sim.RequestClientData(
-                CLIENT_DATA_ID.RESULT,
-                CLIENTDATA_REQUEST_ID.RESULT,
-                CLIENTDATA_DEFINITION_ID.RESULT,
-                SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET,
-                SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT,
-                0, 0, 0);
-        }, _ => {});
-        
-        Set("L:FsCopilotStarted", true);
-        
         _socket = new(port: 8870);
         try { _socket.Start(); }
         catch (Exception e) { Log.Error(e, "Failed to start socket"); }
+        
+        // Set("L:FsCopilotStarted", true);
          
-        Observable
+        _socketMessages = Observable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
                 h => _socket.MessageReceived += h,
                 h => _socket.MessageReceived -= h)
@@ -92,18 +51,16 @@ public class SimClient : IDisposable
             {
                 Debug.WriteLine(json);
                 return JsonDocument.Parse(json).RootElement;
-            })
-            // .Where(json => json.TryGetProperty("type", out var type) && type.ToString() == "interaction")
-            // .Select(json => json.TryGetProperty())
-            .Subscribe(json => 
+            });
+            
+        _socketMessages.Subscribe(json => 
             {
                 var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-                if (type == "interaction" && json.TryGetProperty("key", out var keyProp))
+                if (type == "hevent" && json.TryGetProperty("key", out var keyProp))
                 {
                     _hEvents.OnNext(keyProp.ToString());
                     return;
                 }
-                
             });
 
         // _headless.Configure(sim =>
@@ -130,33 +87,6 @@ public class SimClient : IDisposable
     //     Call("FREEZE_ALTITUDE_SET", on);
     //     Call("FREEZE_ATTITUDE_SET", on);
     // }
-    
-    // public Task<T> SystemState<T>(string szState)
-    // {
-    //     var reqId = _defs.GetOrAdd($"SystemState:{szState}", _ =>
-    //     {
-    //         var nextId = (DEF)Interlocked.Increment(ref _defId);
-    //         return nextId;
-    //     });
-    //     
-    //     var tcs = new TaskCompletionSource<T>();
-    //
-    //     _headless.SystemState.Where(e => e.dwRequestID == (uint)reqId).Take(1).Subscribe(data =>
-    //     {
-    //         if (typeof(T) == typeof(string))
-    //             tcs.SetResult((T)(object)data.szString);
-    //         else if (typeof(T) == typeof(float))
-    //             tcs.SetResult((T)(object)data.fFloat);
-    //         else if (typeof(T) == typeof(uint)) 
-    //             tcs.SetResult((T)(object)data.dwInteger);
-    //     });
-    //     
-    //     _headless.Post(sim =>
-    //     {
-    //         sim.RequestSystemState((REQ)(uint)reqId, szState);
-    //     });
-    //     return tcs.Task;
-    // }
 
     public void Call(string eventName) =>
         Call(eventName, null, null, null, null, null);
@@ -167,7 +97,7 @@ public class SimClient : IDisposable
     public void Call(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
     {
         if (eventName.StartsWith("K:")) TransmitKEvent(eventName[2..], value, value1, value2, value3, value4);
-        if (eventName.StartsWith("B:")) TransmitBEvent(eventName[2..], value, value1, value2, value3, value4);
+        if (eventName.StartsWith("B:")) TransmitBEvent(eventName, value, value1, value2, value3, value4);
     }
 
     private void TransmitKEvent(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
@@ -205,7 +135,8 @@ public class SimClient : IDisposable
                 string s when uint.TryParse(s, out var parsed) => parsed,
                 _ => value
             };
-
+            
+            // todo fix conversion for double value. For some reason it doesn't work. Maybe we need to switch between big/little endian? I don't know yet what simconnect expecting for
             return val switch
             {
                 uint ui => ui,
@@ -218,7 +149,7 @@ public class SimClient : IDisposable
                 long l => unchecked((uint)l),
                 ulong ul => unchecked((uint)ul),
                 float f => BitConverter.ToUInt32(BitConverter.GetBytes(f), 0),
-                double d => BitConverter.ToUInt32(BitConverter.GetBytes((float)d), 0), // we're losing accuracy, but 1:1 with the SDK
+                double d => BitConverter.ToUInt32(BitConverter.GetBytes((float)d), 0),
                 Enum e => Convert.ToUInt32(e),
                 _ => 0
             };
@@ -227,15 +158,8 @@ public class SimClient : IDisposable
 
     private void TransmitBEvent(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
     {
-        var cmd = $"HW.Exe.{Convert.ToString(value, CultureInfo.InvariantCulture)} (>B:{eventName})";
-        Debug.WriteLine(cmd);
-        _headless.Post(sim => sim.SetClientData(
-            CLIENT_DATA_ID.CMD,
-            CLIENTDATA_DEFINITION_ID.CMD,
-            SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT,
-            0,
-            new String256 { Value = cmd }
-        ));
+        var payload = $$"""{"type":"set","key":"{{eventName}}","value":"{{value}}"}""";
+        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, payload)));
     }
 
     public void Set<T>(T def) where T : struct
@@ -246,31 +170,20 @@ public class SimClient : IDisposable
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
     }
 
-    public void Set(string datumName, object value)
+    public void Set(string name, object value)
     {
-        if (datumName.StartsWith("L:"))
+        if (name.StartsWith("L:"))
         {
-            var cmd = $"HW.Set.{Convert.ToString(value, CultureInfo.InvariantCulture)} (>L:{datumName[2..]})";
-            Debug.WriteLine(cmd);
-            _headless.Post(sim => sim.SetClientData(
-                CLIENT_DATA_ID.CMD,
-                CLIENTDATA_DEFINITION_ID.CMD,
-                SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT,
-                0,
-                new String256 { Value = cmd }
-            ));
+            SetDataOnSimObject(name, value);
         }
-        else if (datumName.StartsWith("A:"))
+        else if (name.StartsWith("A:"))
         {
-            SetDataOnSimObject(datumName[2..], value);
+            SetDataOnSimObject(name[2..], value);
         }
-        else if (datumName.StartsWith("H:"))
+        else if (name.StartsWith("H:"))
         {
-            var key = datumName[2..];
-            // var payload = $$"""{"type":"interaction", "key": "{key}"}""";
-            var payload = $$"""{"type":"interaction","key":"{{key}}"}""";
+            var payload = $$"""{"type":"call","key":"{{name}}"}""";
             _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, payload)));
-            SetDataOnSimObject(datumName[2..], value);
         }
     }
 
@@ -326,11 +239,11 @@ public class SimClient : IDisposable
             }
         }).Replay(1).RefCount());
 
-    public IObservable<object> Stream(string datumName, string sUnits)
+    public IObservable<object> Stream(string name, string sUnits)
     {
-        if (datumName.StartsWith("L:")) return LVar(datumName[2..]);
-        if (datumName.StartsWith("A:")) return SimVar(datumName[2..], sUnits);
-        if (datumName.StartsWith("H:")) return HVar(datumName[2..]);
+        if (name.StartsWith("L:")) return SimVar(name, "number");
+        if (name.StartsWith("A:")) return SimVar(name[2..], sUnits);
+        if (name.StartsWith("H:")) return HVar(name);
         // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
         return Observable.Empty<object>();
     }
@@ -363,7 +276,7 @@ public class SimClient : IDisposable
                 Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 var datumType = SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
-            
+
                 sim.AddToDataDefinition(defId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
                 // sim.RegisterDataDefineStruct<T>((DEF)nextId);
 
@@ -388,224 +301,13 @@ public class SimClient : IDisposable
                 _defs.TryRemove(key, out _);
             }
         }).Replay(1).RefCount());
-
-    private IObservable<object> LVar(string name) => 
-        (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
-        {
-            //var defId = (DEF)Interlocked.Increment(ref _defId);
-            //var reqId = (REQ)Interlocked.Increment(ref _requestId);
-            DEF? defId = null;
-            IDisposable? config = null;
-            
-            var sub = _headless.ClientData
-                .Subscribe(data =>
-                {
-                    if (data.dwRequestID == (uint)CLIENTDATA_REQUEST_ID.ACK)
-                    {
-                        var ack = (LVarAck)data.dwData[0];
-                        if (ack.str != $"(L:{name})") return;
-                        defId = (DEF)ack.DefineID;
-                        config = _headless.Configure(
-                            sim => Initialize(sim, ack.Offset), 
-                            Deinitialize);
-                    }
-                    else if (data.dwRequestID >= (uint)CLIENTDATA_REQUEST_ID.START_LVAR && (DEF)data.dwDefineID == defId)
-                    {
-                        observer.OnNext(data.dwData[0]);
-                    }
-                });
-            
-            _headless.Post(sim => sim.SetClientData(
-                CLIENT_DATA_ID.CMD,
-                CLIENTDATA_DEFINITION_ID.CMD,
-                SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT,
-                0,
-                new String256 { Value = $"HW.Reg.(L:{name})" }));
-
-            return () =>
-            {
-                sub.Dispose();
-                config?.Dispose();
-            };
-
-            void Initialize(SimConnect sim, ushort offset)
-            {
-                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
-                var reqId = (REQ)Interlocked.Increment(ref _requestId);
-                sim.AddToClientDataDefinition(defId, offset, sizeof(float), 0, 0);
-                sim.RegisterStruct<SIMCONNECT_RECV_CLIENT_DATA, float>(defId);
-                sim.RequestClientData(
-                    CLIENT_DATA_ID.LVARS, reqId, defId,
-                    // data will be sent whenever SetClientData is used on this client area (even if this defineID doesn't change)
-                    SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET,
-                    // if this is used, this defineID only is sent when its value has changed
-                    SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.CHANGED,
-                    0, 0, 0);
-            }
-            
-            void Deinitialize(SimConnect sim)
-            {
-                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
-                var reqId = (REQ)Interlocked.Increment(ref _requestId);
-                sim.RequestClientData(
-                    CLIENT_DATA_ID.LVARS,
-                    reqId,
-                    defId,
-                    SIMCONNECT_CLIENT_DATA_PERIOD.NEVER,
-                    SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT,
-                    0, 0, 0);
-                sim.ClearClientDataDefinition(defId);
-            }
-        }).Replay(1).RefCount());
     
     private IObservable<object> HVar(string datumName) =>
-        _hEvents.Where(e => string.Equals(e, datumName, StringComparison.OrdinalIgnoreCase)).Select(_ => DefaultHValue);
-
-    // private IObservable<object> KEvent(string datumName, string sUnits) => 
-    //     (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
-    //     {
-    //         // var defId = (DEF)Interlocked.Increment(ref _defId);
-    //         // var reqId = (REQ)Interlocked.Increment(ref _requestId);
-    //         
-    //         var eventId = _defs.GetOrAdd($"K:{datumName}", _ =>
-    //         {
-    //             var nextId = (DEF)Interlocked.Increment(ref _defId);
-    //             Console.WriteLine("MapClientEventToSimEvent {0} {1}", (EVT)nextId, datumName);
-    //             _headless.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, datumName), _ => { });
-    //             return nextId;
-    //         });
-    //
-    //         var sub = _headless.Event.Subscribe(e =>
-    //             {
-    //                 Console.WriteLine("Invoked {0}", e.uGroupID);
-    //                 if (e.uEventID != (uint)eventId) return;
-    //                 observer.OnNext(e.dwData);
-    //             },
-    //             observer.OnError,
-    //             observer.OnCompleted);
-    //
-    //         var config = _headless.Configure(Initialize, Deinitialize);
-    //         Console.WriteLine("Registered {0} with id {1}", key, eventId);
-    //
-    //         return () =>
-    //         {
-    //             sub.Dispose();
-    //             config.Dispose();
-    //         };
-    //
-    //         void Initialize(SimConnect sim)
-    //         {
-    //             Debug.WriteLine($"Initialize {key}");
-    // //         sim.SubscribeToSystemEvent((EVT)nextId, eventName);
-    //             sim.AddClientEventToNotificationGroup(GRP.Dummy, eventId, false);
-    //             // sim.SetInputGroupState(GRP.Dummy, (uint)SIMCONNECT_STATE.ON);
-    //             // sim.SetNotificationGroupPriority(GRP.Dummy, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
-    //         }
-    //
-    //         void Deinitialize(SimConnect sim)
-    //         {
-    //             Debug.WriteLine($"Deinitialize {key}");
-    //             sim.ClearNotificationGroup(eventId);
-    //         }
-    //     }).Replay(1).RefCount());
-    
-    // public IObservable<Unit> Event(string eventName) => Observable.Create<Unit>(observer =>
-    // {
-    //     var eventId = _headless.Configure($"Event:{eventName}", (sim, nextId) =>
-    //     {
-    //         sim.SubscribeToSystemEvent((EVT)nextId, eventName);
-    //         // sim.MapClientEventToSimEvent((EVT)nextId, eventName);
-    //     });
-    //     
-    //     var sub = _headless.Event.Subscribe(e =>
-    //         {
-    //             if (e.uEventID != eventId) return;
-    //             observer.OnNext(Unit.Default);
-    //         },
-    //         observer.OnError,
-    //         observer.OnCompleted);
-    //     
-    //     return () => sub.Dispose();
-    // });
+        _hEvents.Where(e => string.Equals(e, datumName[2..], StringComparison.OrdinalIgnoreCase)).Select(_ => DefaultHValue);
 
     private enum DEF : uint;
     private enum REQ : uint;
     private enum EVT : uint;
     private enum GRP { DUMMY, INPUTS }
-    
-    // private enum MF_CLIENTDATA : uint { REQUEST = 1, RESPONSE = 2 }
-    
-    private enum CLIENT_DATA_ID : uint
-    {
-        LVARS = 0,
-        CMD = 1,
-        ACK = 2,
-        RESULT = 3
-    }
-    
-    // // Structs must match the layout used by MobiFlight WASM
-    // [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-    // private struct MfRequest
-    // {
-    //     public uint RequestId;
-    //     public uint Operation;          // 0=LIST, 1=GET, 2=SET, 3=EXEC
-    //     public double Value;            // For SET or EXEC
-    //     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-    //     public string Name;             // L:VAR, H:EVENT, or calc code
-    // }
-    //
-    // [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-    // private struct MfResponse
-    // {
-    //     public uint RequestId;
-    //     public byte Success;
-    //     public double Value;
-    //     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 96)]
-    //     public string Info;
-    // }
-    
-    // Structure sent back from WASM module to acknowledge for LVars
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    private struct LVarAck
-    {
-        public UInt16 DefineID;
-        public UInt16 Offset;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public String str;
-        public float value;
-    };
-
-    // Structure to get the result of execute_calculator_code
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    private struct Result
-    {
-        public double exeF;
-        public Int32 exeI;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public String exeS;
-    }
-    
-    private enum CLIENTDATA_DEFINITION_ID
-    {
-        CMD,
-        ACK,
-        RESULT
-    }
-
-    // Client Data Area RequestID's for receiving Acknowledge and LVARs
-    private enum CLIENTDATA_REQUEST_ID
-    {
-        ACK,
-        RESULT,
-        START_LVAR
-    }
-    
-    // Currently we only work with strings with a fixed size of 256
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    private struct String256
-    {
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public string Value;
-    }
 }
 

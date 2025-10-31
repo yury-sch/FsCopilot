@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AssetPackage Version="1.0.0">
+	<ItemSettings>
+		<ContentType>MISC</ContentType>
+		<Title>FS Copilot</Title>
+		<Manufacturer/>
+		<Creator>Yury Scherbakov</Creator>
+	</ItemSettings>
+	<Flags>
+		<VisibleInStore>false</VisibleInStore>
+		<CanBeReferenced>false</CanBeReferenced>
+	</Flags>
+	<PackageOrderHint>PANEL_PATCH</PackageOrderHint>
+	<AssetGroups>
+		<AssetGroup Name="ContentInfo">
+			<Type Version="0">ContentInfo</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageDefinitions\fscopilot-bridge\ContentInfo</AssetDir>
+			<OutputDir>ContentInfo\fscopilot-bridge</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="panel">
+			<Type Version="0">SPB</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\InGamePanels\</AssetDir>
+			<OutputDir>InGamePanels\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="ui">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\HTML_UI\</AssetDir>
+			<OutputDir>html_ui\</OutputDir>
+		</AssetGroup>
+	</AssetGroups>
+</AssetPackage>
+

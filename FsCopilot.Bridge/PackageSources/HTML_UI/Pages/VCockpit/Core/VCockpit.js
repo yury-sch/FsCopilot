@@ -1,7 +1,6 @@
-console.log('Starting hook...');
-
 var globalPanelData = null;
 var globalInstrumentListener = RegisterViewListener('JS_LISTENER_INSTRUMENTS');
+var handler = null;
 
 class VCockpitPanel extends HTMLElement {
     constructor() {
@@ -275,7 +274,7 @@ Coherent.on('OnInteractionEvent', function (_target, _args) {
     if (!closed) {
         var panel = window.document.getElementById('panel');
         if (panel) {
-            handler.onInteraction(_args);
+            handler.interact(_args[0]);
 
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
@@ -423,5 +422,6 @@ Coherent.on('Raycast', function (_id, _x, _y) {
 checkAutoload();
 
 Include.addImports([
-    '/FsCopilot/Main.js'
+    '/FsCopilot/network.js',
+    '/FsCopilot/handler.js'
 ]);

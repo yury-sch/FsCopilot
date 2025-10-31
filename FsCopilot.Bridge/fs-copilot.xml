@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Version="2" Name="FsCopilot" FolderName="Packages" MetadataFolderName="PackagesMetadata">
+	<OutputDirectory>.</OutputDirectory>
+	<TemporaryOutputDirectory>_PackageInt</TemporaryOutputDirectory>
+	<Packages>
+		<Package>PackageDefinitions\fscopilot-bridge.xml</Package>
+	</Packages>
+	<PublishingGroups/>
+</Project>
+

@@ -124,29 +124,31 @@ public partial class App : Application
         Debug.WriteLine("Deploying module to Community");
         try
         {
-            var source = Path.Combine(AppContext.BaseDirectory, "Community", "FsCopilot");
+            var source = Path.Combine(AppContext.BaseDirectory, "Community", "fscopilot-bridge");
             if (!Directory.Exists(source))
             {
                 Debug.WriteLine("Missing FS copilot module. Skipped");
                 return;
             }
 
-            var basePaths = GetInstalledPackagesPath();
-            foreach (var basePath in basePaths)
+            var packagesPaths = GetInstalledPackagesPath();
+            foreach (var packagesPath in packagesPaths)
             {
-                var community = Path.Combine(basePath, "Community");
+                var community = Path.Combine(packagesPath, "Community");
                 if (!Directory.Exists(community)) Directory.CreateDirectory(community);
                 Debug.WriteLine("Found community folder: {0}", community);
-                var target = Path.Combine(community, "FsCopilot");
-                if (!Directory.Exists(target))
-                {
-                    CopyDirectory(source, target, overwrite: true);
-                }
-                else
-                {
-                    CopyDirectory(Path.Combine(source, "html_ui"), Path.Combine(target, "html_ui"), overwrite: true);
-                    CopyDirectory(Path.Combine(source, "modules"), Path.Combine(target, "modules"), overwrite: true);
-                }
+                var target = Path.Combine(community, "fscopilot-bridge");
+                if (Directory.Exists(target)) Directory.Delete(target, true);
+                CopyDirectory(source, target, overwrite: true);
+                // {
+                //     CopyDirectory(source, target, overwrite: true);
+                // }
+                // else
+                // {
+                //     CopyDirectory(Path.Combine(source, "html_ui"), Path.Combine(target, "html_ui"), overwrite: true);
+                //     File.Copy(Path.Combine(source, "layout.json"), Path.Combine(target, "layout.json"), overwrite: true);
+                //     File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(target, "manifest.json"), overwrite: true);
+                // }
                 Debug.WriteLine("FS copilot module has been deployed to community");
             }
         }

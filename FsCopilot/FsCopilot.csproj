@@ -55,7 +55,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Community\**\*">
+        <Content Include="..\FsCopilot.Bridge\Packages\**\*">
+            <Link>Community\%(RecursiveDir)%(Filename)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <CopyToPublishDirectory>Always</CopyToPublishDirectory>
         </Content>
@@ -72,6 +73,10 @@
             <CopyToPublishDirectory>Always</CopyToPublishDirectory>
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Community\" />
     </ItemGroup>
 
 </Project>
