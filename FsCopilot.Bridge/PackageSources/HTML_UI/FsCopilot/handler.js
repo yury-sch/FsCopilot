@@ -7,20 +7,32 @@ class FsCopilotHandler {
 
         // this.events = new FsCopilotHTMLEvents(this.onButton.bind(this), this.onInput.bind(this))
         this.network = new FsCopilotNetwork();
-        this.network.onMessage(this.onMessage.bind(this))
-        // this.network.onConnected(() => {
+        this.watcher = new VarWatcher();
+        this.network.addEventListener('message', data => this.onMessage(data))
+        this.network.addEventListener('close', () => this.watcher.clear());
+        // this.network.addEventListener('open', () => {
         //     if (instrument.isInteractive) {
         //         this.events.bindEvents()
         //         this.events.startDocumentListener()
         //     }
         // })
-        // this.network.onDisconnected(() => {
+        // this.network.addEventListener('close', () => {
         //     this.events.clear()
         // })
+        this.watcher.addEventListener('update', ev => {
+            if (!this.canProcess()) return;
+            this.network.send({
+                type: 'var',
+                name: ev.name,
+                value: ev.value
+            });
+        });
     }
 
     canProcess() {
-        return SimVar.GetSimVarValue('L:FsCopilotHandlerId', 'Number') == this.panelId;
+        const isLast = SimVar.GetSimVarValue('L:FsCopilotHandlerId', 'Number') == this.panelId;
+        if (!isLast) this.watcher.clear();
+        return isLast;
     }
 
     onMessage(data) {
@@ -28,19 +40,27 @@ class FsCopilotHandler {
         
         switch (data.type) {
             // case 'input': {
-            //     FsCopilotHTMLTrigger.setInput(document.getElementById(data.key), data.value);
+            //     FsCopilotHTMLTrigger.setInput(document.getElementById(data.name), data.value);
             //     break;
             // }
-            case 'call': {
-                if (data.key.startsWith('H:')) this.instrument.onInteractionEvent([data.key.substring(2)]);
+            case 'watch': {
+                this.watcher.watch(data.name, data.units);
                 break;
             }
+            case 'unwatch': {
+                this.watcher.unwatch(data.name);
+                break;
+            }
+            // case 'call': {
+            //     if (data.name.startsWith('H:')) this.instrument.onInteractionEvent([data.name.substring(2)]);
+            //     break;
+            // }
             case 'set': {
-                SimVar.SetSimVarValue(data.key, 'number', parseFloat(data.value));
+                SimVar.SetSimVarValue(data.name, 'number', parseFloat(data.value));
                 break;
             }
             // case 'button': {
-            //     FsCopilotHTMLTrigger.setPanel(data.key, data.instrument);
+            //     FsCopilotHTMLTrigger.setPanel(data.name, data.instrument);
             //     break;
             // }
         }
@@ -50,7 +70,7 @@ class FsCopilotHandler {
         if (this.canProcess()) return; // Only one gauge should send interaction button events
         this.network.send({
             type: 'hevent',
-            key: name
+            name: name
         });
     }
 
@@ -58,7 +78,7 @@ class FsCopilotHandler {
     //     this.network.send({
     //         instrument: this.instrument.instrumentIdentifier,
     //         type: 'input',
-    //         key: elementId,
+    //         name: elementId,
     //         value: value
     //     })
     // }
@@ -67,7 +87,7 @@ class FsCopilotHandler {
     //     this.network.send({
     //         instrument: this.instrument.instrumentIdentifier,
     //         type: 'button',
-    //         key: elementId
+    //         name: elementId
     //     });
     // }
 }

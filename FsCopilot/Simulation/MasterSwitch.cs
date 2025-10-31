@@ -90,9 +90,9 @@ public class MasterSwitch : IDisposable
 
     private void UpdateFreeze()
     {
-        _sim.Call("K:FREEZE_LATITUDE_LONGITUDE_SET", !IsMaster);
-        _sim.Call("K:FREEZE_ALTITUDE_SET", !IsMaster);
-        _sim.Call("K:FREEZE_ATTITUDE_SET", !IsMaster);
+        _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", !IsMaster);
+        _sim.Set("K:FREEZE_ALTITUDE_SET", !IsMaster);
+        _sim.Set("K:FREEZE_ATTITUDE_SET", !IsMaster);
     }
 
     public void TakeControl()

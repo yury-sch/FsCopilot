@@ -174,7 +174,7 @@ public class Coordinator : IDisposable
                     out var val2, out var val3, out var val4))
             {
                 if (eventName[0] != 'H') Throttle(name);
-                _sim.Call(eventName, val0, val1, val2, val3, val4);
+                _sim.Set(eventName, val0, val1, val2, val3, val4);
             }
             else
             {

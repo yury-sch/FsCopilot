@@ -115,10 +115,10 @@ public class Definition(bool shared, string var, string? evt, string? skp)
     }
 
     public bool TryGetEvent(object value, object current, out string eventName, 
-        out object? value0, out object? value1, out object? value2, out object? value3, out object? value4)
+        out object value0, out object? value1, out object? value2, out object? value3, out object? value4)
     {
         eventName = string.Empty;
-        value0 = null;
+        value0 = 1;
         value1 = null;
         value2 = null;
         value3 = null;
@@ -155,7 +155,7 @@ public class Definition(bool shared, string var, string? evt, string? skp)
             .Select(ParseParam)
             .ToArray();
         if (pars.Length == 0) value0 = value;
-        if (pars.Length >= 1) value0 = pars[0];
+        if (pars.Length >= 1) value0 = pars[0] ?? 1;
         if (pars.Length >= 2) value1 = pars[1];
         if (pars.Length >= 3) value2 = pars[2];
         if (pars.Length >= 4) value3 = pars[3];

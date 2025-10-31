@@ -201,7 +201,7 @@ public partial class Node : ObservableObject, IDisposable
             }
 
             // var value = _def.TransformValue(Value);
-            _sim.Call(eventName, val0, val1, val2, val3, val4);
+            _sim.Set(eventName, val0, val1, val2, val3, val4);
             return;
         }
         // else if (_socket != null && _rawJson != null)

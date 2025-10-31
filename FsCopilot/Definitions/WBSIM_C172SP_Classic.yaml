@@ -75,6 +75,17 @@ shared:
     evt: (>K:RADIO_DME1_IDENT_SET)
   - var: A:SPEAKER ACTIVE, Bool # SPR
     evt: (>K:TOGGLE_SPEAKER)
+  - var: Z:AUDIO_Knob_Selector_1 # MIC
+    evt: |
+      switch (value) {
+          case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
+          case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'
+          case  40: return '(>H:KMA28_TRANSMISSION_KNOB_COM1)'
+          case  60: return '(>H:KMA28_TRANSMISSION_KNOB_COM1_2)'
+          case  80: return '(>H:KMA28_TRANSMISSION_KNOB_COM2_1)'
+          case 100: return '(>H:KMA28_TRANSMISSION_KNOB_TEL)'
+          default: return ''
+      }
 
   - var: A:RECIP ENG LEFT MAGNETO:, Bool # LEFT MAGNETO
   - var: A:RECIP ENG RIGHT MAGNETO:1, Bool # RIGHT MAGNETO

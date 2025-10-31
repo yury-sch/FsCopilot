@@ -1,3 +1,4 @@
+using System.Globalization;
 using Serilog;
 
 namespace FsCopilot.Connection;
@@ -56,7 +57,7 @@ public class SimClient : IDisposable
         _socketMessages.Subscribe(json => 
             {
                 var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-                if (type == "hevent" && json.TryGetProperty("key", out var keyProp))
+                if (type == "hevent" && json.TryGetProperty("name", out var keyProp))
                 {
                     _hEvents.OnNext(keyProp.ToString());
                     return;
@@ -83,21 +84,38 @@ public class SimClient : IDisposable
     //     {
     //         sim.SetInputGroupState(GRP.INPUTS, (uint)(on ? SIMCONNECT_STATE.OFF : SIMCONNECT_STATE.ON));
     //     });
-    //     Call("FREEZE_LATITUDE_LONGITUDE_SET", on);
-    //     Call("FREEZE_ALTITUDE_SET", on);
-    //     Call("FREEZE_ATTITUDE_SET", on);
+    //     Set("FREEZE_LATITUDE_LONGITUDE_SET", on);
+    //     Set("FREEZE_ALTITUDE_SET", on);
+    //     Set("FREEZE_ATTITUDE_SET", on);
     // }
 
-    public void Call(string eventName) =>
-        Call(eventName, null, null, null, null, null);
-
-    public void Call(string eventName, object? value) =>
-        Call(eventName, value, null, null, null, null);
-
-    public void Call(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
+    public void Set<T>(T def) where T : struct
     {
-        if (eventName.StartsWith("K:")) TransmitKEvent(eventName[2..], value, value1, value2, value3, value4);
-        if (eventName.StartsWith("B:")) TransmitBEvent(eventName, value, value1, value2, value3, value4);
+        if (!_defs.TryGetValue(typeof(T).FullName!, out var defId)) return;
+        
+        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
+            SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
+    }
+    
+    public void Set(string eventName, object value) =>
+        Set(eventName, value, null, null, null, null);
+    
+    public void Set(string name, object value, object? value1, object? value2, object? value3, object? value4)
+    {
+        if (name.StartsWith("L:")) SetDataOnSimObject(name, value);
+        if (name.StartsWith("A:")) SetDataOnSimObject(name[2..], value);
+        if (name.StartsWith("Z:")) SetClientVar(name, value);
+        if (name.StartsWith("H:")) SetClientVar(name, value);
+        if (name.StartsWith("K:")) TransmitKEvent(name[2..], value, value1, value2, value3, value4);
+        if (name.StartsWith("B:")) SetClientVar(name, value);
+    }
+
+    private void SetDataOnSimObject(string datumName, object value)
+    {
+        if (!_defs.TryGetValue(datumName, out var defId)) return;
+        
+        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
+            SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
     private void TransmitKEvent(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
@@ -144,43 +162,10 @@ public class SimClient : IDisposable
         }
     }
 
-    private void TransmitBEvent(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
+    private void SetClientVar(string name, object value)
     {
-        var payload = $$"""{"type":"set","key":"{{eventName}}","value":"{{value}}"}""";
+        var payload = $$"""{"type":"set","name":"{{name}}", "value":"{{value}}"}""";
         _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, payload)));
-    }
-
-    public void Set<T>(T def) where T : struct
-    {
-        if (!_defs.TryGetValue(typeof(T).FullName!, out var defId)) return;
-        
-        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
-            SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
-    }
-
-    public void Set(string name, object value)
-    {
-        if (name.StartsWith("L:"))
-        {
-            SetDataOnSimObject(name, value);
-        }
-        else if (name.StartsWith("A:"))
-        {
-            SetDataOnSimObject(name[2..], value);
-        }
-        else if (name.StartsWith("H:"))
-        {
-            var payload = $$"""{"type":"call","key":"{{name}}"}""";
-            _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, payload)));
-        }
-    }
-
-    private void SetDataOnSimObject(string datumName, object value)
-    {
-        if (!_defs.TryGetValue(datumName, out var defId)) return;
-        
-        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
-            SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
     public IObservable<T> Stream<T>() where T : struct => 
@@ -230,6 +215,7 @@ public class SimClient : IDisposable
     public IObservable<object> Stream(string name, string sUnits)
     {
         if (name.StartsWith("L:")) return SimVar(name, "number");
+        if (name.StartsWith("Z:")) return ZVar(name);
         if (name.StartsWith("A:")) return SimVar(name[2..], sUnits);
         if (name.StartsWith("H:")) return HVar(name);
         // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
@@ -288,6 +274,40 @@ public class SimClient : IDisposable
                 sim.ClearDataDefinition(defId);
                 _defs.TryRemove(key, out _);
             }
+        }).Replay(1).RefCount());
+    
+    private IObservable<object> ZVar(string name) => 
+        (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
+        {
+            var sub = _socketMessages.Subscribe(json =>
+            {
+                var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
+                if (type == "var"
+                    && json.TryGetProperty("name", out var keyProp) && keyProp.ToString() == name
+                    && json.TryGetProperty("value", out var valueProp))
+                {
+                    var strValue = valueProp.ToString();
+                    if (int.TryParse(strValue, out var iValue)) observer.OnNext(iValue);
+                    else if (double.TryParse(strValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var dValue)) observer.OnNext(dValue);
+                }
+            });
+            
+            var watch = $$"""{"type":"watch","name":"{{name}}", "units":"number"}""";
+            var conSub = Observable
+                .FromEventPattern<EventHandler<ConnectionEventArgs>, ConnectionEventArgs>(
+                    h => _socket.ClientConnected += h,
+                    h => _socket.ClientConnected -= h)
+                .Subscribe(x => _socket.SendAsync(x.EventArgs.Client.Guid, watch));
+            
+            _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, watch)));
+    
+            return () =>
+            {
+                conSub.Dispose();
+                sub.Dispose();
+                var unwatch = $$"""{"type":"unwatch","name":"{{name}}"}""";
+                _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, unwatch)));
+            };
         }).Replay(1).RefCount());
     
     private IObservable<object> HVar(string datumName) =>

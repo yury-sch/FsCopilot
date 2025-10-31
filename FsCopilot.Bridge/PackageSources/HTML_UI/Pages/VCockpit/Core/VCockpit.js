@@ -422,6 +422,8 @@ Coherent.on('Raycast', function (_id, _x, _y) {
 checkAutoload();
 
 Include.addImports([
+    '/FsCopilot/common.js',
     '/FsCopilot/network.js',
+    '/FsCopilot/watcher.js',
     '/FsCopilot/handler.js'
 ]);
