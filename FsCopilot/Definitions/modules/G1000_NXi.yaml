@@ -5,9 +5,9 @@
 shared:
 # PFD
   - var: A:NAV VOLUME:1, Percent # VOL
-    evt: "`${Math.round(value)} (>K:NAV1_VOLUME_SET_EX1)`"
+    evt: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
   - var: A:NAV VOLUME:2, Percent # VOL
-    evt: "`${Math.round(value)} (>K:NAV2_VOLUME_SET_EX1)`"
+    evt: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
   - var: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
     evt: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
   - var: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
@@ -56,9 +56,9 @@ shared:
     skp: H:AS1000_PFD_SOFTKEYS_9
     
   - var: A:COM VOLUME:1, Percent # VOL
-    evt: "`${Math.round(value)} (>K:COM1_VOLUME_SET)`"
+    evt: "`${value} (>K:COM1_VOLUME_SET)`"
   - var: A:COM VOLUME:2, Percent # VOL
-    evt: "`${Math.round(value)} (>K:COM2_VOLUME_SET)`"
+    evt: "`${value} (>K:COM2_VOLUME_SET)`"
   - var: L:AS1000_PFD_SelectedComIndex # COM 1/2
     evt: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
   - var: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE

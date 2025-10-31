@@ -124,35 +124,23 @@ public class SimClient : IDisposable
         uint? NormalizeValue(object? val)
         {
             if (val == null) return null;
-            
-            val = val switch
-            {
-                uint u => u,
-                int i and >= 0 => (uint)i,
-                double d and >= 0 and <= uint.MaxValue when Math.Floor(d) == d => (uint)d,
-                float f and >= 0 and <= uint.MaxValue when MathF.Floor(f) == f => (uint)f,
-                decimal m and >= 0 and <= uint.MaxValue when decimal.Truncate(m) == m => (uint)m,
-                string s when uint.TryParse(s, out var parsed) => parsed,
-                _ => value
-            };
-            
-            // todo fix conversion for double value. For some reason it doesn't work. Maybe we need to switch between big/little endian? I don't know yet what simconnect expecting for
-            return val switch
+            uint vb = val switch
             {
                 uint ui => ui,
                 bool b => b ? 1u : 0u,
                 byte by => by,
-                sbyte sb => (uint)(byte)sb,
-                short s => (uint)(ushort)s,
+                sbyte sb => (byte)sb,
+                short s => (ushort)s,
                 ushort us => us,
                 int i => unchecked((uint)i),
                 long l => unchecked((uint)l),
                 ulong ul => unchecked((uint)ul),
-                float f => BitConverter.ToUInt32(BitConverter.GetBytes(f), 0),
-                double d => BitConverter.ToUInt32(BitConverter.GetBytes((float)d), 0),
+                float d => unchecked((uint)(int)Math.Round(d, MidpointRounding.AwayFromZero)),
+                double d => unchecked((uint)(int)Math.Round(d, MidpointRounding.AwayFromZero)),
                 Enum e => Convert.ToUInt32(e),
                 _ => 0
             };
+            return vb;
         }
     }
 

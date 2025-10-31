@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FsCopilot.Simulation;
 
 using System.Collections;
@@ -165,7 +167,7 @@ public class Definition(bool shared, string var, string? evt, string? skp)
             ? ui 
             : int.TryParse(p, out var i) 
                 ? i 
-                : double.TryParse(p, out var d) 
+                : double.TryParse(p, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
                     ? d 
                     : p;
     }
