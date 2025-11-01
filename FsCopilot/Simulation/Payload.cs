@@ -7,32 +7,15 @@ using Network;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct Payload
 {
-    [SimVar("PAYLOAD STATION WEIGHT:1", "Pounds", 1)]
-    public double Weight1;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:2", "Pounds", 2)]
-    public double Weight2;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:3", "Pounds", 3)]
-    public double Weight3;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:4", "Pounds", 4)]
-    public double Weight4;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:5", "Pounds", 5)]
-    public double Weight5;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:6", "Pounds", 6)]
-    public double Weight6;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:7", "Pounds", 7)]
-    public double Weight7;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:8", "Pounds", 8)]
-    public double Weight8;
-    
-    [SimVar("PAYLOAD STATION WEIGHT:9", "Pounds", 9)]
-    public double Weight9;
+    [SimVar("PAYLOAD STATION WEIGHT:1", "Pounds", 1)] public double Weight1;
+    [SimVar("PAYLOAD STATION WEIGHT:2", "Pounds", 2)] public double Weight2;
+    [SimVar("PAYLOAD STATION WEIGHT:3", "Pounds", 3)] public double Weight3;
+    [SimVar("PAYLOAD STATION WEIGHT:4", "Pounds", 4)] public double Weight4;
+    [SimVar("PAYLOAD STATION WEIGHT:5", "Pounds", 5)] public double Weight5;
+    [SimVar("PAYLOAD STATION WEIGHT:6", "Pounds", 6)] public double Weight6;
+    [SimVar("PAYLOAD STATION WEIGHT:7", "Pounds", 7)] public double Weight7;
+    [SimVar("PAYLOAD STATION WEIGHT:8", "Pounds", 8)] public double Weight8;
+    [SimVar("PAYLOAD STATION WEIGHT:9", "Pounds", 9)] public double Weight9;
 
     public class Codec : IPacketCodec<Payload>
     {
@@ -49,21 +32,17 @@ public struct Payload
             bw.Write(packet.Weight9);
         }
 
-        public Payload Decode(BinaryReader br)
+        public Payload Decode(BinaryReader br) => new()
         {
-            var aircraft = new Payload
-            {
-                Weight1 = br.ReadDouble(),
-                Weight2 = br.ReadDouble(),
-                Weight3 = br.ReadDouble(),
-                Weight4 = br.ReadDouble(),
-                Weight5 = br.ReadDouble(),
-                Weight6 = br.ReadDouble(),
-                Weight7 = br.ReadDouble(),
-                Weight8 = br.ReadDouble(),
-                Weight9 = br.ReadDouble(),
-            };
-            return aircraft;
-        }
+            Weight1 = br.ReadDouble(),
+            Weight2 = br.ReadDouble(),
+            Weight3 = br.ReadDouble(),
+            Weight4 = br.ReadDouble(),
+            Weight5 = br.ReadDouble(),
+            Weight6 = br.ReadDouble(),
+            Weight7 = br.ReadDouble(),
+            Weight8 = br.ReadDouble(),
+            Weight9 = br.ReadDouble(),
+        };
     }
 }

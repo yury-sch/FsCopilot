@@ -10,78 +10,55 @@ public struct Physics
     /// <summary>
     /// Latitude of aircraft, North is positive, South negative.
     /// </summary>
-    [SimVar("PLANE LATITUDE", "Radians", 1)]
-    public double Lat;
-
+    [SimVar("PLANE LATITUDE", "Radians", 1)] public double Lat;
     /// <summary>
     /// Longitude of aircraft, East is positive, West negative.
     /// </summary>
-    [SimVar("PLANE LONGITUDE", "Radians", 2)]
-    public double Lon;
-
+    [SimVar("PLANE LONGITUDE", "Radians", 2)] public double Lon;
     /// <summary>
     /// Altitude of aircraft.
     /// </summary>
     [SimVar("PLANE ALTITUDE", "Feet", 3)] public double AltFeet;
-
     /// <summary>
     /// Pitch angle, although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE PITCH DEGREES", "Radians", 4)]
-    public double Pitch;
-
+    [SimVar("PLANE PITCH DEGREES", "Radians", 4)] public double Pitch;
     /// <summary>
     /// Bank angle, although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE BANK DEGREES", "Radians", 5)]
-    public double Bank;
-
+    [SimVar("PLANE BANK DEGREES", "Radians", 5)] public double Bank;
     /// <summary>
     /// Heading indicator taken from the aircraft gyro.
     /// </summary>
-    [SimVar("PLANE HEADING DEGREES GYRO", "Degrees", 6)]
-    public double HdgDegGyro;
-
+    [SimVar("PLANE HEADING DEGREES GYRO", "Degrees", 6)] public double HdgDegGyro;
     /// <summary>
     /// Heading relative to true north - although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE HEADING DEGREES TRUE", "Radians", 7)]
-    public double HdgDegTrue;
-
+    [SimVar("PLANE HEADING DEGREES TRUE", "Radians", 7)] public double HdgDegTrue;
     /// <summary>
     /// The current indicated vertical speed for the aircraft.
     /// </summary>
-    [SimVar("VERTICAL SPEED", "Feet per second", 8)]
-    public double VerticalSpeed;
-
+    [SimVar("VERTICAL SPEED", "Feet per second", 8)] public double VerticalSpeed;
     /// <summary>
     /// 
     /// </summary>
     [SimVar("G FORCE", "Gforce", 9)] public double GForce;
-
     /// <summary>
     /// True vertical speed, relative to aircraft axis
     /// </summary>
-    [SimVar("VELOCITY BODY Y", "Feet per second", 10)]
-    public double VBodyY;
-
+    [SimVar("VELOCITY BODY Y", "Feet per second", 10)] public double VBodyY;
     /// <summary>
     /// True longitudinal speed, relative to aircraft axis
     /// </summary>
-    [SimVar("VELOCITY BODY Z", "Feet per second", 11)]
-    public double VBodyZ;
-
+    [SimVar("VELOCITY BODY Z", "Feet per second", 11)] public double VBodyZ;
     /// <summary>
     /// Speed relative to earth, in East/West direction
     /// </summary>
-    [SimVar("VELOCITY WORLD X", "Feet per second", 12)]
-    public double Vx;
-
+    [SimVar("VELOCITY WORLD X", "Feet per second", 12)] public double Vx;
     /// <summary>
     /// Speed relative to earth, in North/South direction
     /// </summary>
-    [SimVar("VELOCITY WORLD Z", "Feet per second", 13)]
-    public double Vz;
+    [SimVar("VELOCITY WORLD Z", "Feet per second", 13)] public double Vz;
     // [SimVar("VELOCITY WORLD Y", "Feet per second", 8)]
     // public double Vy;
 
@@ -104,26 +81,22 @@ public struct Physics
             bw.Write(packet.Vz);
         }
 
-        public Physics Decode(BinaryReader br)
+        public Physics Decode(BinaryReader br) => new()
         {
-            var aircraft = new Physics
-            {
-                Lat = br.ReadDouble(),
-                Lon = br.ReadDouble(),
-                AltFeet = br.ReadDouble(),
-                Pitch = br.ReadDouble(),
-                Bank = br.ReadDouble(),
-                HdgDegGyro = br.ReadDouble(),
-                HdgDegTrue = br.ReadDouble(),
-                VerticalSpeed = br.ReadDouble(),
-                GForce = br.ReadDouble(),
-                VBodyY = br.ReadDouble(),
-                VBodyZ = br.ReadDouble(),
-                Vx = br.ReadDouble(),
-                Vz = br.ReadDouble()
-            };
-            return aircraft;
-        }
+            Lat = br.ReadDouble(),
+            Lon = br.ReadDouble(),
+            AltFeet = br.ReadDouble(),
+            Pitch = br.ReadDouble(),
+            Bank = br.ReadDouble(),
+            HdgDegGyro = br.ReadDouble(),
+            HdgDegTrue = br.ReadDouble(),
+            VerticalSpeed = br.ReadDouble(),
+            GForce = br.ReadDouble(),
+            VBodyY = br.ReadDouble(),
+            VBodyZ = br.ReadDouble(),
+            Vx = br.ReadDouble(),
+            Vz = br.ReadDouble()
+        };
     }
 
     // public class Interpolator : IInterpolator<Physics>

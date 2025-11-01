@@ -45,7 +45,7 @@ public class Coordinator : IDisposable
 
         AddLink<Physics, Physics.Codec>(master: true);
         AddLink<Control, Control.Codec>(master: true);
-        AddLink<Engine, Engine.Codec>(master: true);
+        AddLink<Throttle, Throttle.Codec>(master: true);
         AddLink<Fuel, Fuel.Codec>(master: true);
         AddLink<Payload, Payload.Codec>(master: false);
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
