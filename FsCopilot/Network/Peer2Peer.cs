@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Channels;
@@ -26,7 +27,8 @@ public class Peer2Peer : IAsyncDisposable
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _punches = new();
     private readonly ConcurrentDictionary<string, Connection> _connections = new();
     private readonly PacketRegistry _packetRegistry = new();
-    private readonly ConcurrentDictionary<Type, IPacketSubject> _subjects = new();
+    private readonly ISubject<object> _bus = Subject.Synchronize(new Subject<object>());
+    private readonly ConcurrentDictionary<Type, object> _streams = new();
     private readonly BehaviorSubject<IPEndPoint?> _discoveredAddress = new(null);
     private readonly ReplaySubject<Connection> _connectionEstablished = new();
     private readonly ReplaySubject<Connection> _connectionLost = new();
@@ -92,13 +94,23 @@ public class Peer2Peer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _cts.CancelAsync();
-        _handleChan.Writer.TryComplete();
-        _sendChan.Writer.TryComplete();
         try { await _handleLoop; } catch { /* ignore */ }
         try { await _pingLoop; } catch { /* ignore */ }
         try { await _discoveryLoop; } catch { /* ignore */ }
         try { await _receiveLoop; } catch { /* ignore */ }
         try { await _sendLoop; } catch { /* ignore */ }
+        (_bus as IDisposable)?.Dispose();
+        _handleChan.Writer.TryComplete();
+        _sendChan.Writer.TryComplete();
+        _discoveredAddress.Dispose();
+        _connectionEstablished.Dispose();
+        _connectionLost.Dispose();
+        _seen.Dispose();
+        _punches.Clear();
+        _connections.Clear();
+        _streams.Clear();
+        _handlers.Clear();
+        _sock.Dispose();
         _cts.Dispose();
     }
 
@@ -427,8 +439,7 @@ public class Peer2Peer : IAsyncDisposable
         try
         {
             var packet = codec.Decode(br);
-            if (_subjects.TryGetValue(packet.GetType(), out var subj))
-                subj.Publish(packet);
+            _bus.OnNext(packet);
         }
         catch (Exception e)
         {
@@ -483,11 +494,8 @@ public class Peer2Peer : IAsyncDisposable
         _schema += SchemaFingerprint.For<TPacket>();
     }
 
-    public IDisposable Subscribe<TPacket>(Action<TPacket> action)
-    {
-        var subject = (PacketSubject<TPacket>)_subjects.GetOrAdd(typeof(TPacket), _ => new PacketSubject<TPacket>());
-        return subject.Subscribe(action);
-    }
+    public IObservable<TPacket> Stream<TPacket>() =>
+        (IObservable<TPacket>)_streams.GetOrAdd(typeof(TPacket), _ => _bus.OfType<TPacket>().Publish().RefCount());
 
     static IEnumerable<IPEndPoint> GetLocalCandidates(int port)
     {

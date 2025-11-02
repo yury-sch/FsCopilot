@@ -23,11 +23,12 @@ public class MasterSwitch : IDisposable
 
         _peer2Peer.RegisterPacket<SetMaster, SetMaster.Codec>();
 
-        _d.Add(peer2Peer.Subscribe<SetMaster>(setMaster =>
-        {
-            var newMaster = setMaster.Peer == _peer2Peer.PeerId;
-            if (newMaster != IsMaster) _master.OnNext(newMaster);
-        }));
+        _d.Add(peer2Peer.Stream<SetMaster>()
+            .Subscribe(setMaster =>
+            {
+                var newMaster = setMaster.Peer == _peer2Peer.PeerId;
+                if (newMaster != IsMaster) _master.OnNext(newMaster);
+            }));
 
         _d.Add(_master.Subscribe(_ => UpdateFreeze()));
 

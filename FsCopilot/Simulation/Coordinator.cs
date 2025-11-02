@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace FsCopilot.Simulation;
 
 using System.Collections.Concurrent;
@@ -131,11 +129,9 @@ public class Coordinator : IDisposable
             .Where(_ => !master || _masterSwitch.IsMaster)
             .Subscribe(update => _peer2Peer.SendAll(update)));
 
-        _d.Add(_peer2Peer.Subscribe<TPacket>(update =>
-        {
-            if (master && _masterSwitch.IsMaster) return;
-            _sim.Set(update);
-        }));
+        _d.Add(_peer2Peer.Stream<TPacket>()
+            .Where(_ => !master || !_masterSwitch.IsMaster)
+            .Subscribe(update => _sim.Set(update)));
     }
 
     private void AddLink(Definition def)
@@ -145,43 +141,36 @@ public class Coordinator : IDisposable
         var name = def.GetVar(out var units);
         
         _cSubs.Add(_sim.Stream(name, units)
-            .Delay(TimeSpan.FromMilliseconds(100))
-            .Subscribe(val =>
+            .Do(value => currentValue = value)
+            .Delay(name[0] == 'H' ? TimeSpan.FromMilliseconds(200) : TimeSpan.Zero)
+            .Where(_ => !master || _masterSwitch.IsMaster)
+            .Subscribe(value =>
             {
-                currentValue = val;
-                Debug.WriteLine($"{name} Current value updated with {currentValue}");
-                if (master && !_masterSwitch.IsMaster) return;
                 if (Throttled(name)) return;
-                if (def.Skip != null) Throttle(def.Skip); 
-                _peer2Peer.SendAll(new Update(name, val));
-                Log.Debug("[PACKET] SENT {Name} {Value}", name, val);
+                if (def.Skip != null) Throttle(def.Skip);
+                _peer2Peer.SendAll(new Update(name, value));
+                Log.Debug("[PACKET] SENT {Name} {Value}", name, value);
             }));
 
-        _cSubs.Add(_peer2Peer.Subscribe<Update>(update =>
-        {
-            if (update.Name != name) return;
-            var nextValue = update.Value;
-            Log.Debug("[PACKET] RECEIVE {Name} {Value}", name, nextValue);
-            if (master && _masterSwitch.IsMaster) return;
-            if (name[0] != 'H' && nextValue.Equals(currentValue))
+        _cSubs.Add(_peer2Peer.Stream<Update>()
+            .Where(update => update.Name == name)
+            .Do(update => Log.Debug("[PACKET] RECEIVE {Name} {Value}", name, update.Value))
+            .Where(_ => !master || !_masterSwitch.IsMaster)
+            .Where(update => name[0] == 'H' || !update.Value.Equals(currentValue))
+            .Subscribe(update =>
             {
-                Debug.WriteLine($"{name} value equals with {nextValue}. Skip update");
-                return;
-            }
-            Debug.WriteLine($"{name} will be updated. Current value: {currentValue}. Next value: {nextValue}");
-            
-            if (def.TryGetEvent(nextValue, currentValue ?? nextValue, out var eventName, out var val0, out var val1,
-                    out var val2, out var val3, out var val4))
-            {
-                if (eventName[0] != 'H') Throttle(name);
-                _sim.Set(eventName, val0, val1, val2, val3, val4);
-            }
-            else
-            {
-                if (name[0] != 'H') Throttle(name);
-                _sim.Set(name, nextValue);
-            }
-        }));
+                if (def.TryGetEvent(update.Value, currentValue ?? update.Value, out var eventName, 
+                        out var val0, out var val1, out var val2, out var val3, out var val4))
+                {
+                    if (eventName[0] != 'H') Throttle(name);
+                    _sim.Set(eventName, val0, val1, val2, val3, val4);
+                }
+                else
+                {
+                    if (name[0] != 'H') Throttle(name);
+                    _sim.Set(name, update.Value);
+                }
+            }));
     }
 
     private void Throttle(string key) => _throttle.AddOrUpdate(key,
