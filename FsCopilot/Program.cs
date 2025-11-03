@@ -5,13 +5,11 @@ using Serilog.Events;
 
 sealed class Program
 {
-    // Initialization code. Don't use any Avalonia, third-party APIs or any
-    // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-    // yet and stuff might break.
     [STAThread]
     public static void Main(string[] args)
     {
         var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
+        var isDebug = args.Any(a => string.Equals(a, "--debug", StringComparison.OrdinalIgnoreCase));
         
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
@@ -24,7 +22,7 @@ sealed class Program
                 retainedFileCountLimit: null,
                 fileSizeLimitBytes: null,
                 outputTemplate: "[{Timestamp:HH:mm:ss}] {Message:lj}{NewLine}{Exception}",
-                restrictedToMinimumLevel: isDev ? LogEventLevel.Debug : LogEventLevel.Information
+                restrictedToMinimumLevel: isDev || isDebug ? LogEventLevel.Debug : LogEventLevel.Information
             )
             .CreateLogger();
 
