@@ -1,7 +1,6 @@
-using System.Globalization;
-
 namespace FsCopilot.Simulation;
 
+using System.Globalization;
 using System.Collections;
 using System.Text.RegularExpressions;
 using Jint;
@@ -30,8 +29,12 @@ public class Definitions : IReadOnlyCollection<Definition>
     {
         var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')]));
         var cfg = Deserializer.Deserialize<Config>(cfgFile);
-        var master = cfg.Master.Select(m => new Definition(false, m.Var.Trim(), m.Evt?.Trim(), m.Skp?.Trim())).ToArray();
-        var shared = cfg.Shared.Select(m => new Definition(true, m.Var.Trim(), m.Evt?.Trim(), m.Skp?.Trim())).ToArray();
+        var master = cfg.Master
+            .Where(m => !string.IsNullOrWhiteSpace(m.Get))
+            .Select(m => new Definition(false, m.Get, m.Set, m.Skp)).ToArray();
+        var shared = cfg.Shared
+            .Where(m => !string.IsNullOrWhiteSpace(m.Get))
+            .Select(m => new Definition(true, m.Get, m.Set, m.Skp)).ToArray();
         
         var includes = new List<DefinitionNode>();
         foreach (var i in cfg.Include)
@@ -78,8 +81,8 @@ public class Definitions : IReadOnlyCollection<Definition>
 
         public class Link
         {
-            public string Var { get; set; }
-            public string? Evt { get; set; }
+            public string Get { get; set; }
+            public string? Set { get; set; }
             public string? Skp { get; set; }
         }
     }
@@ -98,57 +101,58 @@ public record DefinitionNode(
     Definition[] Shared,
     string[] Ignore);
 
-public class Definition(bool shared, string var, string? evt, string? skp)
+public class Definition
 {
-    public bool Shared => shared;
-    public string? Skip => skp;
+    private readonly string? _set;
+    public bool Shared { get; init; }
+    public string Get { get; init; }
+    public string Units { get; init; }
+    public string? Skip { get; init; }
 
-    public string GetVar(out string units)
+    public Definition(bool shared, string get, string? set, string? skp)
     {
-        units = string.Empty;
-        if (string.IsNullOrEmpty(var)) return string.Empty;
-        
-        var parts = var.Split(',');
-        if (parts.Length > 1)
-            units = parts[1].Trim();
-        return parts[0].Trim();
+        Shared = shared;
+        var parts = get.Split(',');
+        Units = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+        Get = parts[0].Trim();
+        _set = set?.Trim();
+        Skip = skp?.Trim();
     }
 
-    public bool TryGetEvent(object value, object current, out string eventName, 
+    public string Set(object value, object current, 
         out object value0, out object? value1, out object? value2, out object? value3, out object? value4)
     {
-        eventName = string.Empty;
-        value0 = 1;
+        value0 = value;
         value1 = null;
         value2 = null;
         value3 = null;
         value4 = null;
         
-        if (evt == null) return false;
-        eventName = evt.Trim();
-        if (eventName.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
+        if (_set == null) return Get;
+        var set = _set;
+        if (_set.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
         {
             try
             {
-                var engine = new Jint.Engine().SetValue("value", value).SetValue("current", current);
-                eventName = engine.Evaluate(eventName).AsString();
+                var engine = new Engine().SetValue("value", value).SetValue("current", current);
+                set = engine.Evaluate(_set).AsString();
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse event expression {Name}", eventName);
-                return false;
+                Log.Error(e, "Unable to parse event expression {Name}", _set);
+                return Get;
             }
         }
         
         var rx = new Regex(@"^(?<args>.*?)\s*\(>\s*(?<name>[^)]+)\)$", RegexOptions.CultureInvariant);
         // var rx = new Regex(@"^([A-Z]):([^(:]+)(?:\(([^)]*)\))?$", RegexOptions.CultureInvariant);
 
-        var m = rx.Match(eventName);
-        if (!m.Success) return false;
+        var m = rx.Match(set);
+        if (!m.Success) return Get;
 
         // value = TransformValue(value);
 
-        eventName = m.Groups["name"].Value.Trim();
+        set = m.Groups["name"].Value.Trim();
         var pars = m.Groups["args"].Value
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(p => p.Trim())
@@ -161,7 +165,7 @@ public class Definition(bool shared, string var, string? evt, string? skp)
         if (pars.Length >= 4) value3 = pars[3];
         if (pars.Length >= 5) value4 = pars[4];
 
-        return true;
+        return set;
 
         object? ParseParam(string p) => uint.TryParse(p, out var ui) 
             ? ui 

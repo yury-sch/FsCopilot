@@ -2,108 +2,108 @@ include:
   - modules/G1000_NXi.yaml
   
 master:
-  #  - var: L:AILERON_ANIM
-  #  - var: L:ELEVATOR_ANIM
-  #  - var: L:ELEVATOR_STICK
-  - var: L:INPUT_TRIM_AXIS # Trim
+  #  - get: L:AILERON_ANIM
+  #  - get: L:ELEVATOR_ANIM
+  #  - get: L:ELEVATOR_STICK
+  - get: L:INPUT_TRIM_AXIS # Trim
     
 shared:
-  - var: A:INTERACTIVE POINT GOAL:2, Bool # Main door
-    evt: 3 (>K:TOGGLE_AIRCRAFT_EXIT)
-  - var: A:INTERACTIVE POINT GOAL:3, Bool # Back door
-    evt: 4 (>K:TOGGLE_AIRCRAFT_EXIT_FAST
-  - var: A:INTERACTIVE POINT GOAL:6, Bool # Left window
-    evt: 7 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
-  - var: A:INTERACTIVE POINT GOAL:7, Bool # Right window
-    evt: 8 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
+  - get: A:INTERACTIVE POINT GOAL:2, Bool # Main door
+    set: 3 (>K:TOGGLE_AIRCRAFT_EXIT)
+  - get: A:INTERACTIVE POINT GOAL:3, Bool # Back door
+    set: 4 (>K:TOGGLE_AIRCRAFT_EXIT_FAST
+  - get: A:INTERACTIVE POINT GOAL:6, Bool # Left window
+    set: 7 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
+  - get: A:INTERACTIVE POINT GOAL:7, Bool # Right window
+    set: 8 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
 
-  - var: A:LIGHT PANEL:1, Percent over 100 # Instrument light
-    evt: (>B:LIGHTING_PANEL_1_Set)
-  - var: A:LIGHT GLARESHIELD:1, Percent over 100 # Flood light
-    evt: (>B:LIGHTING_GLARESHIELD_1_Set)
+  - get: A:LIGHT PANEL:1, Percent over 100 # Instrument light
+    set: (>B:LIGHTING_PANEL_1_Set)
+  - get: A:LIGHT GLARESHIELD:1, Percent over 100 # Flood light
+    set: (>B:LIGHTING_GLARESHIELD_1_Set)
   
-  - var: A:LIGHT LANDING, Bool # Light switch state for landing light.
-  - var: A:LIGHT TAXI, Bool # Light switch state for the taxi light.
-  - var: A:LIGHT NAV, Bool # Light switch state for the NAV light
-  - var: A:LIGHT STROBE, Bool # Light switch state for the strobe lights
-  - var: A:LIGHT BEACON, Bool # Light switch state
+  - get: A:LIGHT LANDING, Bool # Light switch state for landing light.
+  - get: A:LIGHT TAXI, Bool # Light switch state for the taxi light.
+  - get: A:LIGHT NAV, Bool # Light switch state for the NAV light
+  - get: A:LIGHT STROBE, Bool # Light switch state for the strobe lights
+  - get: A:LIGHT BEACON, Bool # Light switch state
   
-  - var: L:EMERGENCY_BATT_COVER # Emergency battery cover
-  - var: L:EMERGENCY_BATT # Emergency battery
+  - get: L:EMERGENCY_BATT_COVER # Emergency battery cover
+  - get: L:EMERGENCY_BATT # Emergency battery
 
-  - var: L:ATT_CAGE_IsDown # Attitude cage
-  - var: L:KOHLSMAN SETTING HG:2 # Altimeter
+  - get: L:ATT_CAGE_IsDown # Attitude cage
+  - get: L:KOHLSMAN SETTING HG:2 # Altimeter
 
-  - var: L:MASTER_COVER:1 # Engine cover
-  - var: A:RECIP ENG ENGINE MASTER SWITCH:1, Bool # Engine master
-    evt: (>K:ENGINE_MASTER_1_SET)
-  - var: L:ECU_VOTER:1 # Voter
-  - var: L:ECU_TEST:1_IsDown # ECU test
-  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
-    evt: (>K:ELECT_FUEL_PUMP1_SET)
+  - get: L:MASTER_COVER:1 # Engine cover
+  - get: A:RECIP ENG ENGINE MASTER SWITCH:1, Bool # Engine master
+    set: (>K:ENGINE_MASTER_1_SET)
+  - get: L:ECU_VOTER:1 # Voter
+  - get: L:ECU_TEST:1_IsDown # ECU test
+  - get: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
+    set: (>K:ELECT_FUEL_PUMP1_SET)
   
-  - var: L:ESS_BUS_SWITCH # ESS bus
-  - var: A:CIRCUIT SWITCH ON:32, Bool # Avionics master
-    evt: 32 (>K:ELECTRICAL_CIRCUIT_TOGGLE)
+  - get: L:ESS_BUS_SWITCH # ESS bus
+  - get: A:CIRCUIT SWITCH ON:32, Bool # Avionics master
+    set: 32 (>K:ELECTRICAL_CIRCUIT_TOGGLE)
 
-  - var: A:ELECTRICAL MASTER BATTERY:1, Bool # Electric master
-  - var: A:GENERAL ENG STARTER:1, Bool # Starter
-    evt: (>K:SET_STARTER1_HELD)
-  - var: L:XFER_SWITCH # Fuel trans
-  - var: A:PITOT HEAT SWITCH:1, Bool # Pitot
-    evt: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
+  - get: A:ELECTRICAL MASTER BATTERY:1, Bool # Electric master
+  - get: A:GENERAL ENG STARTER:1, Bool # Starter
+    set: (>K:SET_STARTER1_HELD)
+  - get: L:XFER_SWITCH # Fuel trans
+  - get: A:PITOT HEAT SWITCH:1, Bool # Pitot
+    set: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
 
-  - var: L:INPUT_PARK # Parking brake
+  - get: L:INPUT_PARK # Parking brake
   # Defrost and cabin heat is not functional
-  - var: L:FUEL_SELECTOR # Fuel valve
-  - var: L:FUEL_WIRE_IsDown # Fuel wire
+  - get: L:FUEL_SELECTOR # Fuel valve
+  - get: L:FUEL_WIRE_IsDown # Fuel wire
 
-  - var: A:ALTERNATE STATIC SOURCE OPEN, Bool # Alternate static
-    evt: (>K:TOGGLE_ALTERNATE_STATIC)
-  - var: L:ENGINE_ALTERNATE_AIR # Alternate air
+  - get: A:ALTERNATE STATIC SOURCE OPEN, Bool # Alternate static
+    set: (>K:TOGGLE_ALTERNATE_STATIC)
+  - get: L:ENGINE_ALTERNATE_AIR # Alternate air
 
   - #	Light switch state.
-    var: A:LIGHT CABIN:1, Bool
-  - var: A:LIGHT CABIN:2, Bool
-  - var: A:LIGHT CABIN:3, Bool
+    get: A:LIGHT CABIN:1, Bool
+  - get: A:LIGHT CABIN:2, Bool
+  - get: A:LIGHT CABIN:3, Bool
 
 #	EECU BUS
-  - var: L:CB_ECA
-  - var: L:CB_ECB
-  - var: L:CB_FPA
-  - var: L:CB_FPB
+  - get: L:CB_ECA
+  - get: L:CB_ECB
+  - get: L:CB_FPA
+  - get: L:CB_FPB
 
 #	ESSENTIAL BUS
-  - var: L:CB_HOR
-  - var: L:CB_AHR
-  - var: L:CB_ADC
-  - var: L:CB_CM1
-  - var: L:CB_GP1
-  - var: L:CB_ENG
-  - var: L:CB_XPR
-  - var: L:CB_FLP
-  - var: L:CB_PIT
-  - var: L:CB_FLD
-  - var: L:CB_LDL
-  - var: L:CB_PFD
-  - var: L:CB_MTC
-  - var: L:CB_ESS
+  - get: L:CB_HOR
+  - get: L:CB_AHR
+  - get: L:CB_ADC
+  - get: L:CB_CM1
+  - get: L:CB_GP1
+  - get: L:CB_ENG
+  - get: L:CB_XPR
+  - get: L:CB_FLP
+  - get: L:CB_PIT
+  - get: L:CB_FLD
+  - get: L:CB_LDL
+  - get: L:CB_PFD
+  - get: L:CB_MTC
+  - get: L:CB_ESS
 
 #	MAIN BUS
-  - var: L:CB_MAN
-  - var: L:CB_PWR
-  - var: L:CB_MFD
-  - var: L:CB_STB
-  - var: L:CB_POS
-  - var: L:CB_AVN
-  - var: L:CB_AVF
-  - var: L:CB_STR
-  - var: L:CB_TXM
-  - var: L:CB_INT
-  - var: L:CB_XFR
+  - get: L:CB_MAN
+  - get: L:CB_PWR
+  - get: L:CB_MFD
+  - get: L:CB_STB
+  - get: L:CB_POS
+  - get: L:CB_AVN
+  - get: L:CB_AVF
+  - get: L:CB_STR
+  - get: L:CB_TXM
+  - get: L:CB_INT
+  - get: L:CB_XFR
 
 #	AVIONICS BUS
-  - var: L:CB_CM2
-  - var: L:CB_GP2
-  - var: L:CB_AUD
-  - var: L:CB_AFC
+  - get: L:CB_CM2
+  - get: L:CB_GP2
+  - get: L:CB_AUD
+  - get: L:CB_AFC

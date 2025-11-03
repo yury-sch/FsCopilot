@@ -63,15 +63,15 @@ These templates support embedded **JavaScript expressions** for dynamic data han
 For example:
 
 ```yaml
-- var: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
-  evt: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
-- var: L:PFD_CDI_Source # CDI
-  evt: "value < 3 ? `${value} (>K:AP_NAV_SELECT_SET)` : '(>K:TOGGLE_GPS_DRIVES_NAV1)'"
+- get: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
+  set: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
+- get: L:PFD_CDI_Source # CDI
+  set: "value < 3 ? `${value} (>K:AP_NAV_SELECT_SET)` : '(>K:TOGGLE_GPS_DRIVES_NAV1)'"
   skp: H:AS1000_PFD_SOFTKEYS_6
-- var: A:KOHLSMAN SETTING MB:0, Millibars # BARO
-  evt: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
-- var: Z:AUDIO_Knob_Selector_1 # MIC
-  evt: |
+- get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
+  set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+- get: Z:AUDIO_Knob_Selector_1 # MIC
+  set: |
     switch (value) {
         case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
         case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'

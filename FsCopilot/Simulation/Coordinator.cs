@@ -28,7 +28,6 @@ public class Coordinator : IDisposable
         _masterSwitch = masterSwitch;
         _sim = sim;
         peer2Peer.RegisterPacket<Update, Update.Codec>();
-        peer2Peer.RegisterPacket<HUpdate, HUpdate.Codec>();
         
         _d.Add(sim.Aircraft
             .Subscribe(path =>
@@ -138,38 +137,31 @@ public class Coordinator : IDisposable
     {
         var master = !def.Shared;
         object? currentValue = null;
-        var name = def.GetVar(out var units);
+        var getVar = def.Get;
         
-        _cSubs.Add(_sim.Stream(name, units)
+        _cSubs.Add(_sim.Stream(getVar, def.Units)
             .Do(value => currentValue = value)
-            .Delay(name[0] == 'H' ? TimeSpan.FromMilliseconds(200) : TimeSpan.Zero)
+            .Delay(getVar[0] == 'H' ? TimeSpan.FromMilliseconds(200) : TimeSpan.Zero)
             .Where(_ => !master || _masterSwitch.IsMaster)
             .Subscribe(value =>
             {
-                if (Throttled(name)) return;
+                if (Throttled(getVar)) return;
                 if (def.Skip != null) Throttle(def.Skip);
-                _peer2Peer.SendAll(new Update(name, value));
-                Log.Debug("[PACKET] SENT {Name} {Value}", name, value);
+                _peer2Peer.SendAll(new Update(getVar, value));
+                Log.Debug("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
 
         _cSubs.Add(_peer2Peer.Stream<Update>()
-            .Where(update => update.Name == name)
-            .Do(update => Log.Debug("[PACKET] RECEIVE {Name} {Value}", name, update.Value))
+            .Where(update => update.Name == getVar)
+            .Do(update => Log.Debug("[PACKET] RECEIVE {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
-            .Where(update => name[0] == 'H' || !update.Value.Equals(currentValue))
+            .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
             {
-                if (def.TryGetEvent(update.Value, currentValue ?? update.Value, out var eventName, 
-                        out var val0, out var val1, out var val2, out var val3, out var val4))
-                {
-                    if (eventName[0] != 'H') Throttle(name);
-                    _sim.Set(eventName, val0, val1, val2, val3, val4);
-                }
-                else
-                {
-                    if (name[0] != 'H') Throttle(name);
-                    _sim.Set(name, update.Value);
-                }
+                var setVar = def.Set(update.Value, currentValue ?? update.Value,
+                    out var val0, out var val1, out var val2, out var val3, out var val4);
+                if (setVar[0] != 'H') Throttle(getVar);
+                _sim.Set(setVar, val0, val1, val2, val3, val4);
             }));
     }
 
@@ -260,23 +252,6 @@ public class Coordinator : IDisposable
                 };
 
                 return new(name, value);
-            }
-        }
-    }
-    
-    private record HUpdate(string Evt)
-    {
-        public class Codec : IPacketCodec<HUpdate>
-        {
-            public void Encode(HUpdate packet, BinaryWriter bw)
-            {
-                bw.Write(packet.Evt);
-            }
-    
-            public HUpdate Decode(BinaryReader br)
-            {
-                var evt = br.ReadString();
-                return new(evt);
             }
         }
     }

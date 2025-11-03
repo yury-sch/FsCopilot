@@ -1,68 +1,68 @@
 shared:
   - #	Light switch state for landing light.
-    var: A:LIGHT LANDING, Bool
+    get: A:LIGHT LANDING, Bool
   - #	Light switch state for the taxi light.
-    var: A:LIGHT TAXI, Bool
+    get: A:LIGHT TAXI, Bool
   - #	Light switch state for the NAV light.
-    var: A:LIGHT NAV, Bool
+    get: A:LIGHT NAV, Bool
   - #	Light switch state for the strobe lights.
-    var: A:LIGHT STROBE, Bool
+    get: A:LIGHT STROBE, Bool
   - #	Light switch state.
-    var: A:LIGHT BEACON, Bool
+    get: A:LIGHT BEACON, Bool
 
   - #	Light switch state.
-    var: A:LIGHT CABIN:1, Bool
-  - var: A:LIGHT CABIN:2, Bool
-  - var: A:LIGHT CABIN:3, Bool
+    get: A:LIGHT CABIN:1, Bool
+  - get: A:LIGHT CABIN:2, Bool
+  - get: A:LIGHT CABIN:3, Bool
 
 #  - #	Light switch state of the panel light.
-#    var: A:LIGHT PANEL
+#    get: A:LIGHT PANEL
 #    units: Bool
 #  - #	Whether or not the Light switch for the Glareshield is enabled.
-#    var: A:LIGHT GLARESHIELD
+#    get: A:LIGHT GLARESHIELD
 #    units: Bool
   
-#  - var: A:LIGHT POTENTIOMETER:2
+#  - get: A:LIGHT POTENTIOMETER:2
 #    units: Percent
-#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 2)`"
+#    set: "`K:LIGHT_POTENTIOMETER_SET(${value}, 2)`"
 
 #  - # PANEL LIGHT 
-#    var: A:LIGHT POTENTIOMETER:3
+#    get: A:LIGHT POTENTIOMETER:3
 #    units: Percent
-#    evt: "`K:LIGHT_POTENTIOMETER_SET(3, ${value})`"
+#    set: "`K:LIGHT_POTENTIOMETER_SET(3, ${value})`"
 #
-#  - var: A:LIGHT POTENTIOMETER:4
+#  - get: A:LIGHT POTENTIOMETER:4
 #    units: Percent
-#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 4)`"
+#    set: "`K:LIGHT_POTENTIOMETER_SET(${value}, 4)`"
 #
-#  - var: A:LIGHT POTENTIOMETER:5
+#  - get: A:LIGHT POTENTIOMETER:5
 #    units: Percent
-#    evt: "`K:LIGHT_POTENTIOMETER_SET(${value}, 5)`"
+#    set: "`K:LIGHT_POTENTIOMETER_SET(${value}, 5)`"
 
 #  - #Vehicle backlights current intensity (0 = off, 1 = full intensity).
-#    var: A:LIGHT BACKLIGHT INTENSITY
+#    get: A:LIGHT BACKLIGHT INTENSITY
 #    units: Percent Over 100
 #
 #  - #Vehicle gyrolights current intensity (0 = off, 1 = full intensity).
-#    var: A:LIGHT GYROLIGHT INTENSITY
+#    get: A:LIGHT GYROLIGHT INTENSITY
 #    units: Percent Over 100
 #
 #  - #Vehicle headlights current intensity (0 = off, 1 = full intensity).
-#    var: A:LIGHT HEADLIGHT INTENSITY
+#    get: A:LIGHT HEADLIGHT INTENSITY
 #    units: Percent Over 100
 #
 #  - #Light switch state for logo light.
-#    var: A:LIGHT LOGO
+#    get: A:LIGHT LOGO
 #    units: Bool
 #
 #  - #Whether or not the Light switch for the Pedestal is enabled.
-#    var: A:LIGHT PEDESTRAL
+#    get: A:LIGHT PEDESTRAL
 #    units: Bool
 #
 #  - #Light switch state for the recognition light.
-#    var: A:LIGHT RECOGNITION
+#    get: A:LIGHT RECOGNITION
 #    units: Bool
 #
 #  - #Light switch state for the wing lights.
-#    var: A:LIGHT WING
+#    get: A:LIGHT WING
 #    units: Bool

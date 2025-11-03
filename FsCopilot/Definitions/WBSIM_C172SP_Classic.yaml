@@ -1,82 +1,82 @@
 shared:
 # M803
-  - var: H:M803_OAT_PRESS # O.A.T
-  - var: H:M803_OAT_RELEASE # O.A.T
-  - var: H:M803_SELECT_PRESS # SELECT
-  - var: H:M803_SELECT_RELEASE # SELECT  
-  - var: H:M803_CONTROL_PRESS # CONTROL
-  - var: H:M803_CONTROL_RELEASE # CONTROL
+  - get: H:M803_OAT_PRESS # O.A.T
+  - get: H:M803_OAT_RELEASE # O.A.T
+  - get: H:M803_SELECT_PRESS # SELECT
+  - get: H:M803_SELECT_RELEASE # SELECT  
+  - get: H:M803_CONTROL_PRESS # CONTROL
+  - get: H:M803_CONTROL_RELEASE # CONTROL
     
-  - var: A:AIRSPEED TRUE CALIBRATE, Degrees # AIRSPEED CALIBRATION
+  - get: A:AIRSPEED TRUE CALIBRATE, Degrees # AIRSPEED CALIBRATION
     
-  - var: A:ATTITUDE BARS POSITION, Percent # ATTITUDE CALIBRATION
-    evt: "`0 ${value} (>K:ATTITUDE_BARS_POSITION_SET)`" # todo need to fix double
+  - get: A:ATTITUDE BARS POSITION, Percent # ATTITUDE CALIBRATION
+    set: "`0 ${value} (>K:ATTITUDE_BARS_POSITION_SET)`" # todo need to fix double
     
-  - var: A:KOHLSMAN SETTING MB:2, Millibars # ALTIMETER CALIBRATION
-    evt: "`${value * 16} 2 (>K:KOHLSMAN_SET)`"
+  - get: A:KOHLSMAN SETTING MB:2, Millibars # ALTIMETER CALIBRATION
+    set: "`${value * 16} 2 (>K:KOHLSMAN_SET)`"
     
-  - var: H:C172X_ANNUNCIATOR_TST # ANNUNCIATOR LIGHTS TST
-  - var: H:C172X_ANNUNCIATOR_BRT # ANNUNCIATOR LIGHTS BRT
-  - var: H:C172X_ANNUNCIATOR_DIM # ANNUNCIATOR LIGHTS DIM
+  - get: H:C172X_ANNUNCIATOR_TST # ANNUNCIATOR LIGHTS TST
+  - get: H:C172X_ANNUNCIATOR_BRT # ANNUNCIATOR LIGHTS BRT
+  - get: H:C172X_ANNUNCIATOR_DIM # ANNUNCIATOR LIGHTS DIM
 
-  - var: H:MD41_NAVGPS_PRESS # NAV GPS
-  - var: H:MD41_NAVGPS_RELEASE # GPS APR
+  - get: H:MD41_NAVGPS_PRESS # NAV GPS
+  - get: H:MD41_NAVGPS_RELEASE # GPS APR
 
-  - var: A:NAV OBS:1, Degrees # VOR 1 BEARING
-    evt: (>K:VOR1_SET)
+  - get: A:NAV OBS:1, Degrees # VOR 1 BEARING
+    set: (>K:VOR1_SET)
 
-  - var: A:ENG EXHAUST GAS TEMPERATURE GES:1, Percent # EGT
-    evt: "`${value * 327.67} (>K:EGT1_SET)`"
+  - get: A:ENG EXHAUST GAS TEMPERATURE GES:1, Percent # EGT
+    set: "`${value * 327.67} (>K:EGT1_SET)`"
 
-  - var: A:HEADING INDICATOR, Degrees # HEADING todo sometimes it doesn't work o_O
-    evt: (>K:GYRO_DRIFT_SET_EX1) # todo need to fix double
-  - var: L:C172X_HEADING_KNOB # HEADING
-  - var: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HEADING BUG
-    evt: "`${value} 1 (>K:HEADING_BUG_SET)`"
+  - get: A:HEADING INDICATOR, Degrees # HEADING todo sometimes it doesn't work o_O
+    set: (>K:GYRO_DRIFT_SET_EX1) # todo need to fix double
+  - get: L:C172X_HEADING_KNOB # HEADING
+  - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HEADING BUG
+    set: "`${value} 1 (>K:HEADING_BUG_SET)`"
 
-  - var: A:NAV OBS:2, Degrees # VOR 2 BEARING
-    evt: (>K:VOR2_SET)
+  - get: A:NAV OBS:2, Degrees # VOR 2 BEARING
+    set: (>K:VOR2_SET)
     
-  - var: L:C172X_AVFAN_BREAKER_PULLED # AVN FAN
-  - var: L:C172X_AP_BREAKER_PULLED # AUTO PILOT
-  - var: L:C172X_BATTERY_CHARGE # NOP
-  - var: L:C172X_NAVCOM1_BREAKER_PULLED # NAV COM 1
-  - var: L:C172X_NAVCOM2_BREAKER_PULLED # NAV COM @
-  - var: L:C172X_ADF_BREAKER_PULLED # ADF
-  - var: L:C172X_XPNDR_BREAKER_PULLED # XPNDR
+  - get: L:C172X_AVFAN_BREAKER_PULLED # AVN FAN
+  - get: L:C172X_AP_BREAKER_PULLED # AUTO PILOT
+  - get: L:C172X_BATTERY_CHARGE # NOP
+  - get: L:C172X_NAVCOM1_BREAKER_PULLED # NAV COM 1
+  - get: L:C172X_NAVCOM2_BREAKER_PULLED # NAV COM @
+  - get: L:C172X_ADF_BREAKER_PULLED # ADF
+  - get: L:C172X_XPNDR_BREAKER_PULLED # XPNDR
       
-  - var: L:KI227_CARD_ADJUSTMENT # ADF CARD BEARING
+  - get: L:KI227_CARD_ADJUSTMENT # ADF CARD BEARING
   
 # KMA28
-  - var: A:AUDIO PANEL VOLUME, Percent # VOL
-    evt: (>K:AUDIO_PANEL_VOLUME_SET)
-  - var: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI
-    evt: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
-  - var: A:MARKER BEACON TEST MUTE, Bool # T/M
-    evt: (>K:MARKER_BEACON_TEST_MUTE)
-  - var: A:INTERCOM MODE, Enum # ISO/ALL/CREW
-    evt: (>K:INTERCOM_MODE_SET)
-  - var: A:COM RECEIVE:1, Bool # COM1
-    evt: (>K:COM1_RECEIVE_SELECT)
-  - var: A:COM RECEIVE:2, Bool # COM2
-    evt: (>K:COM2_RECEIVE_SELECT)
-  - var: A:NAV SOUND:1, Bool # NAV1
-    evt: (>K:RADIO_VOR1_IDENT_TOGGLE)
-  - var: A:NAV SOUND:2, Bool # NAV2
-    evt: (>K:RADIO_VOR2_IDENT_TOGGLE)
-  - var: A:MARKER SOUND, Bool # MKR
-    evt: (>K:MARKER_SOUND_TOGGLE)
-  - var: A:INTERCOM SYSTEM ACTIVE, Bool # ICS
-    evt: (>K:TOGGLE_ICS)
-  - var: A:ADF SOUND:1, Bool # ADF
-    evt: (>K:RADIO_ADF_IDENT_SET) # AUX
-  - var: L:XMLVAR_AudioPanel_1
-  - var: A:DME SOUND:1, Bool # DME
-    evt: (>K:RADIO_DME1_IDENT_SET)
-  - var: A:SPEAKER ACTIVE, Bool # SPR
-    evt: (>K:TOGGLE_SPEAKER)
-  - var: Z:AUDIO_Knob_Selector_1 # MIC
-    evt: |
+  - get: A:AUDIO PANEL VOLUME, Percent # VOL
+    set: (>K:AUDIO_PANEL_VOLUME_SET)
+  - get: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI
+    set: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
+  - get: A:MARKER BEACON TEST MUTE, Bool # T/M
+    set: (>K:MARKER_BEACON_TEST_MUTE)
+  - get: A:INTERCOM MODE, Enum # ISO/ALL/CREW
+    set: (>K:INTERCOM_MODE_SET)
+  - get: A:COM RECEIVE:1, Bool # COM1
+    set: (>K:COM1_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:2, Bool # COM2
+    set: (>K:COM2_RECEIVE_SELECT)
+  - get: A:NAV SOUND:1, Bool # NAV1
+    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - get: A:MARKER SOUND, Bool # MKR
+    set: (>K:MARKER_SOUND_TOGGLE)
+  - get: A:INTERCOM SYSTEM ACTIVE, Bool # ICS
+    set: (>K:TOGGLE_ICS)
+  - get: A:ADF SOUND:1, Bool # ADF
+    set: (>K:RADIO_ADF_IDENT_SET) # AUX
+  - get: L:XMLVAR_AudioPanel_1
+  - get: A:DME SOUND:1, Bool # DME
+    set: (>K:RADIO_DME1_IDENT_SET)
+  - get: A:SPEAKER ACTIVE, Bool # SPR
+    set: (>K:TOGGLE_SPEAKER)
+  - get: Z:AUDIO_Knob_Selector_1 # MIC
+    set: |
       switch (value) {
           case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
           case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'
@@ -87,73 +87,73 @@ shared:
           default: return ''
       }
 
-  - var: A:RECIP ENG LEFT MAGNETO:, Bool # LEFT MAGNETO
-  - var: A:RECIP ENG RIGHT MAGNETO:1, Bool # RIGHT MAGNETO
-  - var: A:GENERAL ENG STARTER:1, Bool # START
-    evt: (>K:SET_STARTER1_HELD)
+  - get: A:RECIP ENG LEFT MAGNETO:, Bool # LEFT MAGNETO
+  - get: A:RECIP ENG RIGHT MAGNETO:1, Bool # RIGHT MAGNETO
+  - get: A:GENERAL ENG STARTER:1, Bool # START
+    set: (>K:SET_STARTER1_HELD)
   
-  - var: A:GENERAL ENG MASTER ALTERNATOR:1, Bool # ALT
-    evt: "`${value} 1 (>K:ALTERNATOR_SET)`"
-  - var: A:ELECTRICAL MASTER BATTERY:1, Bool # BAT
-    evt: "`${value} 1 (>K:MASTER_BATTERY_SET)`"
+  - get: A:GENERAL ENG MASTER ALTERNATOR:1, Bool # ALT
+    set: "`${value} 1 (>K:ALTERNATOR_SET)`"
+  - get: A:ELECTRICAL MASTER BATTERY:1, Bool # BAT
+    set: "`${value} 1 (>K:MASTER_BATTERY_SET)`"
     
-  - var: L:C172X_LTSPWR_BREAKER_PULLED # CABIN LTS PWR
-  - var: L:C172X_FLAPS_BREAKER_PULLED # FLAPS
-  - var: L:C172X_INST_BREAKER_PULLED # INST
-  - var: A:CIRCUIT SWITCH ON:46, Bool # AVN BUS 1
-  - var: A:CIRCUIT SWITCH ON:47, Bool # AVN BUS 2
-  - var: L:C172X_TURNCOORD_BREAKER_PULLED # TURN COORD
-  - var: L:C172X_INSTLTS_BREAKER_PULLED # INST LTS
+  - get: L:C172X_LTSPWR_BREAKER_PULLED # CABIN LTS PWR
+  - get: L:C172X_FLAPS_BREAKER_PULLED # FLAPS
+  - get: L:C172X_INST_BREAKER_PULLED # INST
+  - get: A:CIRCUIT SWITCH ON:46, Bool # AVN BUS 1
+  - get: A:CIRCUIT SWITCH ON:47, Bool # AVN BUS 2
+  - get: L:C172X_TURNCOORD_BREAKER_PULLED # TURN COORD
+  - get: L:C172X_INSTLTS_BREAKER_PULLED # INST LTS
   
-  - var: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Enum # FUEL PUMP
-    evt: (>K:ELECT_FUEL_PUMP1_SET)
+  - get: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Enum # FUEL PUMP
+    set: (>K:ELECT_FUEL_PUMP1_SET)
     
-  - var: A:LIGHT BEACON:1, Bool # BCN
-  - var: A:LIGHT LANDING:1, Bool #LAND
-  - var: A:LIGHT TAXI:1, Bool # TAXI
-  - var: A:LIGHT NAV:0, Bool # NAV
-  - var: A:LIGHT STROBE:0, Bool # STROBE
-  - var: A:PITOT HEAT SWITCH:1, Bool # PITOT HEAT
-    evt: "`${value} 1 (>K:PITOT_HEAT_SET)`"
+  - get: A:LIGHT BEACON:1, Bool # BCN
+  - get: A:LIGHT LANDING:1, Bool #LAND
+  - get: A:LIGHT TAXI:1, Bool # TAXI
+  - get: A:LIGHT NAV:0, Bool # NAV
+  - get: A:LIGHT STROBE:0, Bool # STROBE
+  - get: A:PITOT HEAT SWITCH:1, Bool # PITOT HEAT
+    set: "`${value} 1 (>K:PITOT_HEAT_SET)`"
 
-  - var: A:CIRCUIT SWITCH ON:39, Bool # AVIONICS MASTER BUS 1
-  - var: A:CIRCUIT SWITCH ON:40, Bool # AVIONICS MASTER BUS 2
+  - get: A:CIRCUIT SWITCH ON:39, Bool # AVIONICS MASTER BUS 1
+  - get: A:CIRCUIT SWITCH ON:40, Bool # AVIONICS MASTER BUS 2
 
-  - var: L:C172X_ALT_BREAKER # ALT FLD
-  - var: L:C172X_WARN_BREAKER_PULLED # WARN
+  - get: L:C172X_ALT_BREAKER # ALT FLD
+  - get: L:C172X_WARN_BREAKER_PULLED # WARN
       
-  - var: A:LIGHT POTENTIOMETER:3, Percent # PANELS LT
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_3_SET)`"
-  - var: A:LIGHT POTENTIOMETER:7, Percent # RADIO LR
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_7_SET)`"
-  - var: A:LIGHT POTENTIOMETER:6, Percent # PEDESTAL LT
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_6_SET)`"
-  - var: A:LIGHT POTENTIOMETER:5, Percent # GLARESHIELD LT
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_5_SET)`"
+  - get: A:LIGHT POTENTIOMETER:3, Percent # PANELS LT
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_3_SET)`"
+  - get: A:LIGHT POTENTIOMETER:7, Percent # RADIO LR
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_7_SET)`"
+  - get: A:LIGHT POTENTIOMETER:6, Percent # PEDESTAL LT
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_6_SET)`"
+  - get: A:LIGHT POTENTIOMETER:5, Percent # GLARESHIELD LT
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_5_SET)`"
 
-  - var: A:ALTERNATE STATIC SOURCE OPEN, Bool # ALTERNATE STATIC
-    evt: (>K:TOGGLE_ALTERNATE_STATIC)
+  - get: A:ALTERNATE STATIC SOURCE OPEN, Bool # ALTERNATE STATIC
+    set: (>K:TOGGLE_ALTERNATE_STATIC)
   
-  - var: A:GENERAL ENG MIXTURE LEVER POSITION:1, Position 16k # MIX
+  - get: A:GENERAL ENG MIXTURE LEVER POSITION:1, Position 16k # MIX
     
-  - var: L:XMLVAR_Cabin_Air_1_Position # CABIN AIR
-  - var: L:XMLVAR_Cabin_Heat_1_Position # CABIN HT
+  - get: L:XMLVAR_Cabin_Air_1_Position # CABIN AIR
+  - get: L:XMLVAR_Cabin_Heat_1_Position # CABIN HT
     
-  - var: A:BRAKE PARKING POSITION, Bool # PARKING BRAKE
-    evt: (>K:PARKING_BRAKE_SET)
+  - get: A:BRAKE PARKING POSITION, Bool # PARKING BRAKE
+    set: (>K:PARKING_BRAKE_SET)
 
-  - var: A:ELEVATOR TRIM PCT, Percent scaler 16k # TRIM
-    evt: (>K:ELEVATOR_TRIM_SET) # todo need to fix double
+  - get: A:ELEVATOR TRIM PCT, Percent scaler 16k # TRIM
+    set: (>K:ELEVATOR_TRIM_SET) # todo need to fix double
   
-  - var: A:GENERAL ENG FUEL VALVE:1, Bool # FUEL VALVE
-    evt: (>K:SET_FUEL_VALVE_ENG1)
+  - get: A:GENERAL ENG FUEL VALVE:1, Bool # FUEL VALVE
+    set: (>K:SET_FUEL_VALVE_ENG1)
 
-  - var: A:FUEL TANK SELECTOR:1, Enum
-    evt: (>K:FUEL_SELECTOR_SET)
+  - get: A:FUEL TANK SELECTOR:1, Enum
+    set: (>K:FUEL_SELECTOR_SET)
   
   
   
-  - var: A:LIGHT POTENTIOMETER:10, Percent # FLOOD LIGHT
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_10_SET)`"
-  - var: A:LIGHT POTENTIOMETER:11, Percent # FLOOD LIGHT
-    evt: "`${value} (>K:LIGHT_POTENTIOMETER_11_SET)`"
+  - get: A:LIGHT POTENTIOMETER:10, Percent # FLOOD LIGHT
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_10_SET)`"
+  - get: A:LIGHT POTENTIOMETER:11, Percent # FLOOD LIGHT
+    set: "`${value} (>K:LIGHT_POTENTIOMETER_11_SET)`"

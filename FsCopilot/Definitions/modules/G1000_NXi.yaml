@@ -1,190 +1,190 @@
 #master:
 #  - #	Returns the current autotpilot reference pitch.
-#    var: A:AUTOPILOT PITCH HOLD REF, Degrees
+#    get: A:AUTOPILOT PITCH HOLD REF, Degrees
 
 shared:
 # PFD
-  - var: A:NAV VOLUME:1, Percent # VOL
-    evt: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
-  - var: A:NAV VOLUME:2, Percent # VOL
-    evt: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
-  - var: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
-    evt: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
-  - var: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
-    evt: (>K:NAV1_RADIO_SET_HZ)
-  - var: A:NAV ACTIVE FREQUENCY:2, Hz # NAV2 ACTIVE
-    evt: (>K:NAV2_RADIO_SET_HZ)
-  - var: A:NAV STANDBY FREQUENCY:1, Hz # NAV1 STANDBY
-    evt: (>K:NAV1_STBY_SET_HZ)
-  - var: A:NAV STANDBY FREQUENCY:2, Hz # NAV2 STANDBY
-    evt: (>K:NAV2_STBY_SET_HZ)
-  - var: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG
-#  - var: A:AUTOPILOT ALTITUDE SLOT INDEX, Number
-#    evt: (>K:AP_ALTITUDE_SLOT_INDEX_SET)
-  - var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # hack for not initialized ALT
-    evt: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : ''"
-  - var: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALT
+  - get: A:NAV VOLUME:1, Percent # VOL
+    set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
+  - get: A:NAV VOLUME:2, Percent # VOL
+    set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
+  - get: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
+    set: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
+  - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
+    set: (>K:NAV1_RADIO_SET_HZ)
+  - get: A:NAV ACTIVE FREQUENCY:2, Hz # NAV2 ACTIVE
+    set: (>K:NAV2_RADIO_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:1, Hz # NAV1 STANDBY
+    set: (>K:NAV1_STBY_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:2, Hz # NAV2 STANDBY
+    set: (>K:NAV2_STBY_SET_HZ)
+  - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG
+#  - get: A:AUTOPILOT ALTITUDE SLOT INDEX, Number
+#    set: (>K:AP_ALTITUDE_SLOT_INDEX_SET)
+  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # hack for not initialized ALT
+    set: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : ''"
+  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALT
     
-  - var: H:AS1000_PFD_SOFTKEYS_1
-  - var: H:AS1000_PFD_SOFTKEYS_2
-  - var: H:AS1000_PFD_SOFTKEYS_3
-  - var: H:AS1000_PFD_SOFTKEYS_4
-  - var: H:AS1000_PFD_SOFTKEYS_5
-  - var: H:AS1000_PFD_SOFTKEYS_6
-  - var: H:AS1000_PFD_SOFTKEYS_7
-  - var: H:AS1000_PFD_SOFTKEYS_8
-  - var: H:AS1000_PFD_SOFTKEYS_9
-  - var: H:AS1000_PFD_SOFTKEYS_10
-  - var: H:AS1000_PFD_SOFTKEYS_11
-  - var: H:AS1000_PFD_SOFTKEYS_12
-  - var: L:PFD_CDI_Source # CDI
-    evt: (>K:AP_NAV_SELECT_SET)
+  - get: H:AS1000_PFD_SOFTKEYS_1
+  - get: H:AS1000_PFD_SOFTKEYS_2
+  - get: H:AS1000_PFD_SOFTKEYS_3
+  - get: H:AS1000_PFD_SOFTKEYS_4
+  - get: H:AS1000_PFD_SOFTKEYS_5
+  - get: H:AS1000_PFD_SOFTKEYS_6
+  - get: H:AS1000_PFD_SOFTKEYS_7
+  - get: H:AS1000_PFD_SOFTKEYS_8
+  - get: H:AS1000_PFD_SOFTKEYS_9
+  - get: H:AS1000_PFD_SOFTKEYS_10
+  - get: H:AS1000_PFD_SOFTKEYS_11
+  - get: H:AS1000_PFD_SOFTKEYS_12
+  - get: L:PFD_CDI_Source # CDI
+    set: (>K:AP_NAV_SELECT_SET)
     skp: H:AS1000_PFD_SOFTKEYS_6
-  - var: A:GPS DRIVES NAV1, Bool # CDI
-    evt: (>K:TOGGLE_GPS_DRIVES_NAV1)
-  - var: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32 # ADF ACTIVE
-    evt: (>K:ADF_ACTIVE_SET)
-  - var: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32 # ADF STANDBY
-    evt: (>K:ADF_STBY_SET)
-  - var: A:ADF SOUND:1, Bool # ADF SOUND
-    evt: (>K:RADIO_ADF_IDENT_SET)
-  - var: A:TRANSPONDER STATE:1, Enum # XPDR StandBy/On/Alt
-  - var: A:TRANSPONDER CODE:1, BCO16 # XPDR Code
-    evt: (>K:XPNDR_SET)
-  - var: A:TRANSPONDER IDENT:1, Bool # Ident
-    evt: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
+  - get: A:GPS DRIVES NAV1, Bool # CDI
+    set: (>K:TOGGLE_GPS_DRIVES_NAV1)
+  - get: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32 # ADF ACTIVE
+    set: (>K:ADF_ACTIVE_SET)
+  - get: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32 # ADF STANDBY
+    set: (>K:ADF_STBY_SET)
+  - get: A:ADF SOUND:1, Bool # ADF SOUND
+    set: (>K:RADIO_ADF_IDENT_SET)
+  - get: A:TRANSPONDER STATE:1, Enum # XPDR StandBy/On/Alt
+  - get: A:TRANSPONDER CODE:1, BCO16 # XPDR Code
+    set: (>K:XPNDR_SET)
+  - get: A:TRANSPONDER IDENT:1, Bool # Ident
+    set: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
     skp: H:AS1000_PFD_SOFTKEYS_9
     
-  - var: A:COM VOLUME:1, Percent # VOL
-    evt: "`${value} (>K:COM1_VOLUME_SET)`"
-  - var: A:COM VOLUME:2, Percent # VOL
-    evt: "`${value} (>K:COM2_VOLUME_SET)`"
-  - var: L:AS1000_PFD_SelectedComIndex # COM 1/2
-    evt: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
-  - var: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
-    evt: (>K:COM_RADIO_SET_HZ)
-  - var: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
-    evt: (>K:COM2_RADIO_SET_HZ)
-  - var: A:COM STANDBY FREQUENCY:1, Hz # COM1 STANDBY
-    evt: (>K:COM_STBY_RADIO_SET_HZ)
-  - var: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
-    evt: (>K:COM2_STBY_RADIO_SET_HZ)
-  - var: A:KOHLSMAN SETTING MB:0, Millibars # BARO
-    evt: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
-  - var: H:AS1000_PFD_CLR
-  - var: H:AS1000_PFD_ENT_Push
-  - var: H:AS1000_PFD_PPL_Push
-  - var: H:AS1000_PFD_PROC_Push
-  - var: H:AS1000_PFD_DIRECTTO
-  - var: H:AS1000_PFD_MENU_Push
-  - var: H:AS1000_PFD_JOYSTICK_PUSH
-  - var: H:AS1000_PFD_JOYSTICK_LEFT
-  - var: H:AS1000_PFD_JOYSTICK_RIGHT
-  - var: H:AS1000_PFD_JOYSTICK_UP
-  - var: H:AS1000_PFD_JOYSTICK_DOWN
-  - var: H:AS1000_PFD_FMS_Lower_INC
-  - var: H:AS1000_PFD_FMS_Lower_DEC
-  - var: H:AS1000_PFD_FMS_Upper_INC
-  - var: H:AS1000_PFD_FMS_Upper_DEC
-  - var: H:AS1000_PFD_FMS_Upper_PUSH
+  - get: A:COM VOLUME:1, Percent # VOL
+    set: "`${value} (>K:COM1_VOLUME_SET)`"
+  - get: A:COM VOLUME:2, Percent # VOL
+    set: "`${value} (>K:COM2_VOLUME_SET)`"
+  - get: L:AS1000_PFD_SelectedComIndex # COM 1/2
+    set: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
+  - get: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
+    set: (>K:COM_RADIO_SET_HZ)
+  - get: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
+    set: (>K:COM2_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:1, Hz # COM1 STANDBY
+    set: (>K:COM_STBY_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
+    set: (>K:COM2_STBY_RADIO_SET_HZ)
+  - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
+    set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+  - get: H:AS1000_PFD_CLR
+  - get: H:AS1000_PFD_ENT_Push
+  - get: H:AS1000_PFD_PPL_Push
+  - get: H:AS1000_PFD_PROC_Push
+  - get: H:AS1000_PFD_DIRECTTO
+  - get: H:AS1000_PFD_MENU_Push
+  - get: H:AS1000_PFD_JOYSTICK_PUSH
+  - get: H:AS1000_PFD_JOYSTICK_LEFT
+  - get: H:AS1000_PFD_JOYSTICK_RIGHT
+  - get: H:AS1000_PFD_JOYSTICK_UP
+  - get: H:AS1000_PFD_JOYSTICK_DOWN
+  - get: H:AS1000_PFD_FMS_Lower_INC
+  - get: H:AS1000_PFD_FMS_Lower_DEC
+  - get: H:AS1000_PFD_FMS_Upper_INC
+  - get: H:AS1000_PFD_FMS_Upper_DEC
+  - get: H:AS1000_PFD_FMS_Upper_PUSH
     
-    #  - var: A:NAV OBS:1, Degrees # CRS CTR 
-    #    evt: (>K:VOR1_SET)
-    #  - var: A:NAV OBS:2, Degrees # CRS CTR
-    #    evt: (>K:VOR2_SET)
-    #  - var: A:GPS OBS ACTIVE, Bool # CRS CTR
-    #  - var: A:GPS OBS VALUE, Degrees # CRS CTR
-    #    evt: (>K:GPS_OBS_SET)
-    #  - var: L:CRS_FIX_1 # CRS CTR
+    #  - get: A:NAV OBS:1, Degrees # CRS CTR 
+    #    set: (>K:VOR1_SET)
+    #  - get: A:NAV OBS:2, Degrees # CRS CTR
+    #    set: (>K:VOR2_SET)
+    #  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
+    #  - get: A:GPS OBS VALUE, Degrees # CRS CTR
+    #    set: (>K:GPS_OBS_SET)
+    #  - get: L:CRS_FIX_1 # CRS CTR
 
-#  - var: L:AS1000_PFD_STATE
-#  - var: L:AS1000_PFD_Brightness
+#  - get: L:AS1000_PFD_STATE
+#  - get: L:AS1000_PFD_Brightness
 #  #    cancel_h_events: true
-#  - var: L:AS1000_PFD_Brightness_IsAuto
+#  - get: L:AS1000_PFD_Brightness_IsAuto
 
 # MID 
-  - var: A:COM TRANSMIT:1, Bool # COM1 MIC
-    evt: "value ? '0 (>K:PILOT_TRANSMITTER_SET)' : '1 (>K:PILOT_TRANSMITTER_SET)'"
-  - var: A:COM TRANSMIT:1, Bool # COM1 MIC
-    evt: "value ? '0 (>K:COPILOT_TRANSMITTER_SET)' : '1 (>K:COPILOT_TRANSMITTER_SET)'"
-  - var: A:COM RECEIVE:1, Bool # COM1
-    evt: (>K:COM1_RECEIVE_SELECT)
-  - var: A:COM RECEIVE:2, Bool # COM2
-    evt: (>K:COM2_RECEIVE_SELECT)
-  - var: A:MARKER BEACON TEST MUTE, Bool # MKR MUTE
-    evt: (>K:MARKER_BEACON_TEST_MUTE)
-  - var: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI SENS
-    evt: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
-  - var: A:DME SOUND, Bool # DME
-    evt: (>K:RADIO_DME1_IDENT_TOGGLE)
-  - var: A:NAV SOUND:1, Bool # NAV1
-    evt: (>K:RADIO_VOR1_IDENT_TOGGLE)
-  - var: A:ADF SOUND, Bool # ADF
-    evt: (>K:RADIO_ADF_IDENT_TOGGLE)
-  - var: A:NAV SOUND:2, Bool # NAV2
-    evt: (>K:RADIO_VOR2_IDENT_TOGGLE)
-  - var: L:G1000_REV_FORCE # Display backup  
+  - get: A:COM TRANSMIT:1, Bool # COM1 MIC
+    set: "value ? '0 (>K:PILOT_TRANSMITTER_SET)' : '1 (>K:PILOT_TRANSMITTER_SET)'"
+  - get: A:COM TRANSMIT:1, Bool # COM1 MIC
+    set: "value ? '0 (>K:COPILOT_TRANSMITTER_SET)' : '1 (>K:COPILOT_TRANSMITTER_SET)'"
+  - get: A:COM RECEIVE:1, Bool # COM1
+    set: (>K:COM1_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:2, Bool # COM2
+    set: (>K:COM2_RECEIVE_SELECT)
+  - get: A:MARKER BEACON TEST MUTE, Bool # MKR MUTE
+    set: (>K:MARKER_BEACON_TEST_MUTE)
+  - get: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI SENS
+    set: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
+  - get: A:DME SOUND, Bool # DME
+    set: (>K:RADIO_DME1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:1, Bool # NAV1
+    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - get: A:ADF SOUND, Bool # ADF
+    set: (>K:RADIO_ADF_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - get: L:G1000_REV_FORCE # Display backup  
 
 # MFD
-  - var: A:AUTOPILOT MASTER, Bool # On/off flag
-    evt: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
-  - var: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
-    evt: "0 (>K:TOGGLE_FLIGHT_DIRECTOR)"
-  - var: A:AUTOPILOT HEADING LOCK, Bool # HDG
-    evt: "value ? '(>K:AP_HDG_HOLD_ON)' : '(>K:AP_HDG_HOLD_OFF)'"
-  - var: A:AUTOPILOT NAV1 LOCK, Bool # NAV
-    evt: (>K:AP_NAV1_HOLD)
-  - var: A:AUTOPILOT APPROACH HOLD, Bool # APR
-    evt: (>K:AP_APR_HOLD)
-#  - var: A:AUTOPILOT GLIDESLOPE HOLD, Bool # APR
-#    evt: (>K:AP_LOC_HOLD)
-  - var: A:AUTOPILOT ALTITUDE LOCK, Bool # ALT
-    evt: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
-  - var: L:XMLVAR_VNAVButtonValue # VNV
-  - var: A:AUTOPILOT VERTICAL HOLD, Bool # VS
-    evt: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
-  - var: A:AUTOPILOT FLIGHT LEVEL CHANGE, Bool # FLC
-    evt:  "value ? '(>K:FLIGHT_LEVEL_CHANGE_ON)' : '(>K:FLIGHT_LEVEL_CHANGE_OFF)'"
-  - var: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute # UP/DN
-  - var: A:AUTOPILOT AIRSPEED HOLD VAR:1, Knots # UP/DN
-    evt: (>K:AP_SPD_VAR_SET)
+  - get: A:AUTOPILOT MASTER, Bool # On/off flag
+    set: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
+  - get: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
+    set: "0 (>K:TOGGLE_FLIGHT_DIRECTOR)"
+  - get: A:AUTOPILOT HEADING LOCK, Bool # HDG
+    set: "value ? '(>K:AP_HDG_HOLD_ON)' : '(>K:AP_HDG_HOLD_OFF)'"
+  - get: A:AUTOPILOT NAV1 LOCK, Bool # NAV
+    set: (>K:AP_NAV1_HOLD)
+  - get: A:AUTOPILOT APPROACH HOLD, Bool # APR
+    set: (>K:AP_APR_HOLD)
+#  - get: A:AUTOPILOT GLIDESLOPE HOLD, Bool # APR
+#    set: (>K:AP_LOC_HOLD)
+  - get: A:AUTOPILOT ALTITUDE LOCK, Bool # ALT
+    set: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
+  - get: L:XMLVAR_VNAVButtonValue # VNV
+  - get: A:AUTOPILOT VERTICAL HOLD, Bool # VS
+    set: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
+  - get: A:AUTOPILOT FLIGHT LEVEL CHANGE, Bool # FLC
+    set:  "value ? '(>K:FLIGHT_LEVEL_CHANGE_ON)' : '(>K:FLIGHT_LEVEL_CHANGE_OFF)'"
+  - get: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute # UP/DN
+  - get: A:AUTOPILOT AIRSPEED HOLD VAR:1, Knots # UP/DN
+    set: (>K:AP_SPD_VAR_SET)
 
-  - var: H:AS1000_MFD_SOFTKEYS_1
-  - var: H:AS1000_MFD_SOFTKEYS_2
-  - var: H:AS1000_MFD_SOFTKEYS_3
-  - var: H:AS1000_MFD_SOFTKEYS_4
-  - var: H:AS1000_MFD_SOFTKEYS_5
-  - var: H:AS1000_MFD_SOFTKEYS_6
-  - var: H:AS1000_MFD_SOFTKEYS_7
-  - var: H:AS1000_MFD_SOFTKEYS_8
-  - var: H:AS1000_MFD_SOFTKEYS_9
-  - var: H:AS1000_MFD_SOFTKEYS_10
-  - var: H:AS1000_MFD_SOFTKEYS_11
-  - var: H:AS1000_MFD_SOFTKEYS_12
+  - get: H:AS1000_MFD_SOFTKEYS_1
+  - get: H:AS1000_MFD_SOFTKEYS_2
+  - get: H:AS1000_MFD_SOFTKEYS_3
+  - get: H:AS1000_MFD_SOFTKEYS_4
+  - get: H:AS1000_MFD_SOFTKEYS_5
+  - get: H:AS1000_MFD_SOFTKEYS_6
+  - get: H:AS1000_MFD_SOFTKEYS_7
+  - get: H:AS1000_MFD_SOFTKEYS_8
+  - get: H:AS1000_MFD_SOFTKEYS_9
+  - get: H:AS1000_MFD_SOFTKEYS_10
+  - get: H:AS1000_MFD_SOFTKEYS_11
+  - get: H:AS1000_MFD_SOFTKEYS_12
 
-  - var: H:AS1000_MFD_JOYSTICK_PUSH
-  - var: H:AS1000_MFD_JOYSTICK_LEFT
-  - var: H:AS1000_MFD_JOYSTICK_RIGHT
-  - var: H:AS1000_MFD_JOYSTICK_UP
-  - var: H:AS1000_MFD_JOYSTICK_DOWN
-  - var: H:AS1000_MFD_CLR
-  - var: H:AS1000_MFD_ENT_Push
-  - var: H:AS1000_MFD_PPL_Push
-  - var: H:AS1000_MFD_PROC_Push
-  - var: H:AS1000_MFD_DIRECTTO
-  - var: H:AS1000_MFD_MENU_Push
-  - var: H:AS1000_MFD_FMS_Lower_INC
-  - var: H:AS1000_MFD_FMS_Lower_DEC
-  - var: H:AS1000_MFD_FMS_Upper_INC
-  - var: H:AS1000_MFD_FMS_Upper_DEC
-  - var: H:AS1000_MFD_FMS_Upper_PUSH
+  - get: H:AS1000_MFD_JOYSTICK_PUSH
+  - get: H:AS1000_MFD_JOYSTICK_LEFT
+  - get: H:AS1000_MFD_JOYSTICK_RIGHT
+  - get: H:AS1000_MFD_JOYSTICK_UP
+  - get: H:AS1000_MFD_JOYSTICK_DOWN
+  - get: H:AS1000_MFD_CLR
+  - get: H:AS1000_MFD_ENT_Push
+  - get: H:AS1000_MFD_PPL_Push
+  - get: H:AS1000_MFD_PROC_Push
+  - get: H:AS1000_MFD_DIRECTTO
+  - get: H:AS1000_MFD_MENU_Push
+  - get: H:AS1000_MFD_FMS_Lower_INC
+  - get: H:AS1000_MFD_FMS_Lower_DEC
+  - get: H:AS1000_MFD_FMS_Upper_INC
+  - get: H:AS1000_MFD_FMS_Upper_DEC
+  - get: H:AS1000_MFD_FMS_Upper_PUSH
 
-#  - var: L:AS1000_MFD_Brightness
+#  - get: L:AS1000_MFD_Brightness
 #  #      cancel_h_events: true
 #  #      unreliable: true
-#  - var: L:AS1000_MFD_Brightness_IsAuto
-#  - var: L:AS1000_MFD_SelectedNavIndex
-#  - var: L:AS1000_MFD_SelectedComIndex
+#  - get: L:AS1000_MFD_Brightness_IsAuto
+#  - get: L:AS1000_MFD_SelectedNavIndex
+#  - get: L:AS1000_MFD_SelectedComIndex
 #ignore:
 ## PFD
 #  - H:AS1000_PFD_VOL_1_INC
@@ -247,115 +247,115 @@ shared:
 #  - H:AS1000_MFD_BARO_DEC
 #  - H:AS1000_MFD_CRS_PUSH
 
-#  - var: H:AS1000_PFD_SOFTKEYS_1
-#  - var: H:AS1000_PFD_SOFTKEYS_2
-#  - var: H:AS1000_PFD_SOFTKEYS_3
-#  - var: H:AS1000_PFD_SOFTKEYS_4
-#  - var: H:AS1000_PFD_SOFTKEYS_5
-#  - var: H:AS1000_PFD_SOFTKEYS_6
-#  - var: H:AS1000_PFD_SOFTKEYS_7
-#  - var: H:AS1000_PFD_SOFTKEYS_8
-#  - var: H:AS1000_PFD_SOFTKEYS_9
-#  - var: H:AS1000_PFD_SOFTKEYS_10
-#  - var: H:AS1000_PFD_SOFTKEYS_11
-#  - var: H:AS1000_PFD_SOFTKEYS_12
-#  - var: H:AS1000_PFD_CLR
-#  - var: H:AS1000_PFD_ENT_Push
-#  - var: H:AS1000_PFD_PPL_Push
-#  - var: H:AS1000_PFD_PROC_Push
-#  - var: H:AS1000_PFD_DIRECTTO
-#  - var: H:AS1000_PFD_MENU_Push
-#  - var: H:AS1000_PFD_JOYSTICK_LEFT
-#  - var: H:AS1000_PFD_JOYSTICK_RIGHT
-#  - var: H:AS1000_PFD_JOYSTICK_UP
-#  - var: H:AS1000_PFD_JOYSTICK_DOWN
-#  - var: H:AS1000_PFD_FMS_Lower_INC
-#  - var: H:AS1000_PFD_FMS_Lower_DEC
-#  - var: H:AS1000_PFD_FMS_Upper_INC
-#  - var: H:AS1000_PFD_FMS_Upper_DEC
-#  - var: H:AS1000_PFD_FMS_Upper_PUSH
+#  - get: H:AS1000_PFD_SOFTKEYS_1
+#  - get: H:AS1000_PFD_SOFTKEYS_2
+#  - get: H:AS1000_PFD_SOFTKEYS_3
+#  - get: H:AS1000_PFD_SOFTKEYS_4
+#  - get: H:AS1000_PFD_SOFTKEYS_5
+#  - get: H:AS1000_PFD_SOFTKEYS_6
+#  - get: H:AS1000_PFD_SOFTKEYS_7
+#  - get: H:AS1000_PFD_SOFTKEYS_8
+#  - get: H:AS1000_PFD_SOFTKEYS_9
+#  - get: H:AS1000_PFD_SOFTKEYS_10
+#  - get: H:AS1000_PFD_SOFTKEYS_11
+#  - get: H:AS1000_PFD_SOFTKEYS_12
+#  - get: H:AS1000_PFD_CLR
+#  - get: H:AS1000_PFD_ENT_Push
+#  - get: H:AS1000_PFD_PPL_Push
+#  - get: H:AS1000_PFD_PROC_Push
+#  - get: H:AS1000_PFD_DIRECTTO
+#  - get: H:AS1000_PFD_MENU_Push
+#  - get: H:AS1000_PFD_JOYSTICK_LEFT
+#  - get: H:AS1000_PFD_JOYSTICK_RIGHT
+#  - get: H:AS1000_PFD_JOYSTICK_UP
+#  - get: H:AS1000_PFD_JOYSTICK_DOWN
+#  - get: H:AS1000_PFD_FMS_Lower_INC
+#  - get: H:AS1000_PFD_FMS_Lower_DEC
+#  - get: H:AS1000_PFD_FMS_Upper_INC
+#  - get: H:AS1000_PFD_FMS_Upper_DEC
+#  - get: H:AS1000_PFD_FMS_Upper_PUSH
 #
-##  - var: H:AS1000_MID_NAV_1_Push
-##  - var: H:AS1000_MID_NAV_2_Push
-##  - var: H:AS1000_MID_DME_Push
-##  - var: H:AS1000_MID_MKR_Mute_Push
-##  - var: H:AS1000_MID_HI_SENS_Push
-##  - var: H:AS1000_MID_COM_3_Push
-##  - var: H:AS1000_MID_COM_Mic_3_Push
-##  - var: H:AS1000_MID_COM_2_Push
-##  - var: H:AS1000_MID_COM_Mic_2_Push
-##  - var: H:AS1000_MID_COM_1_Push
-##  - var: H:AS1000_MID_COM_Mic_1_Push
+##  - get: H:AS1000_MID_NAV_1_Push
+##  - get: H:AS1000_MID_NAV_2_Push
+##  - get: H:AS1000_MID_DME_Push
+##  - get: H:AS1000_MID_MKR_Mute_Push
+##  - get: H:AS1000_MID_HI_SENS_Push
+##  - get: H:AS1000_MID_COM_3_Push
+##  - get: H:AS1000_MID_COM_Mic_3_Push
+##  - get: H:AS1000_MID_COM_2_Push
+##  - get: H:AS1000_MID_COM_Mic_2_Push
+##  - get: H:AS1000_MID_COM_1_Push
+##  - get: H:AS1000_MID_COM_Mic_1_Push
 #
-#  - var: H:AS1000_MFD_SOFTKEYS_1
-#  - var: H:AS1000_MFD_SOFTKEYS_2
-#  - var: H:AS1000_MFD_SOFTKEYS_3
-#  - var: H:AS1000_MFD_SOFTKEYS_4
-#  - var: H:AS1000_MFD_SOFTKEYS_5
-#  - var: H:AS1000_MFD_SOFTKEYS_6
-#  - var: H:AS1000_MFD_SOFTKEYS_7
-#  - var: H:AS1000_MFD_SOFTKEYS_8
-#  - var: H:AS1000_MFD_SOFTKEYS_9
-#  - var: H:AS1000_MFD_SOFTKEYS_10
-#  - var: H:AS1000_MFD_SOFTKEYS_11
-#  - var: H:AS1000_MFD_SOFTKEYS_12
-#  - var: H:AS1000_MFD_CLR
-#  - var: H:AS1000_MFD_ENT_Push
-#  - var: H:AS1000_MFD_PPL_Push
-#  - var: H:AS1000_MFD_PROC_Push
-#  - var: H:AS1000_MFD_DIRECTTO
-#  - var: H:AS1000_MFD_MENU_Push
-#  - var: H:AS1000_MFD_JOYSTICK_LEFT
-#  - var: H:AS1000_MFD_JOYSTICK_RIGHT
-#  - var: H:AS1000_MFD_JOYSTICK_UP
-#  - var: H:AS1000_MFD_JOYSTICK_DOWN
-#  - var: H:AS1000_MFD_FMS_Lower_INC
-#  - var: H:AS1000_MFD_FMS_Lower_DEC
-#  - var: H:AS1000_MFD_FMS_Upper_INC
-#  - var: H:AS1000_MFD_FMS_Upper_DEC
-#  - var: H:AS1000_MFD_FMS_Upper_PUSH
+#  - get: H:AS1000_MFD_SOFTKEYS_1
+#  - get: H:AS1000_MFD_SOFTKEYS_2
+#  - get: H:AS1000_MFD_SOFTKEYS_3
+#  - get: H:AS1000_MFD_SOFTKEYS_4
+#  - get: H:AS1000_MFD_SOFTKEYS_5
+#  - get: H:AS1000_MFD_SOFTKEYS_6
+#  - get: H:AS1000_MFD_SOFTKEYS_7
+#  - get: H:AS1000_MFD_SOFTKEYS_8
+#  - get: H:AS1000_MFD_SOFTKEYS_9
+#  - get: H:AS1000_MFD_SOFTKEYS_10
+#  - get: H:AS1000_MFD_SOFTKEYS_11
+#  - get: H:AS1000_MFD_SOFTKEYS_12
+#  - get: H:AS1000_MFD_CLR
+#  - get: H:AS1000_MFD_ENT_Push
+#  - get: H:AS1000_MFD_PPL_Push
+#  - get: H:AS1000_MFD_PROC_Push
+#  - get: H:AS1000_MFD_DIRECTTO
+#  - get: H:AS1000_MFD_MENU_Push
+#  - get: H:AS1000_MFD_JOYSTICK_LEFT
+#  - get: H:AS1000_MFD_JOYSTICK_RIGHT
+#  - get: H:AS1000_MFD_JOYSTICK_UP
+#  - get: H:AS1000_MFD_JOYSTICK_DOWN
+#  - get: H:AS1000_MFD_FMS_Lower_INC
+#  - get: H:AS1000_MFD_FMS_Lower_DEC
+#  - get: H:AS1000_MFD_FMS_Upper_INC
+#  - get: H:AS1000_MFD_FMS_Upper_DEC
+#  - get: H:AS1000_MFD_FMS_Upper_PUSH
 
 # BELOW HAS NOT BEEN TESTED YET
-#  - var: A:AUTOPILOT BACKCOURSE HOLD, Bool
-#    evt: "value ? '(>K:AP_BC_HOLD_ON)' : '(>K:AP_BC_HOLD_OFF)'"
-#  - var: A:AUTOPILOT DISENGAGED, Bool
-#    evt: (>K:AUTOPILOT_DISENGAGE_SET)
+#  - get: A:AUTOPILOT BACKCOURSE HOLD, Bool
+#    set: "value ? '(>K:AP_BC_HOLD_ON)' : '(>K:AP_BC_HOLD_OFF)'"
+#  - get: A:AUTOPILOT DISENGAGED, Bool
+#    set: (>K:AUTOPILOT_DISENGAGE_SET)
 
 #    use_calculator: true
 #  -
-#    var: A:AUTOPILOT MACH HOLD VAR:1
+#    get: A:AUTOPILOT MACH HOLD VAR:1
 #    units: Mach
 #    multiply_by: 100
-#    evt: K:AP_MACH_VAR_SET(1, value)
+#    set: K:AP_MACH_VAR_SET(1, value)
 #    condition:
-#      var:
-#        var: A:AUTOPILOT MANAGED SPEED IN MACH
+#      get:
+#        get: A:AUTOPILOT MANAGED SPEED IN MACH
 #        var_units: Bool
 #        var_type: bool
 #      equals:
 #        Bool: true
 #    unreliable: true
 #  - #
-#    var: A:AUTOPILOT MANAGED SPEED IN MACH, Bool
-#    evt: "value ? '(>K:AP_MANAGED_SPEED_IN_MACH_ON)' : '(>K:AP_MANAGED_SPEED_IN_MACH_OFF)'"
-#  - var: A:AUTOPILOT MAX BANK ID, Number
-#    evt: (>K:AP_MAX_BANK_SET)
-#  - var: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
-#    evt: (>K:AUTO_THROTTLE_TO_GA)
-#  - var: A:AUTOPILOT WING LEVELER, Bool
-#    evt: "value ? '(>K:AP_WING_LEVELER_ON)' : '(>K:AP_WING_LEVELER_OFF)'"
-#  - var: A:AUTOPILOT YAW DAMPER, Bool
-#    evt: "value ? '(>K:YAW_DAMPER_ON)' : '(>K:YAW_DAMPER_OFF)'"
+#    get: A:AUTOPILOT MANAGED SPEED IN MACH, Bool
+#    set: "value ? '(>K:AP_MANAGED_SPEED_IN_MACH_ON)' : '(>K:AP_MANAGED_SPEED_IN_MACH_OFF)'"
+#  - get: A:AUTOPILOT MAX BANK ID, Number
+#    set: (>K:AP_MAX_BANK_SET)
+#  - get: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
+#    set: (>K:AUTO_THROTTLE_TO_GA)
+#  - get: A:AUTOPILOT WING LEVELER, Bool
+#    set: "value ? '(>K:AP_WING_LEVELER_ON)' : '(>K:AP_WING_LEVELER_OFF)'"
+#  - get: A:AUTOPILOT YAW DAMPER, Bool
+#    set: "value ? '(>K:YAW_DAMPER_ON)' : '(>K:YAW_DAMPER_OFF)'"
 
 #  - type: event
-#    evt: K:AP_ALT_HOLD
+#    set: K:AP_ALT_HOLD
 #  - type: event
-#    evt: K:AP_APR_HOLD
+#    set: K:AP_APR_HOLD
 #  - type: event
-#    evt: K:AP_PITCH_LEVELER_ON
+#    set: K:AP_PITCH_LEVELER_ON
 #  - type: event
-#    evt: K:AP_PITCH_LEVELER_OFF
+#    set: K:AP_PITCH_LEVELER_OFF
 #  - type: event
-#    evt: K:AUTO_THROTTLE_DISCONNECT
-#  - var: L:WT1000_ControlPad_Mode
-#  - var: L:WT1000_ControlPad_ModeInput_Inhibited
+#    set: K:AUTO_THROTTLE_DISCONNECT
+#  - get: L:WT1000_ControlPad_Mode
+#  - get: L:WT1000_ControlPad_ModeInput_Inhibited

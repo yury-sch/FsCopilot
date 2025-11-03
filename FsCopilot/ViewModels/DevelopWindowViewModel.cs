@@ -127,13 +127,14 @@ public partial class Node : ObservableObject, IDisposable
         _sim = sim;
         SubNodes = [];
         
-        var name = def.GetVar(out var units);
+        var getVar = def.Get;
+        var units = def.Units;
         var title = new StringBuilder();
-        title.Append(name);
+        title.Append(getVar);
         if (!string.IsNullOrWhiteSpace(units)) title.Append($", {units}");
         Title = title.ToString();
         
-        _sub = sim.Stream(name, units)
+        _sub = sim.Stream(getVar, units)
             .Throttle(TimeSpan.FromMilliseconds(250))
             .WithPreviousFirstPair()
             .Subscribe(pair => Dispatcher.UIThread.Post(() =>
@@ -144,28 +145,18 @@ public partial class Node : ObservableObject, IDisposable
 
     private Node(SimClient sim, Definition def, object value, object prevValue) : this(string.Empty, false)
     {
-        // Name =  $"{def.Name}_{DateTime.Now:O}_{Convert.ToString(value, CultureInfo.InvariantCulture)}"
-        // Title = $"{DateTime.Now:HH:mm:ss}: {value}"
         _sim = sim;
         _def = def;
         Value = value;
         PrevValueValue = prevValue;
         IsVariable = true;
-        if (def.TryGetEvent(value, prevValue, out var eventName, out var val0, out var val1, out var val2, out var val3, out var val4))
-        {
-            if (val0 != null) Title += $"{Convert.ToString(val0, CultureInfo.InvariantCulture)} ";
-            if (val1 != null) Title += $"{Convert.ToString(val1, CultureInfo.InvariantCulture)} ";
-            if (val2 != null) Title += $"{Convert.ToString(val2, CultureInfo.InvariantCulture)} ";
-            if (val3 != null) Title += $"{Convert.ToString(val3, CultureInfo.InvariantCulture)} ";
-            if (val4 != null) Title += $"{Convert.ToString(val4, CultureInfo.InvariantCulture)} ";
-            Title += $"(>{eventName})";
-        }
-        else
-        {
-            var name = def.GetVar(out _);
-            Title += $"{Convert.ToString(value, CultureInfo.InvariantCulture)} ";
-            Title += $"(>{name})";
-        }
+        var setVar = def.Set(value, prevValue, out var val0, out var val1, out var val2, out var val3, out var val4);
+        Title += $"{Convert.ToString(val0, CultureInfo.InvariantCulture)} ";
+        if (val1 != null) Title += $"{Convert.ToString(val1, CultureInfo.InvariantCulture)} ";
+        if (val2 != null) Title += $"{Convert.ToString(val2, CultureInfo.InvariantCulture)} ";
+        if (val3 != null) Title += $"{Convert.ToString(val3, CultureInfo.InvariantCulture)} ";
+        if (val4 != null) Title += $"{Convert.ToString(val4, CultureInfo.InvariantCulture)} ";
+        Title += $"(>{setVar})";
     }
 
     // public Node(string raw, JsonElement json)
@@ -190,23 +181,9 @@ public partial class Node : ObservableObject, IDisposable
     [RelayCommand]
     private void Push()
     {
-        if (_sim != null && _def != null && Value != null && PrevValueValue != null)
-        {
-            if (!_def.TryGetEvent(Value, PrevValueValue, out var eventName, out var val0, out var val1, out var val2,
-                    out var val3, out var val4))
-            {
-                var name = _def.GetVar(out _);
-                _sim.Set(name, Value);
-                return;
-            }
-
-            // var value = _def.TransformValue(Value);
-            _sim.Set(eventName, val0, val1, val2, val3, val4);
-            return;
-        }
-        // else if (_socket != null && _rawJson != null)
-        // {
-        //     await Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, _rawJson)));
-        // }
+        if (_sim == null || _def == null || Value == null || PrevValueValue == null) return;
+        var eventName = _def.Set(Value, PrevValueValue, out var val0, out var val1, out var val2, out var val3,
+            out var val4);
+        _sim.Set(eventName, val0, val1, val2, val3, val4);
     }
 }
