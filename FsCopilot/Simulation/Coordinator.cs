@@ -1,6 +1,5 @@
 namespace FsCopilot.Simulation;
 
-using System.Collections.Concurrent;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -16,11 +15,8 @@ public class Coordinator : IDisposable
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
     private CompositeDisposable _cSubs = new();
-    // private readonly BehaviorSubject<string> _aircraft = new(string.Empty);
     private readonly BehaviorSubject<bool?> _configured = new(null);
-    // public IObservable<string> Aircraft => _aircraft;
     public IObservable<bool?> Configured => _configured;
-    private readonly ConcurrentDictionary<string, DateTime> _throttle = new ();
 
     public Coordinator(SimClient sim, Peer2Peer peer2Peer, MasterSwitch masterSwitch)
     {
@@ -36,9 +32,6 @@ public class Coordinator : IDisposable
                 if (match.Success) path = match.Groups[1].Value;
                 Load(path);
             }));
-
-        // _d.Add(simConnect.Stream<Aircraft>()
-        //     .Subscribe(Load));
 
         AddLink<Physics, Physics.Codec>(master: true);
         AddLink<Control, Control.Codec>(master: true);
@@ -74,23 +67,6 @@ public class Coordinator : IDisposable
         }
 
         foreach (var def in definitions) AddLink(def);
-        
-        // var ignoreEvents = definitions.Ignore.Where(i => i[0] == 'H').ToHashSet();
-        // _cSubs.Add(_sim.HEvents
-        //     .Delay(TimeSpan.FromMilliseconds(100))
-        //     .Subscribe(evt =>
-        //     {
-        //         evt = $"H:{evt}";
-        //         if (ignoreEvents.Contains(evt) || Throttled(evt)) return;
-        //         _peer2Peer.SendAll(new HUpdate(evt));
-        //         Log.Debug("[PACKET] Sent {Name}", evt);
-        //     }));
-        //
-        // _cSubs.Add(_peer2Peer.Subscribe<HUpdate>(update =>
-        // {
-        //     Log.Debug("[PACKET] RECEIVE {Name}", update.Evt);
-        //     _sim.Set(update.Evt, string.Empty);
-        // }));
     }
 
     // private void AddLink<TPacket, TCodec, TInterpolator>(bool master) 
@@ -143,10 +119,10 @@ public class Coordinator : IDisposable
             .Do(value => currentValue = value)
             .Delay(getVar[0] == 'H' ? TimeSpan.FromMilliseconds(200) : TimeSpan.Zero)
             .Where(_ => !master || _masterSwitch.IsMaster)
+            .Where(_ => !Skip.Should(getVar))
             .Subscribe(value =>
             {
-                if (Throttled(getVar)) return;
-                if (def.Skip != null) Throttle(def.Skip);
+                if (def.Skip != null) Skip.Next(def.Skip);
                 _peer2Peer.SendAll(new Update(getVar, value));
                 Log.Debug("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
@@ -160,16 +136,10 @@ public class Coordinator : IDisposable
             {
                 var setVar = def.Set(update.Value, currentValue ?? update.Value,
                     out var val0, out var val1, out var val2, out var val3, out var val4);
-                if (setVar[0] != 'H') Throttle(getVar);
+                if (setVar[0] != 'H') Skip.Next(getVar);
                 _sim.Set(setVar, val0, val1, val2, val3, val4);
             }));
     }
-
-    private void Throttle(string key) => _throttle.AddOrUpdate(key,
-        _ => DateTime.UtcNow + TimeSpan.FromMilliseconds(200),
-        (_, _) => DateTime.UtcNow + TimeSpan.FromMilliseconds(200));
-
-    private bool Throttled(string name) => _throttle.TryGetValue(name, out var throttle) && DateTime.UtcNow <= throttle;
 
     private record Update(string Name, object Value)
     {
@@ -183,48 +153,20 @@ public class Coordinator : IDisposable
                 bw.Write((byte)type);
                 switch (type)
                 {
-                    case TypeCode.String:
-                        bw.Write((string)v);
-                        break;
-                    case TypeCode.Int32:
-                        bw.Write((int)v);
-                        break;
-                    case TypeCode.Int64:
-                        bw.Write((long)v);
-                        break;
-                    case TypeCode.Double:
-                        bw.Write((double)v);
-                        break;
-                    case TypeCode.Single:
-                        bw.Write((float)v);
-                        break;
-                    case TypeCode.Boolean:
-                        bw.Write((bool)v);
-                        break;
-                    case TypeCode.Int16:
-                        bw.Write((short)v);
-                        break;
-                    case TypeCode.UInt16:
-                        bw.Write((ushort)v);
-                        break;
-                    case TypeCode.UInt32:
-                        bw.Write((uint)v);
-                        break;
-                    case TypeCode.UInt64:
-                        bw.Write((ulong)v);
-                        break;
-                    case TypeCode.Decimal:
-                        bw.Write((decimal)v);
-                        break;
-                    case TypeCode.SByte:
-                        bw.Write((sbyte)v);
-                        break;
-                    case TypeCode.Byte:
-                        bw.Write((byte)v);
-                        break;
-                    default:
-                        throw new NotSupportedException(
-                            $"Data.Value type '{v.GetType().FullName}' is not supported by codec");
+                    case TypeCode.String: bw.Write((string)v); break;
+                    case TypeCode.Int32: bw.Write((int)v); break;
+                    case TypeCode.Int64: bw.Write((long)v); break;
+                    case TypeCode.Double: bw.Write((double)v); break;
+                    case TypeCode.Single: bw.Write((float)v); break;
+                    case TypeCode.Boolean: bw.Write((bool)v); break;
+                    case TypeCode.Int16: bw.Write((short)v); break;
+                    case TypeCode.UInt16: bw.Write((ushort)v); break;
+                    case TypeCode.UInt32: bw.Write((uint)v); break;
+                    case TypeCode.UInt64: bw.Write((ulong)v); break;
+                    case TypeCode.Decimal: bw.Write((decimal)v); break;
+                    case TypeCode.SByte: bw.Write((sbyte)v); break;
+                    case TypeCode.Byte: bw.Write((byte)v); break;
+                    default: throw new NotSupportedException( $"Data.Value type '{v.GetType().FullName}' is not supported by codec");
                 }
             }
 
