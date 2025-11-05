@@ -83,6 +83,9 @@ For example:
     }
 ```
 
+You can find a detailed documentation here:
+👉 [FS Copilot — Definitions Guide](https://github.com/yury-sch/FsCopilot/wiki)
+
 ## 🧑‍💻 Author
 
 **FS Copilot** is created by aviation and MSFS enthusiast **Yury Sсherbakov.**
