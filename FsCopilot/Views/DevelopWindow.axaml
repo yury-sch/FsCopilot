@@ -43,7 +43,8 @@
                     Classes="Card Tree">
                 <ScrollViewer Classes="Tree"
                               DockPanel.Dock="Bottom">
-                    <TreeView ItemsSource="{Binding Nodes}">
+                    <TreeView x:Name="DefTree"
+                              ItemsSource="{Binding Nodes}">
                         <TreeView.Styles>
                             <Style Selector="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).IsExpanded}"></Setter>
@@ -52,14 +53,31 @@
                         
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-                                <DockPanel>
-                                    <Button IsVisible="{Binding IsVariable}" 
-                                            Classes="Push"
-                                            Content="Push"
-                                            Command="{Binding PushCommand}"/>
-                                    <TextBlock Classes="Line"
-                                               Text="{Binding Title}"/>
-                                </DockPanel>
+                                <Grid>
+                                    <!-- highlight overlay -->
+                                    <Border IsHitTestVisible="False"
+                                            CornerRadius="6"
+                                            Margin="2"
+                                            Background="{DynamicResource SystemAccentColor}"
+                                            Opacity="{Binding IsPulse}">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <!-- smooth in/out -->
+                                                <DoubleTransition Property="Opacity" Duration="0:0:0.35"/>
+                                            </Transitions>
+                                        </Border.Transitions>
+                                    </Border>
+
+                                    <!-- header content -->
+                                    <StackPanel Orientation="Horizontal" Margin="6,2">
+                                        <Button IsVisible="{Binding IsVariable}" 
+                                                Classes="Push"
+                                                Content="Push"
+                                                Command="{Binding PushCommand}"/>
+                                        <TextBlock Classes="Line"
+                                                   Text="{Binding Title}"/>
+                                    </StackPanel>
+                                </Grid>
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>

@@ -101,6 +101,7 @@ public partial class Node : ObservableObject, IDisposable
     private readonly Definition? _def;
     private readonly IDisposable? _sub;
     private readonly string? _rawJson;
+    
     public ObservableCollection<Node>? SubNodes { get; }
 
     // public string Name { get; }
@@ -109,6 +110,8 @@ public partial class Node : ObservableObject, IDisposable
     public object? PrevValueValue { get; }
     public bool IsVariable { get; }
     public bool IsExpanded { get; } = true;
+    [ObservableProperty]
+    private bool _isPulse; // IsPulse
 
     private Node(string title, bool isExpanded)
     {
@@ -140,6 +143,7 @@ public partial class Node : ObservableObject, IDisposable
             .Subscribe(pair => Dispatcher.UIThread.Post(() =>
             {
                 SubNodes.Add(new(_sim, def, pair.Curr, pair.Prev));
+                PulseOnce(TimeSpan.FromMilliseconds(1200));
             }));
     }
 
@@ -157,6 +161,19 @@ public partial class Node : ObservableObject, IDisposable
         if (val3 != null) Title += $"{Convert.ToString(val3, CultureInfo.InvariantCulture)} ";
         if (val4 != null) Title += $"{Convert.ToString(val4, CultureInfo.InvariantCulture)} ";
         Title += $"(>{setVar})";
+    }
+
+    // Turns IsPulse on, then off after duration (UI-thread safe)
+    private void PulseOnce(TimeSpan duration)
+    {
+        Dispatcher.UIThread.Post(() => IsPulse = true);
+        var t = new DispatcherTimer { Interval = duration };
+        t.Tick += (_, _) =>
+        {
+            t.Stop();
+            Dispatcher.UIThread.Post(() => IsPulse = false);
+        };
+        t.Start();
     }
 
     // public Node(string raw, JsonElement json)
