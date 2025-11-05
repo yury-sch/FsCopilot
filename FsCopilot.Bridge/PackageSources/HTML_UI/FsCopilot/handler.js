@@ -3,6 +3,7 @@ class FsCopilotHandler {
         this.instrument = instrument;
         this.panelId = Math.floor(Math.random() * 100000)
         // Only one panel should fire event
+        console.log(`[FsCopilot] Created handler ${this.panelId} for instrument ${this.instrument.instrumentIdentifier}`);
         SimVar.SetSimVarValue('L:FsCopilotHandlerId', 'Number', this.panelId)
 
         // this.events = new FsCopilotHTMLEvents(this.onButton.bind(this), this.onInput.bind(this))
@@ -67,7 +68,7 @@ class FsCopilotHandler {
     }
 
     interact(name) {
-        if (this.canProcess()) return; // Only one gauge should send interaction button events
+        if (!this.canProcess()) return; // Only one gauge should send interaction button events
         this.network.send({
             type: 'hevent',
             name: name

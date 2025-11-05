@@ -24,14 +24,14 @@ public class SimClient : IDisposable
     // private readonly ConcurrentDictionary<string, ushort> _lVars = new();
     private uint _defId = 100;
     private uint _requestId = 100;
-    private readonly Subject<string> _hEvents = new();
+    // private readonly Subject<string> _hEvents = new();
     private readonly WatsonWsServer _socket;
     private readonly IObservable<JsonElement> _socketMessages;
 
     public IObservable<bool> Connected => _headless.Connected;
     public IObservable<string> Aircraft => _headless.Aircraft;
     
-    public IObservable<string> HEvents => _hEvents;
+    // public IObservable<string> HEvents => _hEvents;
 
     public SimClient(string appName)
     {
@@ -42,7 +42,7 @@ public class SimClient : IDisposable
         catch (Exception e) { Log.Error(e, "Failed to start socket"); }
         
         // Set("L:FsCopilotStarted", true);
-         
+
         _socketMessages = Observable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
                 h => _socket.MessageReceived += h,
@@ -50,19 +50,19 @@ public class SimClient : IDisposable
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
             .Select(json =>
             {
-                Debug.WriteLine(json);
+                Log.Debug("Received UI data: {json}", json);
                 return JsonDocument.Parse(json).RootElement;
-            });
-            
-        _socketMessages.Subscribe(json => 
-            {
-                var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-                if (type == "hevent" && json.TryGetProperty("name", out var keyProp))
-                {
-                    _hEvents.OnNext(keyProp.ToString());
-                    return;
-                }
-            });
+            }).Replay(0).RefCount();
+
+        // _socketMessages.Subscribe(json => 
+        //     {
+        //         var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
+        //         if (type == "hevent" && json.TryGetProperty("name", out var keyProp))
+        //         {
+        //             _hEvents.OnNext(keyProp.ToString());
+        //             return;
+        //         }
+        //     });
 
         // _headless.Configure(sim =>
         // {
@@ -309,9 +309,22 @@ public class SimClient : IDisposable
                 _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, unwatch)));
             };
         }).Replay(1).RefCount());
+
+    private IObservable<object> HVar(string name) => 
+        (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
+        {
+            var sub = _socketMessages.Subscribe(json =>
+            {
+                var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
+                if (type == "hevent"
+                    && json.TryGetProperty("name", out var keyProp) && keyProp.ToString() == name[2..])
+                {
+                    observer.OnNext(DefaultHValue);
+                }
+            });
     
-    private IObservable<object> HVar(string datumName) =>
-        _hEvents.Where(e => string.Equals(e, datumName[2..], StringComparison.OrdinalIgnoreCase)).Select(_ => DefaultHValue);
+            return () => sub.Dispose();
+        }).Replay(1).RefCount());
 
     private enum DEF : uint;
     private enum REQ : uint;

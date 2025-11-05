@@ -136,7 +136,7 @@ public class Coordinator : IDisposable
             {
                 var setVar = def.Set(update.Value, currentValue ?? update.Value,
                     out var val0, out var val1, out var val2, out var val3, out var val4);
-                if (setVar[0] != 'H') Skip.Next(getVar);
+                Skip.Next(getVar);
                 _sim.Set(setVar, val0, val1, val2, val3, val4);
             }));
     }
