@@ -21,9 +21,8 @@ shared:
   - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG
 #  - get: A:AUTOPILOT ALTITUDE SLOT INDEX, Number
 #    set: (>K:AP_ALTITUDE_SLOT_INDEX_SET)
-  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # hack for not initialized ALT
-    set: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : ''"
-  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALT
+  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # A hack for uninitialized ALT. First, you need to trigger the k event when the height isn't set, otherwise the value won't update. We can't use the k event all the time because the value is set incorrectly with it 
+    set: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : '${value} (>A:AUTOPILOT ALTITUDE LOCK VAR:1)'"
     
   - get: H:AS1000_PFD_SOFTKEYS_1
   - get: H:AS1000_PFD_SOFTKEYS_2

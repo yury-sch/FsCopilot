@@ -10,7 +10,7 @@ shared:
   - get: A:AIRSPEED TRUE CALIBRATE, Degrees # AIRSPEED CALIBRATION
     
   - get: A:ATTITUDE BARS POSITION, Percent # ATTITUDE CALIBRATION
-    set: "`0 ${value} (>K:ATTITUDE_BARS_POSITION_SET)`" # todo need to fix double
+    set: "`0 ${value} (>K:ATTITUDE_BARS_POSITION_SET)`"
     
   - get: A:KOHLSMAN SETTING MB:2, Millibars # ALTIMETER CALIBRATION
     set: "`${value * 16} 2 (>K:KOHLSMAN_SET)`"
@@ -28,8 +28,8 @@ shared:
   - get: A:ENG EXHAUST GAS TEMPERATURE GES:1, Percent # EGT
     set: "`${value * 327.67} (>K:EGT1_SET)`"
 
-  - get: A:HEADING INDICATOR, Degrees # HEADING todo sometimes it doesn't work o_O
-    set: (>K:GYRO_DRIFT_SET_EX1) # todo need to fix double
+  - get: A:HEADING INDICATOR, Degrees # HEADING todo we should use fEEpsilon = 1, otherwise it doesn't work
+    set: (>K:GYRO_DRIFT_SET_EX1)
   - get: L:C172X_HEADING_KNOB # HEADING
   - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HEADING BUG
     set: "`${value} 1 (>K:HEADING_BUG_SET)`"
@@ -87,7 +87,7 @@ shared:
           default: return ''
       }
 
-  - get: A:RECIP ENG LEFT MAGNETO:, Bool # LEFT MAGNETO
+  - get: A:RECIP ENG LEFT MAGNETO:1, Bool # LEFT MAGNETO
   - get: A:RECIP ENG RIGHT MAGNETO:1, Bool # RIGHT MAGNETO
   - get: A:GENERAL ENG STARTER:1, Bool # START
     set: (>K:SET_STARTER1_HELD)
@@ -143,7 +143,7 @@ shared:
     set: (>K:PARKING_BRAKE_SET)
 
   - get: A:ELEVATOR TRIM PCT, Percent scaler 16k # TRIM
-    set: (>K:ELEVATOR_TRIM_SET) # todo need to fix double
+    set: (>K:ELEVATOR_TRIM_SET)
   
   - get: A:GENERAL ENG FUEL VALVE:1, Bool # FUEL VALVE
     set: (>K:SET_FUEL_VALVE_ENG1)

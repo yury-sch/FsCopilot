@@ -1,11 +1,11 @@
 include:
   - modules/G1000_NXi.yaml
   
-master:
-  #  - get: L:AILERON_ANIM
-  #  - get: L:ELEVATOR_ANIM
-  #  - get: L:ELEVATOR_STICK
-  - get: L:INPUT_TRIM_AXIS # Trim
+#master:
+#  #  - get: L:AILERON_ANIM
+#  #  - get: L:ELEVATOR_ANIM
+#  #  - get: L:ELEVATOR_STICK
+#  - get: L:INPUT_TRIM_AXIS # Trim todo I tested it with the autopilot in flight and it doesn't work correctly. 
     
 shared:
   - get: A:INTERACTIVE POINT GOAL:2, Bool # Main door
