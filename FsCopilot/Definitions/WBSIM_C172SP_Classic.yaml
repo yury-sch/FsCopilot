@@ -28,7 +28,7 @@ shared:
   - get: A:ENG EXHAUST GAS TEMPERATURE GES:1, Percent # EGT
     set: "`${value * 327.67} (>K:EGT1_SET)`"
 
-  - get: A:HEADING INDICATOR, Degrees # HEADING todo we should use fEEpsilon = 1, otherwise it doesn't work
+  - get: A:HEADING INDICATOR, Degrees # HEADING
     set: (>K:GYRO_DRIFT_SET_EX1)
   - get: L:C172X_HEADING_KNOB # HEADING
   - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HEADING BUG

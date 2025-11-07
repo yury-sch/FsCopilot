@@ -97,6 +97,8 @@ public static class SimConnectExtensions
             case "position step":
             case "bcd16":
             case "bco16":
+            case "degrees":
+            case "degree":
                 return SIMCONNECT_DATATYPE.INT32;
         }
 
