@@ -1,3 +1,7 @@
+include:
+  - modules/AS_GNS530.yaml
+  - modules/AS_GNS430.yaml
+
 shared:
 # M803
   - get: H:M803_OAT_PRESS # O.A.T
@@ -46,46 +50,6 @@ shared:
   - get: L:C172X_XPNDR_BREAKER_PULLED # XPNDR
       
   - get: L:KI227_CARD_ADJUSTMENT # ADF CARD BEARING
-  
-# KMA28
-  - get: A:AUDIO PANEL VOLUME, Percent # VOL
-    set: (>K:AUDIO_PANEL_VOLUME_SET)
-  - get: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI
-    set: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
-  - get: A:MARKER BEACON TEST MUTE, Bool # T/M
-    set: (>K:MARKER_BEACON_TEST_MUTE)
-  - get: A:INTERCOM MODE, Enum # ISO/ALL/CREW
-    set: (>K:INTERCOM_MODE_SET)
-  - get: A:COM RECEIVE:1, Bool # COM1
-    set: (>K:COM1_RECEIVE_SELECT)
-  - get: A:COM RECEIVE:2, Bool # COM2
-    set: (>K:COM2_RECEIVE_SELECT)
-  - get: A:NAV SOUND:1, Bool # NAV1
-    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
-  - get: A:NAV SOUND:2, Bool # NAV2
-    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
-  - get: A:MARKER SOUND, Bool # MKR
-    set: (>K:MARKER_SOUND_TOGGLE)
-  - get: A:INTERCOM SYSTEM ACTIVE, Bool # ICS
-    set: (>K:TOGGLE_ICS)
-  - get: A:ADF SOUND:1, Bool # ADF
-    set: (>K:RADIO_ADF_IDENT_SET) # AUX
-  - get: L:XMLVAR_AudioPanel_1
-  - get: A:DME SOUND:1, Bool # DME
-    set: (>K:RADIO_DME1_IDENT_SET)
-  - get: A:SPEAKER ACTIVE, Bool # SPR
-    set: (>K:TOGGLE_SPEAKER)
-  - get: Z:AUDIO_Knob_Selector_1 # MIC
-    set: |
-      switch (value) {
-          case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
-          case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'
-          case  40: return '(>H:KMA28_TRANSMISSION_KNOB_COM1)'
-          case  60: return '(>H:KMA28_TRANSMISSION_KNOB_COM1_2)'
-          case  80: return '(>H:KMA28_TRANSMISSION_KNOB_COM2_1)'
-          case 100: return '(>H:KMA28_TRANSMISSION_KNOB_TEL)'
-          default: return ''
-      }
 
   - get: A:RECIP ENG LEFT MAGNETO:1, Bool # LEFT MAGNETO
   - get: A:RECIP ENG RIGHT MAGNETO:1, Bool # RIGHT MAGNETO
@@ -151,9 +115,83 @@ shared:
   - get: A:FUEL TANK SELECTOR:1, Enum
     set: (>K:FUEL_SELECTOR_SET)
   
-  
-  
   - get: A:LIGHT POTENTIOMETER:10, Percent # FLOOD LIGHT
     set: "`${value} (>K:LIGHT_POTENTIOMETER_10_SET)`"
   - get: A:LIGHT POTENTIOMETER:11, Percent # FLOOD LIGHT
     set: "`${value} (>K:LIGHT_POTENTIOMETER_11_SET)`"
+  
+# KMA28
+  - get: A:AUDIO PANEL VOLUME, Percent # VOL
+    set: (>K:AUDIO_PANEL_VOLUME_SET)
+  - get: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI
+    set: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
+  - get: A:MARKER BEACON TEST MUTE, Bool # T/M
+    set: (>K:MARKER_BEACON_TEST_MUTE)
+  - get: A:INTERCOM MODE, Enum # ISO/ALL/CREW
+    set: (>K:INTERCOM_MODE_SET)
+  - get: A:COM RECEIVE:1, Bool # COM1
+    set: (>K:COM1_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:2, Bool # COM2
+    set: (>K:COM2_RECEIVE_SELECT)
+  - get: A:NAV SOUND:1, Bool # NAV1
+    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - get: A:MARKER SOUND, Bool # MKR
+    set: (>K:MARKER_SOUND_TOGGLE)
+  - get: A:INTERCOM SYSTEM ACTIVE, Bool # ICS
+    set: (>K:TOGGLE_ICS)
+  - get: A:ADF SOUND:1, Bool # ADF
+    set: (>K:RADIO_ADF_IDENT_SET) # AUX
+  - get: L:XMLVAR_AudioPanel_1
+  - get: A:DME SOUND:1, Bool # DME
+    set: (>K:RADIO_DME1_IDENT_SET)
+  - get: A:SPEAKER ACTIVE, Bool # SPR
+    set: (>K:TOGGLE_SPEAKER)
+  - get: Z:AUDIO_Knob_Selector_1 # MIC
+    set: |
+      switch (value) {
+          case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
+          case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'
+          case  40: return '(>H:KMA28_TRANSMISSION_KNOB_COM1)'
+          case  60: return '(>H:KMA28_TRANSMISSION_KNOB_COM1_2)'
+          case  80: return '(>H:KMA28_TRANSMISSION_KNOB_COM2_1)'
+          case 100: return '(>H:KMA28_TRANSMISSION_KNOB_TEL)'
+          default: return ''
+      }
+  
+# KAP140
+  - get: A:AUTOPILOT MASTER, Bool #AP
+    set: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
+  - get: A:AUTOPILOT HEADING LOCK, Bool # HDG
+    set: "value ? '(>K:AP_HDG_HOLD_ON)' : '(>K:AP_HDG_HOLD_OFF)'"
+  - get: L:KAP140_NAVARM
+    set: H:KAP140_NAV_PRESS
+  - get: H:KAP140_NAV_RELEASE
+  - get: L:KAP140_APRARM
+    set: H:KAP140_APR_PRESS
+  - get: H:KAP140_APR_RELEASE
+  - get: L:KAP140_REVARM
+    set: H:KAP140_REV_PRESS
+  - get: H:KAP140_REV_RELEASE
+  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALT
+  - get: A:AUTOPILOT VERTICAL HOLD, Bool
+    set: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
+  - get: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute # UP/DN
+  - get: L:KAP140_ALTARM
+    set: H:KAP140_ARM_PRESS
+  - get: H:KAP140_ARM_RELEASE
+  - get: H:KAP140_BARO_PRESS
+  - get: H:KAP140_BARO_RELEASE
+#  - get: A:AUTOPILOT NAV1 LOCK, Bool # NAV
+#    set: (>K:AP_NAV1_HOLD)
+#  - get: A:AUTOPILOT APPROACH HOLD, Bool # APR
+#    set: (>K:AP_APR_HOLD)
+  - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
+    set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+#  - get: L:KAP140_ALT_ALERTER # we can read, but we can't set
+
+#  - get: H:KAP140_KNOB_OUTER_INC
+#  - get: H:KAP140_KNOB_OUTER_DEC
+#  - get: H:KAP140_KNOB_INNER_INC
+#  - get: H:KAP140_KNOB_INNER_DEC

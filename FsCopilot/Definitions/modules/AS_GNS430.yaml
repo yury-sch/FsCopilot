@@ -1,0 +1,31 @@
+﻿shared:
+  - get: A:COM VOLUME:2, Percent # VOL
+    set: "`${value} (>K:COM2_VOLUME_SET)`"
+  - get: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
+    set: (>K:COM2_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
+    set: (>K:COM2_STBY_RADIO_SET_HZ)
+  
+  - get: A:NAV VOLUME:2, Percent # VOL
+    set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
+  - get: A:NAV ACTIVE FREQUENCY:2, Hz # NAV ACTIVE
+    set: (>K:NAV2_RADIO_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:2, Hz # NAV STANDBY
+    set: (>K:NAV2_STBY_SET_HZ)
+  
+  - get: H:AS430_CDI_Push
+  - get: H:AS430_OBS_Push
+  - get: H:AS430_MSG_Push
+  - get: H:AS430_FPL_Push
+  - get: H:AS430_PROC_Push
+  - get: H:AS430_RightLargeKnob_Right
+  - get: H:AS430_RightLargeKnob_Left
+  - get: H:AS430_RightSmallKnob_Right
+  - get: H:AS430_RightSmallKnob_Left
+  - get: H:AS430_RightSmallKnob_Push
+  - get: H:AS430_RNG_Dezoom
+  - get: H:AS430_RNG_Zoom
+  - get: H:AS430_DirectTo_Push
+  - get: H:AS430_MENU_Push
+  - get: H:AS430_CLR_Push
+  - get: H:AS430_ENT_Push

@@ -1,0 +1,38 @@
+﻿shared:
+  - get: A:COM VOLUME:1, Percent # VOL
+    set: "`${value} (>K:COM1_VOLUME_SET)`"
+  - get: L:AS1000_PFD_SelectedComIndex # COM 1/2
+    set: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
+  - get: A:COM ACTIVE FREQUENCY:1, Hz # COM ACTIVE
+    set: (>K:COM_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:1, Hz # COM STANDBY
+    set: (>K:COM_STBY_RADIO_SET_HZ)
+  
+  - get: A:NAV VOLUME:1, Percent # VOL
+    set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
+  - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV ACTIVE
+    set: (>K:NAV1_RADIO_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:1, Hz # NAV STANDBY
+    set: (>K:NAV1_STBY_SET_HZ)
+    
+  - get: H:AS530_LeftSmallKnob_Push
+  - get: A:GPS DRIVES NAV1, Bool # CDI
+    set: (>K:TOGGLE_GPS_DRIVES_NAV1)
+#  - get: H:AS530_CDI_Push
+  - get: H:AS530_OBS_Push
+  - get: H:AS530_MSG_Push
+  - get: H:AS530_FPL_Push
+  - get: H:AS530_VNAV_Push
+  - get: H:AS530_PROC_Push
+  - get: H:AS530_RightLargeKnob_Right
+  - get: H:AS530_RightLargeKnob_Left
+  - get: H:AS530_RightSmallKnob_Right
+  - get: H:AS530_RightSmallKnob_Left
+  - get: H:AS530_RightSmallKnob_Push
+    
+  - get: H:AS530_RNG_Dezoom
+  - get: H:AS530_RNG_Zoom
+  - get: H:AS530_DirectTo_Push
+  - get: H:AS530_MENU_Push
+  - get: H:AS530_CLR_Push
+  - get: H:AS530_ENT_Push

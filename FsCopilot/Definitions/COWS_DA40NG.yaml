@@ -1,5 +1,5 @@
 include:
-  - modules/G1000_NXi.yaml
+  - modules/AS_G1000_NXi.yaml
   
 master:
 #  - get: L:AILERON_ANIM # resets by aircraft
