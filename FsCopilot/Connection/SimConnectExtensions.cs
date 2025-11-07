@@ -89,7 +89,7 @@ public static class SimConnectExtensions
             case "flag":
             case "flags":
             case "count":
-            case "number":
+            // case "number":
             case "items":
             case "state":
             case "switch":

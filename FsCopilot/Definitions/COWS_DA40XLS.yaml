@@ -2,7 +2,9 @@ include:
   - modules/G1000_NXi.yaml
 
 master:
-  - get: L:INPUT_TRIM_AXIS # The built-in trimmer event doesn't work for some reason
+#  - get: L:AILERON_ANIM # resets by aircraft
+#  - get: L:ELEVATOR_ANIM
+  - get: L:INPUT_TRIM_AXIS # Trim
 
 shared:
   - get: A:INTERACTIVE POINT GOAL:2, Bool # Main door
