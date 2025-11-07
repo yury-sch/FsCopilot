@@ -16,9 +16,9 @@ shared:
   - get: A:INTERACTIVE POINT GOAL:7, Bool # Right window
     set: 8 (>K:TOGGLE_AIRCRAFT_EXIT_FAST)
 
-  - get: A:LIGHT PANEL:1, Percent over 100 # Instrument light
+  - get: L:LIGHTING_PANEL_1 # Instrument light
     set: (>B:LIGHTING_PANEL_1_Set)
-  - get: A:LIGHT GLARESHIELD:1, Percent over 100 # Flood light
+  - get: L:LIGHTING_GLARESHIELD_1 # Flood light
     set: (>B:LIGHTING_GLARESHIELD_1_Set)
 
   - get: A:LIGHT LANDING, Bool # Light switch state for landing light.
