@@ -1,3 +1,5 @@
+> 🌐 Visit the official website — [FS Copilot — Shared Cockpit for MSFS 2024](https://fscopilot.com)
+
 > [!WARNING]
 > **FS Copilot is currently in active development.**
 > This preview version is provided for **testing and familiarization purposes only**.
