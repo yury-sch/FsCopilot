@@ -195,3 +195,21 @@ shared:
 #  - get: H:KAP140_KNOB_OUTER_DEC
 #  - get: H:KAP140_KNOB_INNER_INC
 #  - get: H:KAP140_KNOB_INNER_DEC
+
+# KT76C
+  - get: A:TRANSPONDER STATE:1, Enum # XPDR OFF/SBY/TST/ON/ALT
+    set: |
+      switch (value) {
+          case 0: return '(>H:C172X_XPNDR_OFF)'
+          case 1: return '(>H:C172X_XPNDR_SBY)'
+          case 2: return '(>H:C172X_XPNDR_TST)'
+          case 3: return '(>H:C172X_XPNDR_ON)'
+          case 4: return '(>H:C172X_XPNDR_ALT)'
+          default: return ''
+      }
+  - get: A:TRANSPONDER CODE:1, BCO16 # XPDR Code
+    set: (>K:XPNDR_SET)
+  - get: A:TRANSPONDER IDENT:1, Bool # Ident
+    set: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
+  - get: H:TransponderCLR
+    
