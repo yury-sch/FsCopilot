@@ -2,6 +2,13 @@ var globalPanelData = null;
 var globalInstrumentListener = RegisterViewListener('JS_LISTENER_INSTRUMENTS');
 var handler = null;
 
+Include.addImports([
+    '/FsCopilot/common.js',
+    '/FsCopilot/network.js',
+    '/FsCopilot/watcher.js',
+    '/FsCopilot/handler.js'
+]);
+
 class VCockpitPanel extends HTMLElement {
     constructor() {
         super(...arguments);
@@ -99,7 +106,7 @@ class VCockpitPanel extends HTMLElement {
     }
     registerInstrument(_instrumentName, _instrumentClass) {
         console.log(`[Hook] (registerInstrument) called (${_instrumentName})`);
-        var pattern = Include.absolutePath(window.location.pathname, VCockpitPanel.instrumentRoot);
+        var pattern = Include.absolutePath(window.location.pathname, '../Instruments/');
         var stillLoading = Include.isLoadingScript(pattern);
         if (stillLoading) {
             console.log('[Hook] (registerInstrument) Still Loading Dependencies. Retrying...');
@@ -135,7 +142,8 @@ class VCockpitPanel extends HTMLElement {
             this.data.daInstruments[this.curInstrumentIndex].templateClass = _instrumentClass;
             document.title += ' - ' + template.instrumentIdentifier;
             // FsCopilot
-            handler = new FsCopilotHandler(template)
+            try { handler = new FsCopilotHandler(template); }
+            catch (error) { console.error(error); }
         }
         console.log('[Hook] (createInstrument) Call this.loadNextInstrument()');
         this.loadNextInstrument();
@@ -145,7 +153,7 @@ class VCockpitPanel extends HTMLElement {
         this.curInstrumentIndex++;
         if (this.curInstrumentIndex < this.data.daInstruments.length) {
             var instrument = this.data.daInstruments[this.curInstrumentIndex];
-            // var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
+            // var url = '../Instruments/' + instrument.sUrl;
             var url = '/Pages/VCockpit/Instruments/' + instrument.sUrl;
             var index = this.urlAlreadyImported(instrument.sUrl);
             if (index >= 0) {
@@ -164,7 +172,7 @@ class VCockpitPanel extends HTMLElement {
     setupInstrument(_elem) {
         console.log('[Hook] (setupInstrument) called');
         var instrument = this.data.daInstruments[this.curInstrumentIndex];
-        var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
+        var url = '../Instruments/' + instrument.sUrl;
         url = Include.absoluteURL(window.location.pathname, url);
         diffAndSetAttribute(_elem, 'Guid', instrument.iGUId + '');
         diffAndSetAttribute(_elem, 'Url', url);
@@ -235,7 +243,6 @@ class VCockpitPanel extends HTMLElement {
     }
 }
 
-VCockpitPanel.instrumentRoot = '../Instruments/';
 window.customElements.define('vcockpit-panel', VCockpitPanel);
 
 function registerInstrument(_instrumentName, _instrumentClass) {
@@ -270,11 +277,10 @@ Coherent.on('RefreshVCockpitPanel', function (_data) {
 });
 
 Coherent.on('OnInteractionEvent', function (_target, _args) {
-    console.log('OnInteractionEvent', _args[0]);
     if (!closed) {
         var panel = window.document.getElementById('panel');
         if (panel) {
-            handler.interact(_args[0]);
+            if (!!handler) handler.interact(_args[0]);
 
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
@@ -420,10 +426,3 @@ Coherent.on('Raycast', function (_id, _x, _y) {
     Coherent.trigger('ON_VCOCKPIT_RAYCAST_RESULT', _id, JSON.stringify(result), rect.x, rect.y, rect.width, rect.height);
 });
 checkAutoload();
-
-Include.addImports([
-    '/FsCopilot/common.js',
-    '/FsCopilot/network.js',
-    '/FsCopilot/watcher.js',
-    '/FsCopilot/handler.js'
-]);
