@@ -211,7 +211,7 @@ public class SimClient : IDisposable
 
     public IObservable<object> Stream(string name, string sUnits)
     {
-        if (name.StartsWith("L:")) return SimVar(name, "number");
+        if (name.StartsWith("L:")) return SimVar(name, "number", SIMCONNECT_DATATYPE.FLOAT32);
         if (name.StartsWith("Z:")) return ZVar(name);
         if (name.StartsWith("A:")) return SimVar(name[2..], sUnits);
         if (name.StartsWith("H:")) return HVar(name);
@@ -219,7 +219,7 @@ public class SimClient : IDisposable
         return Observable.Empty<object>();
     }
 
-    private IObservable<object> SimVar(string datumName, string sUnits) => 
+    private IObservable<object> SimVar(string datumName, string sUnits, SIMCONNECT_DATATYPE? datatype = null) => 
         (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
         {
             var defId = (DEF)Interlocked.Increment(ref _defId);
@@ -245,7 +245,7 @@ public class SimClient : IDisposable
             void Initialize(SimConnect sim)
             {
                 Debug.WriteLine($"Initialize {key}. DefId: {defId}");
-                var datumType = SimConnectExtensions.InferDataType(sUnits);
+                SIMCONNECT_DATATYPE datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
 
                 sim.AddToDataDefinition(defId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
