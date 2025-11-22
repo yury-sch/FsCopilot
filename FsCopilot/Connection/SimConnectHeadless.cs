@@ -34,7 +34,7 @@ public sealed class SimConnectHeadless : IDisposable
     public IObservable<SIMCONNECT_RECV_SIMOBJECT_DATA> SimObjectData => _simObjectData;
     // public IObservable<SIMCONNECT_RECV_EVENT> Event => _event;
     // public Subject<SIMCONNECT_RECV_SYSTEM_STATE> SystemState => _systemState;
-    public IObservable<SIMCONNECT_RECV_CLIENT_DATA> ClientData => _clientData;
+    // public IObservable<SIMCONNECT_RECV_CLIENT_DATA> ClientData => _clientData;
 
     public SimConnectHeadless(string appName)
     {
@@ -59,7 +59,8 @@ public sealed class SimConnectHeadless : IDisposable
                 {
                     _evt = new(false);
                     _sim = new(_appName, IntPtr.Zero, 0, _evt, 0);
-                    _sim.SubscribeToSystemEvent(EVT.SimStart, "SimStart");
+                    // _sim.SubscribeToSystemEvent(EVT.SimStart, "SimStart");
+                    _sim.SubscribeToSystemEvent(EVT.AircraftLoaded, "AircraftLoaded");
                     _sim.OnRecvOpen += (_, _) =>
                     {
                         _sim.RequestSystemState(REQ.AircraftLoaded, "AircraftLoaded");
@@ -68,37 +69,41 @@ public sealed class SimConnectHeadless : IDisposable
                         // _opened.OnNext(Unit.Default);
                     };
                     _sim.OnRecvSimobjectData += (_, data) => _simObjectData.OnNext(data);
-                    _sim.OnRecvEvent += (_, data) =>
+                    _sim.OnRecvEventFilename += (_, data) =>
                     {
-                        // SimStart emits on every new loaded aircraft
-                        // we are waiting for first loaded aircraft when msfs started
-                        if (data.uEventID == (uint)EVT.SimStart)
-                        {
-                            _sim.RequestSystemState(REQ.AircraftLoaded, "AircraftLoaded");
-                        }
-                        // else
-                        // {
-                        //     _event.OnNext(data);    
-                        // }
+                        if (data.uEventID == (uint)EVT.AircraftLoaded) _sim.RequestSystemState(REQ.AircraftLoaded, "AircraftLoaded");
                     };
+                    // _sim.OnRecvEvent += (_, data) =>
+                    // {
+                    //     // SimStart emits on every new loaded aircraft
+                    //     // we are waiting for first loaded aircraft when msfs started
+                    //     // if (data.uEventID == (uint)EVT.SimStart)
+                    //     // {
+                    //     //     Console.WriteLine("SimStart");
+                    //     //     _sim.RequestSystemState(REQ.AircraftLoaded, "AircraftLoaded");
+                    //     // }
+                    // };
                     _sim.OnRecvSystemState += (_, state) =>
                     {
                         if (state.dwRequestID == (uint)REQ.AircraftLoaded)
                         {
                             var path = state.szString;
-                            var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)");
-                            if (match.Success) path = match.Groups[1].Value;
+                            if  (string.IsNullOrEmpty(path))  return;
+
+                            var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                            var name  =  match.Success ? match.Groups[1].Value : null;
+                            if  (name == null)  return;
                             lock (_aircraft)
                             {
-                                if (!path.Equals(_aircraft.Value))
+                                if (!name.Equals(_aircraft.Value))
                                 {
                                     if (_aircraft.Value == null)
                                     {
                                         lock (_preCfgLock) foreach (var action in _preConfigure)
                                             try { action(_sim); } catch (Exception e) { Log.Error(e, "An error occurred when receiving data from simconnect"); }
                                     }
-                                    Log.Information("[SimConnect] Loaded aircraft: {path}", path);
-                                    _aircraft.OnNext(path);
+                                    Log.Information("[SimConnect] Loaded aircraft: {Aircraft}", name);
+                                    _aircraft.OnNext(name);
                                 }
                             }
                         }
@@ -237,7 +242,7 @@ public sealed class SimConnectHeadless : IDisposable
         _cts.Dispose();
     }
     
-    private enum EVT : uint { SimStart = uint.MaxValue, Loaded = uint.MaxValue - 1 }
+    private enum EVT : uint { SimStart = uint.MaxValue, AircraftLoaded = uint.MaxValue - 1 }
     private enum REQ { AircraftLoaded }
 }
 

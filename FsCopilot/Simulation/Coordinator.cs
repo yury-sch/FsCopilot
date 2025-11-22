@@ -26,12 +26,7 @@ public class Coordinator : IDisposable
         peer2Peer.RegisterPacket<Update, Update.Codec>();
         
         _d.Add(sim.Aircraft
-            .Subscribe(path =>
-            {
-                var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)");
-                if (match.Success) path = match.Groups[1].Value;
-                Load(path);
-            }));
+            .Subscribe(Load));
 
         AddLink<Physics, Physics.Codec>(master: true);
         AddLink<Control, Control.Codec>(master: true);

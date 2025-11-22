@@ -35,8 +35,6 @@ public partial class DevelopWindowViewModel : ViewModelBase
     IDisposable PopulateTreeAndAttach(string path)
     {
         var d = new CompositeDisposable();
-        var match = Regex.Match(path, @"SimObjects\\Airplanes\\([^\\]+)");
-        if (match.Success) path = match.Groups[1].Value;
 
         try
         {
