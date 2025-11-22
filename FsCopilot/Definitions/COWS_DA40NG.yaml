@@ -50,7 +50,7 @@ shared:
     set: (>K:SET_STARTER1_HELD)
   - get: L:XFER_SWITCH # Fuel trans
   - get: A:PITOT HEAT SWITCH:1, Bool # Pitot
-    set: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
+    set: "`${value} 1 (>K:PITOT_HEAT_SET)`"
 
   - get: L:INPUT_PARK # Parking brake
   # Defrost and cabin heat is not functional

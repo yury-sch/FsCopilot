@@ -44,7 +44,7 @@ shared:
   - get: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Bool # Fuel pump
     set: (>K:ELECT_FUEL_PUMP1_SET)
   - get: A:PITOT HEAT SWITCH:1, Bool # Pitot
-    set: "`${value}, 1 (>K:PITOT_HEAT_SET)`"
+    set: "`${value} 1 (>K:PITOT_HEAT_SET)`"
     
   # Defrost and cabin heat is not functional 
   - get: L:INPUT_PARK # Parking brake
