@@ -112,7 +112,7 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public int Count { get; }
+    public int Count => _links.Length;
 }
 
 public record DefinitionNode(
