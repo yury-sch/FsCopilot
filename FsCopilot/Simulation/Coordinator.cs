@@ -24,9 +24,9 @@ public class Coordinator : IDisposable
         _masterSwitch = masterSwitch;
         _sim = sim;
         peer2Peer.RegisterPacket<Update, Update.Codec>();
+        peer2Peer.RegisterPacket<InstrumentInteraction, InstrumentInteraction.Codec>();
         
-        _d.Add(sim.Aircraft
-            .Subscribe(Load));
+        _d.Add(sim.Aircraft.Subscribe(Load));
 
         AddLink<Physics, Physics.Codec>(master: true);
         AddLink<Control, Control.Codec>(master: true);
@@ -34,6 +34,12 @@ public class Coordinator : IDisposable
         AddLink<Fuel, Fuel.Codec>(master: true);
         AddLink<Payload, Payload.Codec>(master: false);
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
+
+        _d.Add(_sim.InstrumentEvents
+            .Subscribe(update => _peer2Peer.SendAll(new InstrumentInteraction(update))));
+
+        _d.Add(_peer2Peer.Stream<InstrumentInteraction>()
+            .Subscribe(update => _sim.Interact(update.Json)));
     }
 
     public void Dispose()
@@ -119,7 +125,7 @@ public class Coordinator : IDisposable
 
         _cSubs.Add(_peer2Peer.Stream<Update>()
             .Where(update => update.Name == getVar)
-            .Do(update => Log.Debug("[PACKET] RECEIVE {Name} {Value}", getVar, update.Value))
+            .Do(update => Log.Debug("[PACKET] RECV {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
             .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
@@ -184,6 +190,23 @@ public class Coordinator : IDisposable
                 };
 
                 return new(name, value);
+            }
+        }
+    }
+
+    private record InstrumentInteraction(string Json)
+    {
+        public class Codec : IPacketCodec<InstrumentInteraction>
+        {
+            public void Encode(InstrumentInteraction packet, BinaryWriter bw)
+            {
+                bw.Write(packet.Json);
+            }
+
+            public InstrumentInteraction Decode(BinaryReader br)
+            {
+                var json = br.ReadString();
+                return new(json);
             }
         }
     }
