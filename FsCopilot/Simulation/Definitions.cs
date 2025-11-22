@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace FsCopilot.Simulation;
 
 using System.Globalization;
@@ -11,6 +13,12 @@ using YamlDotNet.Serialization.NamingConventions;
 public class Definitions : IReadOnlyCollection<Definition>
 {
     private static readonly IDeserializer Deserializer = new DeserializerBuilder()
+        .WithObjectFactory(type =>
+        {
+            if (type == typeof(Config)) return new Config();
+            if (type == typeof(Config.Link)) return new Config.Link();
+            return Activator.CreateInstance(type)!;
+        })
         .WithNamingConvention(UnderscoredNamingConvention.Instance)
         // .IgnoreUnmatchedProperties() 
         .Build();
@@ -25,32 +33,35 @@ public class Definitions : IReadOnlyCollection<Definition>
         Ignore = ignore;
     }
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config.Link))]
+    private static Config ParseConfig(string yaml) => Deserializer.Deserialize<Config>(yaml);
+
     public static DefinitionNode LoadTree(string path)
     {
-        var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')]));
-        var cfg = Deserializer.Deserialize<Config>(cfgFile);
+        Config cfg;
+        try
+        {
+            var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')])).Trim();
+            cfg = ParseConfig(cfgFile);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "[Definitions] Failed to load {Module} configuration", path);
+            return DefinitionNode.Empty;
+        }
         var master = cfg.Master
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(false, m.Get, m.Set, m.Skp)).ToArray();
         var shared = cfg.Shared
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(true, m.Get, m.Set, m.Skp)).ToArray();
-        
-        var includes = new List<DefinitionNode>();
-        foreach (var i in cfg.Include)
-        {
-            try
-            {
-                includes.Add(LoadTree(i));
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error loading module {Module}", i);
-            }
-        }
 
         var ignore = cfg.Ignore.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
-        return new(path, includes.ToArray(), master, shared, ignore);
+        return new(path, cfg.Include
+            .Select(LoadTree)
+            .Where(def => def != DefinitionNode.Empty)
+            .ToArray(), master, shared, ignore);
     }
 
     public static Definitions Load(string name)
@@ -72,17 +83,27 @@ public class Definitions : IReadOnlyCollection<Definition>
         ignore.AddRange(node.Ignore);
     }
 
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties 
+                                | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
     private class Config
     {
+        [YamlMember(Alias = "include")]
         public string[] Include { get; set; } = [];
+        [YamlMember(Alias = "shared")]
         public Link[] Shared { get; set; } = [];
+        [YamlMember(Alias = "master")]
         public Link[] Master { get; set; } = [];
+        [YamlMember(Alias = "ignore")]
         public string[] Ignore { get; set; } = [];
 
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         public class Link
         {
-            public string Get { get; set; }
+            [YamlMember(Alias = "get")]
+            public string Get { get; set; } = string.Empty;
+            [YamlMember(Alias = "set")]
             public string? Set { get; set; }
+            [YamlMember(Alias = "skp")]
             public string? Skp { get; set; }
         }
     }
@@ -99,7 +120,10 @@ public record DefinitionNode(
     DefinitionNode[] Include,
     Definition[] Master,
     Definition[] Shared,
-    string[] Ignore);
+    string[] Ignore)
+{
+    public static readonly DefinitionNode Empty = new(string.Empty, [], [], [], []);
+}
 
 public class Definition
 {
@@ -139,7 +163,7 @@ public class Definition
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse event expression {Name}", _set);
+                Log.Error(e, "[Definitions] Unable to parse event expression {Name}", _set);
                 return Get;
             }
         }

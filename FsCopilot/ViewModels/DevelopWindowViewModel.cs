@@ -36,20 +36,16 @@ public partial class DevelopWindowViewModel : ViewModelBase
     {
         var d = new CompositeDisposable();
 
-        try
+        var definitions = Definitions.LoadTree($"{path}.yaml");
+        Nodes.Clear();
+        if (definitions == DefinitionNode.Empty)
         {
-            var definitions = Definitions.LoadTree($"{path}.yaml");
-            Nodes.Clear();
-            foreach (var node in PopulateTree(definitions, d)) Nodes.Add(node);
-            // Nodes.Add(new("Instrument events", InstrumentNode));
-            Loaded = $"Loaded {path} configuration";
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, $"Failed to load {path} configuration");
-            Nodes.Clear();
             Loaded = $"Failed to load {path} configuration";
+            return d;
         }
+        foreach (var node in PopulateTree(definitions, d)) Nodes.Add(node);
+        // Nodes.Add(new("Instrument events", InstrumentNode));
+        Loaded = $"Loaded {path} configuration";
 
         return d;
     }
@@ -98,7 +94,7 @@ public partial class Node : ObservableObject, IDisposable
     private readonly SimClient? _sim;
     private readonly Definition? _def;
     private readonly IDisposable? _sub;
-    private readonly string? _rawJson;
+    // private readonly string? _rawJson;
     
     public ObservableCollection<Node>? SubNodes { get; }
 

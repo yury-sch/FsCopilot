@@ -48,18 +48,13 @@ public class Coordinator : IDisposable
         if (!_cSubs.IsDisposed) _cSubs.Dispose();
         _cSubs = new();
 
-        Definitions definitions;
-        try
+        var definitions = Definitions.Load(name);
+        if (definitions.Count == 0)
         {
-            definitions = Definitions.Load(name);
-            _configured.OnNext(true);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Unable to load aircraft configuration");
             _configured.OnNext(false);
             return;
         }
+        _configured.OnNext(true);
 
         foreach (var def in definitions) AddLink(def);
     }
