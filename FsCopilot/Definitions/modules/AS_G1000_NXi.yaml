@@ -70,6 +70,14 @@ shared:
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
     set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+  - get: A:NAV OBS:1, Degrees # CRS CTR 
+    set: (>K:VOR1_SET)
+  - get: A:NAV OBS:2, Degrees # CRS CTR
+    set: (>K:VOR2_SET)
+    #  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
+    #  - get: A:GPS OBS VALUE, Degrees # CRS CTR
+    #    set: (>K:GPS_OBS_SET)
+    #  - get: L:CRS_FIX_1 # CRS CTR
   - get: H:AS1000_PFD_CLR
   - get: H:AS1000_PFD_ENT_Push
   - get: H:AS1000_PFD_PPL_Push
@@ -77,6 +85,8 @@ shared:
   - get: H:AS1000_PFD_DIRECTTO
   - get: H:AS1000_PFD_MENU_Push
   - get: H:AS1000_PFD_JOYSTICK_PUSH
+  - get: H:AS1000_PFD_RANGE_INC
+  - get: H:AS1000_PFD_RANGE_DEC
   - get: H:AS1000_PFD_JOYSTICK_LEFT
   - get: H:AS1000_PFD_JOYSTICK_RIGHT
   - get: H:AS1000_PFD_JOYSTICK_UP
@@ -86,15 +96,6 @@ shared:
   - get: H:AS1000_PFD_FMS_Upper_INC
   - get: H:AS1000_PFD_FMS_Upper_DEC
   - get: H:AS1000_PFD_FMS_Upper_PUSH
-    
-    #  - get: A:NAV OBS:1, Degrees # CRS CTR 
-    #    set: (>K:VOR1_SET)
-    #  - get: A:NAV OBS:2, Degrees # CRS CTR
-    #    set: (>K:VOR2_SET)
-    #  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
-    #  - get: A:GPS OBS VALUE, Degrees # CRS CTR
-    #    set: (>K:GPS_OBS_SET)
-    #  - get: L:CRS_FIX_1 # CRS CTR
 
 #  - get: L:AS1000_PFD_STATE
 #  - get: L:AS1000_PFD_Brightness
@@ -162,6 +163,8 @@ shared:
   - get: H:AS1000_MFD_SOFTKEYS_12
 
   - get: H:AS1000_MFD_JOYSTICK_PUSH
+  - get: H:AS1000_MFD_RANGE_INC
+  - get: H:AS1000_MFD_RANGE_DEC
   - get: H:AS1000_MFD_JOYSTICK_LEFT
   - get: H:AS1000_MFD_JOYSTICK_RIGHT
   - get: H:AS1000_MFD_JOYSTICK_UP
@@ -184,142 +187,12 @@ shared:
 #  - get: L:AS1000_MFD_Brightness_IsAuto
 #  - get: L:AS1000_MFD_SelectedNavIndex
 #  - get: L:AS1000_MFD_SelectedComIndex
-#ignore:
-## PFD
-#  - H:AS1000_PFD_VOL_1_INC
-#  - H:AS1000_PFD_VOL_1_DEC
-#  - H:AS1000_PFD_NAV_Switch
-#  - H:AS1000_PFD_NAV_Push
-#  - H:AS1000_PFD_NAV_Large_INC
-#  - H:AS1000_PFD_NAV_Large_DEC
-#  - H:AS1000_PFD_NAV_Small_INC
-#  - H:AS1000_PFD_NAV_Small_DEC
-#  - H:AP_KNOB_Up
-#  - H:AP_KNOB_Down
-#
-#  - H:AS1000_PFD_VOL_2_INC
-#  - H:AS1000_PFD_VOL_2_DEC
-#  - H:AS1000_PFD_COM_Switch
-#  - H:AS1000_PFD_COM_Push
-#  - H:AS1000_PFD_COM_Large_INC
-#  - H:AS1000_PFD_COM_Large_DEC
-#  - H:AS1000_PFD_COM_Small_INC
-#  - H:AS1000_PFD_COM_Small_DEC
-#  
-#  - H:AS1000_PFD_BARO_INC
-#  - H:AS1000_PFD_BARO_DEC
-#  - H:AS1000_PFD_CRS_PUSH
-## MID
-#  - H:AS1000_MID_COM_Mic_1_Push
-#  - H:AS1000_MID_COM_Mic_2_Push
-#  - H:AS1000_MID_COM_1_Push
-#  - H:AS1000_MID_COM_2_Push
-#  - H:AS1000_MID_MKR_Mute_Push
-#  - H:AS1000_MID_HI_SENS_Push
-#  
-#  - H:AS1000_MID_DME_Push
-#  - H:AS1000_MID_NAV_1_Push
-#  - H:AS1000_MID_ADF_Push
-#  - H:AS1000_MID_NAV_2_Push
-## MFD
-#  - H:AS1000_MFD_VOL_1_INC
-#  - H:AS1000_MFD_VOL_1_DEC
-#  - H:AS1000_MFD_NAV_Switch
-#  - H:AS1000_MFD_NAV_Push
-#  - H:AS1000_MFD_NAV_Large_INC
-#  - H:AS1000_MFD_NAV_Large_DEC
-#  - H:AS1000_MFD_NAV_Small_INC
-#  - H:AS1000_MFD_NAV_Small_DEC
-#  
-#  - H:Generic_Autopilot_Manual_Off
-#  
-#  - H:AS1000_MFD_VOL_2_INC
-#  - H:AS1000_MFD_VOL_2_DEC
-#  - H:AS1000_MFD_COM_Switch
-#  - H:AS1000_MFD_COM_Push
-#  - H:AS1000_MFD_COM_Large_INC
-#  - H:AS1000_MFD_COM_Large_DEC
-#  - H:AS1000_MFD_COM_Small_INC
-#  - H:AS1000_MFD_COM_Small_DEC
-#
-#  - H:AS1000_MFD_BARO_INC
-#  - H:AS1000_MFD_BARO_DEC
-#  - H:AS1000_MFD_CRS_PUSH
-
-#  - get: H:AS1000_PFD_SOFTKEYS_1
-#  - get: H:AS1000_PFD_SOFTKEYS_2
-#  - get: H:AS1000_PFD_SOFTKEYS_3
-#  - get: H:AS1000_PFD_SOFTKEYS_4
-#  - get: H:AS1000_PFD_SOFTKEYS_5
-#  - get: H:AS1000_PFD_SOFTKEYS_6
-#  - get: H:AS1000_PFD_SOFTKEYS_7
-#  - get: H:AS1000_PFD_SOFTKEYS_8
-#  - get: H:AS1000_PFD_SOFTKEYS_9
-#  - get: H:AS1000_PFD_SOFTKEYS_10
-#  - get: H:AS1000_PFD_SOFTKEYS_11
-#  - get: H:AS1000_PFD_SOFTKEYS_12
-#  - get: H:AS1000_PFD_CLR
-#  - get: H:AS1000_PFD_ENT_Push
-#  - get: H:AS1000_PFD_PPL_Push
-#  - get: H:AS1000_PFD_PROC_Push
-#  - get: H:AS1000_PFD_DIRECTTO
-#  - get: H:AS1000_PFD_MENU_Push
-#  - get: H:AS1000_PFD_JOYSTICK_LEFT
-#  - get: H:AS1000_PFD_JOYSTICK_RIGHT
-#  - get: H:AS1000_PFD_JOYSTICK_UP
-#  - get: H:AS1000_PFD_JOYSTICK_DOWN
-#  - get: H:AS1000_PFD_FMS_Lower_INC
-#  - get: H:AS1000_PFD_FMS_Lower_DEC
-#  - get: H:AS1000_PFD_FMS_Upper_INC
-#  - get: H:AS1000_PFD_FMS_Upper_DEC
-#  - get: H:AS1000_PFD_FMS_Upper_PUSH
-#
-##  - get: H:AS1000_MID_NAV_1_Push
-##  - get: H:AS1000_MID_NAV_2_Push
-##  - get: H:AS1000_MID_DME_Push
-##  - get: H:AS1000_MID_MKR_Mute_Push
-##  - get: H:AS1000_MID_HI_SENS_Push
-##  - get: H:AS1000_MID_COM_3_Push
-##  - get: H:AS1000_MID_COM_Mic_3_Push
-##  - get: H:AS1000_MID_COM_2_Push
-##  - get: H:AS1000_MID_COM_Mic_2_Push
-##  - get: H:AS1000_MID_COM_1_Push
-##  - get: H:AS1000_MID_COM_Mic_1_Push
-#
-#  - get: H:AS1000_MFD_SOFTKEYS_1
-#  - get: H:AS1000_MFD_SOFTKEYS_2
-#  - get: H:AS1000_MFD_SOFTKEYS_3
-#  - get: H:AS1000_MFD_SOFTKEYS_4
-#  - get: H:AS1000_MFD_SOFTKEYS_5
-#  - get: H:AS1000_MFD_SOFTKEYS_6
-#  - get: H:AS1000_MFD_SOFTKEYS_7
-#  - get: H:AS1000_MFD_SOFTKEYS_8
-#  - get: H:AS1000_MFD_SOFTKEYS_9
-#  - get: H:AS1000_MFD_SOFTKEYS_10
-#  - get: H:AS1000_MFD_SOFTKEYS_11
-#  - get: H:AS1000_MFD_SOFTKEYS_12
-#  - get: H:AS1000_MFD_CLR
-#  - get: H:AS1000_MFD_ENT_Push
-#  - get: H:AS1000_MFD_PPL_Push
-#  - get: H:AS1000_MFD_PROC_Push
-#  - get: H:AS1000_MFD_DIRECTTO
-#  - get: H:AS1000_MFD_MENU_Push
-#  - get: H:AS1000_MFD_JOYSTICK_LEFT
-#  - get: H:AS1000_MFD_JOYSTICK_RIGHT
-#  - get: H:AS1000_MFD_JOYSTICK_UP
-#  - get: H:AS1000_MFD_JOYSTICK_DOWN
-#  - get: H:AS1000_MFD_FMS_Lower_INC
-#  - get: H:AS1000_MFD_FMS_Lower_DEC
-#  - get: H:AS1000_MFD_FMS_Upper_INC
-#  - get: H:AS1000_MFD_FMS_Upper_DEC
-#  - get: H:AS1000_MFD_FMS_Upper_PUSH
 
 # BELOW HAS NOT BEEN TESTED YET
 #  - get: A:AUTOPILOT BACKCOURSE HOLD, Bool
 #    set: "value ? '(>K:AP_BC_HOLD_ON)' : '(>K:AP_BC_HOLD_OFF)'"
 #  - get: A:AUTOPILOT DISENGAGED, Bool
 #    set: (>K:AUTOPILOT_DISENGAGE_SET)
-
 #    use_calculator: true
 #  -
 #    get: A:AUTOPILOT MACH HOLD VAR:1
