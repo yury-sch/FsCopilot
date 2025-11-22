@@ -110,6 +110,7 @@ public class Coordinator : IDisposable
         var master = !def.Shared;
         object? currentValue = null;
         var getVar = def.Get;
+        Skip.Next(getVar);
         
         _cSubs.Add(_sim.Stream(getVar, def.Units)
             .Do(value => currentValue = value)
