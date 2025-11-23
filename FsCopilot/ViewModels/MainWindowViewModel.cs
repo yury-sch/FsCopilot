@@ -66,14 +66,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (result == ConnectionResult.Cancelled)
         {
             IsConnectionTimeout = true;
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            IsConnectionTimeout = false;        
+            _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsConnectionTimeout = false);
         }
         else if (result == ConnectionResult.VersionMismatch)
         {
             IsVersionMismatch = true;
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            IsVersionMismatch = false;
+            _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsVersionMismatch = false);
         }
     }
 

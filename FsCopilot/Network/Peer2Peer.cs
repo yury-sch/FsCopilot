@@ -116,7 +116,7 @@ public class Peer2Peer : IAsyncDisposable
 
     private async Task DiscoveryLookAsync(CancellationToken ct)
     {
-        _connectionEstablished.Subscribe(async void (connection) =>
+        _connectionEstablished.Subscribe(void (connection) =>
         {
             try
             {
@@ -132,7 +132,7 @@ public class Peer2Peer : IAsyncDisposable
             catch (Exception) { /* ignore */ }
         });
         
-        await Task.Delay(100, ct);
+        await Task.Delay(1000, ct);
 
         while (!ct.IsCancellationRequested)
         {
@@ -373,10 +373,7 @@ public class Peer2Peer : IAsyncDisposable
 
     private void MismatchHandle(string peerId, IPEndPoint from, BinaryReader br)
     {
-        if (_punches.TryRemove(peerId, out _))
-        {
-            _connectTcs?.TrySetResult(ConnectionResult.VersionMismatch);
-        }
+        _connectTcs?.TrySetResult(ConnectionResult.VersionMismatch);
     }
 
     private void PunchHandle(string peerId, IPEndPoint from, BinaryReader br)
@@ -472,7 +469,7 @@ public class Peer2Peer : IAsyncDisposable
         return _connectTcs.Task;
     }
 
-    public void SendAll<TPacket>(TPacket packet)
+    public void SendAll<TPacket>(TPacket packet) where TPacket : notnull
     {
         if (!_packetRegistry.TryGetCodec<TPacket>(out var packetId, out var codec)) return;
         
@@ -536,7 +533,7 @@ public class Peer2Peer : IAsyncDisposable
     {
         DISCOVER = 0,
         CONNECT = 1,
-        MISMATCH = 3,
+        MISMATCH = 2,
         PUNCH = 10,
         HOLE = 11,
         PING = 22,

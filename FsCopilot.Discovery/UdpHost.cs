@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-public class UdpHost : BackgroundService
+public class UdpHost(ILogger<UdpHost> logger) : BackgroundService
 {
     private static readonly byte[] HostProtocolVersion = Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
     
@@ -67,32 +67,53 @@ public class UdpHost : BackgroundService
                 {
                     var sourceId = br.ReadString();
                     var targetId = br.ReadString();
+                    logger.LogInformation("UDP connection requested from {SourceId} to {TargetId}.", sourceId, targetId);
 
                     var window = DateTime.UtcNow - TimeSpan.FromSeconds(30);
-                    if (sourceId != targetId
-                        && peers.TryGetValue(sourceId, out var sourceInfo)
-                        && peers.TryGetValue(targetId, out var targetInfo)
-                        && sourceInfo.Timestamp >= window
-                        && targetInfo.Timestamp >= window)
+                    if (sourceId == targetId)
                     {
-                        if (sourceInfo.Schema.Equals(targetInfo.Schema))
-                        {
-                            var targetData = PreparePeerConnection(targetInfo);
-                            await udp.SendAsync(targetData, targetData.Length, sourceInfo.UdpSeen);
-
-                            var notify = PreparePeerConnection(sourceInfo);
-                            await udp.SendAsync(notify, notify.Length, targetInfo.UdpSeen);    
-                        }
-                        else
-                        {
-                            using var msw = new MemoryStream();
-                            await using var bw = new BinaryWriter(msw, Encoding.UTF8, true);
-                            bw.Write((byte)SystemPacketTypes.MISMATCH);
-                            var reply = msw.ToArray();
-                            bw.Write(peerId);
-                            await udp.SendAsync(reply, reply.Length, remote);
-                        }   
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Сan not connect to himself.", sourceId, targetId);
+                        continue;
                     }
+                    if (!peers.TryGetValue(sourceId, out var sourceInfo))
+                    {
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Source peer not discovered.", sourceId, targetId);
+                        continue;
+                    }
+                    if (!peers.TryGetValue(targetId, out var targetInfo))
+                    {
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Target peer not discovered.", sourceId, targetId);
+                        continue;
+                    }
+                    if (sourceInfo.Timestamp < window)
+                    {
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Source peer outdated.", sourceId, targetId);
+                        continue;
+                    }
+                    if (targetInfo.Timestamp < window)
+                    {
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Target peer outdated.", sourceId, targetId);
+                        continue;
+                    }
+
+                    if (!sourceInfo.Schema.Equals(targetInfo.Schema))
+                    {
+                        using var msw = new MemoryStream();
+                        await using var bw = new BinaryWriter(msw, Encoding.UTF8, true);
+                        bw.Write((byte)SystemPacketTypes.MISMATCH);
+                        bw.Write(peerId);
+                        var reply = msw.ToArray();
+                        await udp.SendAsync(reply, reply.Length, remote);
+                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Schema not equals.", sourceId, targetId);
+                        continue;
+                    }
+
+                    var targetData = PreparePeerConnection(targetInfo);
+                    await udp.SendAsync(targetData, targetData.Length, sourceInfo.UdpSeen);
+
+                    var notify = PreparePeerConnection(sourceInfo);
+                    await udp.SendAsync(notify, notify.Length, targetInfo.UdpSeen);
+                    logger.LogInformation("UDP connection approved from {SourceId} to {TargetId}.", sourceId, targetId);
                 }
                 // else if (requestType == byte.MaxValue) // RELAYTO
                 // {
@@ -109,7 +130,7 @@ public class UdpHost : BackgroundService
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                logger.LogError(e, "An error occurred while processing your request.");
             }
         }
     }
