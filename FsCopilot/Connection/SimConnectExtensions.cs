@@ -99,6 +99,7 @@ public static class SimConnectExtensions
             case "bco16":
             case "degrees":
             case "degree":
+            case "feet":
                 return SIMCONNECT_DATATYPE.INT32;
         }
 
