@@ -2,16 +2,17 @@ var globalPanelData = null;
 var globalInstrumentListener = RegisterViewListener('JS_LISTENER_INSTRUMENTS');
 var handler = null;
 var templateToLoad = null;
+var jsLoaded = false;
 
-Include.addImports([
-    '/FsCopilot/common.js',
-    '/FsCopilot/network.js',
-    '/FsCopilot/events.js',
-    '/FsCopilot/watcher.js',
-    '/FsCopilot/handler.js'
-], () => {
+Include.addImports(['/FsCopilot/common.js'], () =>
+Include.addImports(['/FsCopilot/network.js'], () =>
+Include.addImports(['/FsCopilot/events.js'], () =>
+Include.addImports(['/FsCopilot/watcher.js'], () =>
+Include.addImports(['/FsCopilot/handler.js'], () => {
+    console.log('[Hook] References loaded.');
+    jsLoaded = true;
     if (templateToLoad != null) handler = new FsCopilotHandler(templateToLoad);
-});
+})))));
 
 class VCockpitPanel extends HTMLElement {
     constructor() {
@@ -145,11 +146,14 @@ class VCockpitPanel extends HTMLElement {
             this.data.daInstruments[this.curInstrumentIndex].templateName = _instrumentName;
             this.data.daInstruments[this.curInstrumentIndex].templateClass = _instrumentClass;
             document.title += ' - ' + template.instrumentIdentifier;
-            templateToLoad = template;
             // FsCopilot
-            // if (!!FsCopilotHandler) {}
-            try { handler = new FsCopilotHandler(template); }
-            catch (error) { console.error(error); }
+            if (jsLoaded) {
+                try { handler = new FsCopilotHandler(template); }
+                catch (error) { console.error(error); }
+            }
+            else {
+                templateToLoad = template;
+            }
         }
         console.log('[Hook] (createInstrument) Call this.loadNextInstrument()');
         this.loadNextInstrument();
