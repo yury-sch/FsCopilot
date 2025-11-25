@@ -1,0 +1,303 @@
+﻿shared:
+  # CKPT DOOR Panel
+  - get: L:A32NX_COCKPIT_DOOR_LOCKED # COCKPIT DOOR
+  
+  # Cockpit Lighting Panel
+  - get: A:LIGHT POTENTIOMETER:85, Percent # INTEG LT
+    set: "`85 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  - get: A:LIGHT POTENTIOMETER:83, Percent # MAIN PNL FLOOD LT
+    set: "`83 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  - get: A:LIGHT POTENTIOMETER:76, Percent # PEDESTAL FLOOD LT
+    set: "`76 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  - get: A:LIGHT POTENTIOMETER:7, Percent # AMBIENT LT
+    set: "`7 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  
+  # ECAM Control Panel
+  - get: L:A32NX_ECAM_SD_CURRENT_PAGE_INDEX # ECAM SD Page pb
+  - get: L:A32NX_BTN_TOCONFIG # T.O. CONFIG pb
+  - get: L:A32NX_BTN_CL # C/L pb
+  - get: L:A32NX_BTN_CHECK_LH # CHECK L pb
+  - get: L:A32NX_BTN_CHECK_RH # CHECK R pb
+  - get: L:A32NX_BTN_ABNPROC # ABNPROC pb
+  - get: L:A32NX_BTN_EMERCANC # EMERCANC pb
+  - get: L:A32NX_BTN_UP # UP pb
+  - get: L:A32NX_BTN_DOWN # DOWN pb
+  - get: L:A32NX_BTN_CLR # Left CLR button
+  - get: L:A32NX_BTN_RCL # RCL button
+  - get: L:A32NX_BTN_MORE # MORE button
+  - get: L:A32NX_BTN_CLR2 # Right CLR button
+  - get: A:LIGHT POTENTIOMETER:92, Percent # EWD DU BRT
+    set: "`92 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  - get: A:LIGHT POTENTIOMETER:93, Percent # SD DU BRT
+    set: "`93 ${value} (>K:LIGHT_POTENTIOMETER_SET)`"
+  
+  # ENG MASTER Panel
+  - get: A:FUELSYSTEM VALVE SWITCH:1, Bool # ENG 1 MASTER
+    set: "value ? '1 (>K:FUELSYSTEM_VALVE_OPEN)' : '1 (>K:FUELSYSTEM_VALVE_CLOSE)'"
+  - get: A:FUELSYSTEM VALVE SWITCH:2, Bool # ENG 2 MASTER
+    set: "value ? '2 (>K:FUELSYSTEM_VALVE_OPEN)' : '2 (>K:FUELSYSTEM_VALVE_CLOSE)'"
+  - get: A:FUELSYSTEM VALVE SWITCH:3, Bool # ENG 3 MASTER
+    set: "value ? '3 (>K:FUELSYSTEM_VALVE_OPEN)' : '3 (>K:FUELSYSTEM_VALVE_CLOSE)'"
+  - get: A:FUELSYSTEM VALVE SWITCH:4, Bool # ENG 4 MASTER
+    set: "value ? '4 (>K:FUELSYSTEM_VALVE_OPEN)' : '4 (>K:FUELSYSTEM_VALVE_CLOSE)'"
+  - get: L:A32NX_ENG_1_ON_FIRE # ENG MASTER sw FIRE Lt
+  - get: L:A32NX_ENG_2_ON_FIRE # ENG MASTER sw FIRE Lt
+  - get: L:A32NX_ENG_3_ON_FIRE # ENG MASTER sw FIRE Lt
+  - get: L:A32NX_ENG_4_ON_FIRE # ENG MASTER sw FIRE Lt
+  
+  # Flight Data Recording System Panel
+  - get: L:A32NX_ACMS_TRIGGER_ON # ACMS Trigger pb
+  - get: L:A32NX_DFDR_EVENT_ON # DFDR Event pb
+  
+  # KCCU Panel Left
+  - get: H:A32NX_KCCU_L_ESC
+  - get: H:A32NX_KCCU_L_CLRINFO
+  - get: H:A32NX_KCCU_L_UP
+  - get: H:A32NX_KCCU_L_LEFT
+  - get: H:A32NX_KCCU_L_DOWN
+  - get: H:A32NX_KCCU_L_RIGHT
+  - get: H:A32NX_KCCU_L_DIR
+  - get: H:A32NX_KCCU_L_FPLN
+  - get: H:A32NX_KCCU_L_PERF
+  - get: H:A32NX_KCCU_L_DEST
+  - get: H:A32NX_KCCU_L_INIT
+  - get: H:A32NX_KCCU_L_SECINDEX
+  - get: H:A32NX_KCCU_L_NAVAID
+  - get: H:A32NX_KCCU_L_SURV
+  - get: H:A32NX_KCCU_L_MAILBOX
+  - get: H:A32NX_KCCU_L_ATCCOM
+  - get: H:A32NX_KCCU_L_ND
+  - get: H:A32NX_KCCU_L_Q
+  - get: H:A32NX_KCCU_L_W
+  - get: H:A32NX_KCCU_L_E
+  - get: H:A32NX_KCCU_L_R
+  - get: H:A32NX_KCCU_L_T
+  - get: H:A32NX_KCCU_L_Y
+  - get: H:A32NX_KCCU_L_U
+  - get: H:A32NX_KCCU_L_I
+  - get: H:A32NX_KCCU_L_O
+  - get: H:A32NX_KCCU_L_P
+  - get: H:A32NX_KCCU_L_BACKSPACE
+  - get: H:A32NX_KCCU_L_A
+  - get: H:A32NX_KCCU_L_S
+  - get: H:A32NX_KCCU_L_D
+  - get: H:A32NX_KCCU_L_F
+  - get: H:A32NX_KCCU_L_G
+  - get: H:A32NX_KCCU_L_H
+  - get: H:A32NX_KCCU_L_J
+  - get: H:A32NX_KCCU_L_K
+  - get: H:A32NX_KCCU_L_L
+  - get: H:A32NX_KCCU_L_SLASH
+  - get: H:A32NX_KCCU_L_Z
+  - get: H:A32NX_KCCU_L_X
+  - get: H:A32NX_KCCU_L_C
+  - get: H:A32NX_KCCU_L_V
+  - get: H:A32NX_KCCU_L_B
+  - get: H:A32NX_KCCU_L_N
+  - get: H:A32NX_KCCU_L_M
+  - get: H:A32NX_KCCU_L_SP
+  - get: H:A32NX_KCCU_L_ENT
+  - get: H:A32NX_KCCU_L_ESC2
+  - get: H:A32NX_KCCU_L_KBD
+  - get: H:A32NX_KCCU_L_REWIND
+  - get: H:A32NX_KCCU_L_FORWARD
+  - get: H:A32NX_KCCU_L_1
+  - get: H:A32NX_KCCU_L_2
+  - get: H:A32NX_KCCU_L_3
+  - get: H:A32NX_KCCU_L_4
+  - get: H:A32NX_KCCU_L_5
+  - get: H:A32NX_KCCU_L_6
+  - get: H:A32NX_KCCU_L_7
+  - get: H:A32NX_KCCU_L_8
+  - get: H:A32NX_KCCU_L_9
+  - get: H:A32NX_KCCU_L_DOT
+  - get: H:A32NX_KCCU_L_0
+  - get: H:A32NX_KCCU_L_PLUSMINUS
+  - get: L:A32NX_KCCU_L_KBD_ON_OFF # KBD sw
+  - get: L:A32NX_KCCU_L_CCD_ON_OFF # CCD sw
+
+  # KCCU RIGHT
+  - get: HA32NX_KCCU_R_ESC
+  - get: HA32NX_KCCU_R_CLRINFO
+  - get: HA32NX_KCCU_R_UP
+  - get: HA32NX_KCCU_R_RIGHT
+  - get: HA32NX_KCCU_R_DOWN
+  - get: HA32NX_KCCU_R_LEFT
+  - get: HA32NX_KCCU_R_DIR
+  - get: HA32NX_KCCU_R_FPLN
+  - get: HA32NX_KCCU_R_PERF
+  - get: HA32NX_KCCU_R_DEST
+  - get: HA32NX_KCCU_R_INIT
+  - get: HA32NX_KCCU_R_NAVAID
+  - get: HA32NX_KCCU_R_SURV
+  - get: HA32NX_KCCU_R_MAILBOX
+  - get: HA32NX_KCCU_R_ATCCOM
+  - get: HA32NX_KCCU_R_ND
+  - get: HA32NX_KCCU_R_Q
+  - get: HA32NX_KCCU_R_W
+  - get: HA32NX_KCCU_R_E
+  - get: HA32NX_KCCU_R_R
+  - get: HA32NX_KCCU_R_T
+  - get: HA32NX_KCCU_R_Y
+  - get: HA32NX_KCCU_R_U
+  - get: HA32NX_KCCU_R_I
+  - get: HA32NX_KCCU_R_O
+  - get: HA32NX_KCCU_R_P
+  - get: HA32NX_KCCU_R_BACKSPACE
+  - get: HA32NX_KCCU_R_A
+  - get: HA32NX_KCCU_R_S
+  - get: HA32NX_KCCU_R_D
+  - get: HA32NX_KCCU_R_F
+  - get: HA32NX_KCCU_R_G
+  - get: HA32NX_KCCU_R_H
+  - get: HA32NX_KCCU_R_J
+  - get: HA32NX_KCCU_R_K
+  - get: HA32NX_KCCU_R_L
+  - get: HA32NX_KCCU_R_SLASH
+  - get: HA32NX_KCCU_R_Z
+  - get: HA32NX_KCCU_R_X
+  - get: HA32NX_KCCU_R_C
+  - get: HA32NX_KCCU_R_V
+  - get: HA32NX_KCCU_R_B
+  - get: HA32NX_KCCU_R_N
+  - get: HA32NX_KCCU_R_M
+  - get: HA32NX_KCCU_R_SP
+  - get: HA32NX_KCCU_R_ENT
+  - get: HA32NX_KCCU_R_ESC2
+  - get: HA32NX_KCCU_R_KBD
+  - get: HA32NX_KCCU_R_REWIND
+  - get: HA32NX_KCCU_R_FORWARD
+  - get: HA32NX_KCCU_R_1
+  - get: HA32NX_KCCU_R_2
+  - get: HA32NX_KCCU_R_3
+  - get: HA32NX_KCCU_R_4
+  - get: HA32NX_KCCU_R_5
+  - get: HA32NX_KCCU_R_6
+  - get: HA32NX_KCCU_R_7
+  - get: HA32NX_KCCU_R_8
+  - get: HA32NX_KCCU_R_9
+  - get: HA32NX_KCCU_R_DOT
+  - get: HA32NX_KCCU_R_0
+  - get: HA32NX_KCCU_R_PLUSMINUS
+  - get: L:A32NX_KCCU_R_KBD_ON_OFF # KBD sw
+  - get: L:A32NX_KCCU_R_CCD_ON_OFF # CCD sw
+    set: (>K:SPOILERS_ARM_TOGGLE)
+  
+  # PARK BRK Panel
+  - get: L:A32NX_PARK_BRAKE_LEVER_POS # PARKING BRAKE
+  
+  # RMP LEFT
+  - get: L:A380X_RMP_1_BRIGHTNESS_KNOB
+  - get: L:A380X_RMP_1_VHF_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_1_VHF_VOL_RX_1
+  - get: L:A380X_RMP_1_VHF_TX_1
+  - get: L:A380X_RMP_1_VHF_VOL_1
+  - get: L:A380X_RMP_1_VHF_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_1_VHF_VOL_RX_2
+  - get: L:A380X_RMP_1_VHF_TX_2
+  - get: L:A380X_RMP_1_VHF_VOL_2
+  - get: L:A380X_RMP_1_VHF_VOL_RX_SWITCH_3
+  #  - get: L:A380X_RMP_1_VHF_VOL_RX_3
+  - get: L:A380X_RMP_1_VHF_TX_3
+  - get: L:A380X_RMP_1_VHF_VOL_3
+  - get: L:A380X_RMP_1_HF_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_1_HF_VOL_RX_1
+  - get: L:A380X_RMP_1_HF_TX_1
+  - get: L:A380X_RMP_1_HF_VOL_1
+  - get: L:A380X_RMP_1_HF_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_1_HF_VOL_RX_2
+  - get: L:A380X_RMP_1_HF_TX_2
+  - get: L:A380X_RMP_1_HF_VOL_2
+  - get: L:A380X_RMP_1_TEL_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_1_TEL_VOL_RX_1
+  - get: L:A380X_RMP_1_TEL_TX_1
+  - get: L:A380X_RMP_1_TEL_VOL_1
+  - get: L:A380X_RMP_1_TEL_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_1_TEL_VOL_RX_2
+  - get: L:A380X_RMP_1_TEL_TX_2
+  - get: L:A380X_RMP_1_TEL_VOL_2
+  - get: L:A380X_RMP_1_INT_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_1_INT_VOL_RX
+  - get: L:A380X_RMP_1_INT_TX
+  - get: L:A380X_RMP_1_INT_VOL
+  - get: L:A380X_RMP_1_CAB_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_1_CAB_VOL_RX
+  - get: L:A380X_RMP_1_CAB_TX
+  - get: L:A380X_RMP_1_CAB_VOL
+  - get: L:A380X_RMP_1_PA_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_1_PA_VOL_RX
+  - get: L:A380X_RMP_1_PA_TX
+  - get: L:A380X_RMP_1_PA_VOL
+  - get: L:A380X_RMP_1_NAV_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_1_NAV_VOL_RX
+  - get: L:A380X_RMP_1_NAV_FILTER
+  - get: L:A380X_RMP_1_NAV_VOL
+  - get: L:A380X_RMP_1_NAV_SEL
+  - get: L:A380X_RMP_1_DUMMY_VOL_RX_SWITCH
+  - get: L:A380X_RMP_1_DUMMY_VOL
+  - get: L:A380X_RMP_1_INT_RAD
+
+  # RMP RIGHT
+  - get: L:A380X_RMP_2_BRIGHTNESS_KNOB
+  - get: L:A380X_RMP_2_VHF_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_2_VHF_VOL_RX_1
+  - get: L:A380X_RMP_2_VHF_TX_1
+  - get: L:A380X_RMP_2_VHF_VOL_1
+  - get: L:A380X_RMP_2_VHF_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_2_VHF_VOL_RX_2
+  - get: L:A380X_RMP_2_VHF_TX_2
+  - get: L:A380X_RMP_2_VHF_VOL_2
+  - get: L:A380X_RMP_2_VHF_VOL_RX_SWITCH_3
+  #  - get: L:A380X_RMP_2_VHF_VOL_RX_3
+  - get: L:A380X_RMP_2_VHF_TX_3
+  - get: L:A380X_RMP_2_VHF_VOL_3
+  - get: L:A380X_RMP_2_HF_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_2_HF_VOL_RX_1
+  - get: L:A380X_RMP_2_HF_TX_1
+  - get: L:A380X_RMP_2_HF_VOL_1
+  - get: L:A380X_RMP_2_HF_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_2_HF_VOL_RX_2
+  - get: L:A380X_RMP_2_HF_TX_2
+  - get: L:A380X_RMP_2_HF_VOL_2
+  - get: L:A380X_RMP_2_TEL_VOL_RX_SWITCH_1
+  #  - get: L:A380X_RMP_2_TEL_VOL_RX_1
+  - get: L:A380X_RMP_2_TEL_TX_1
+  - get: L:A380X_RMP_2_TEL_VOL_1
+  - get: L:A380X_RMP_2_TEL_VOL_RX_SWITCH_2
+  #  - get: L:A380X_RMP_2_TEL_VOL_RX_2
+  - get: L:A380X_RMP_2_TEL_TX_2
+  - get: L:A380X_RMP_2_TEL_VOL_2
+  - get: L:A380X_RMP_2_INT_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_2_INT_VOL_RX
+  - get: L:A380X_RMP_2_INT_TX
+  - get: L:A380X_RMP_2_INT_VOL
+  - get: L:A380X_RMP_2_CAB_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_2_CAB_VOL_RX
+  - get: L:A380X_RMP_2_CAB_TX
+  - get: L:A380X_RMP_2_CAB_VOL
+  - get: L:A380X_RMP_2_PA_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_2_PA_VOL_RX
+  - get: L:A380X_RMP_2_PA_TX
+  - get: L:A380X_RMP_2_PA_VOL
+  - get: L:A380X_RMP_2_NAV_VOL_RX_SWITCH
+  #  - get: L:A380X_RMP_2_NAV_VOL_RX
+  - get: L:A380X_RMP_2_NAV_FILTER
+  - get: L:A380X_RMP_2_NAV_VOL
+  - get: L:A380X_RMP_2_NAV_SEL
+  - get: L:A380X_RMP_2_DUMMY_VOL_RX_SWITCH
+  - get: L:A380X_RMP_2_DUMMY_VOL
+  - get: L:A380X_RMP_2_INT_RAD
+    
+  # RUDDER  TRIM Panel
+  #  - get: A:RUDDER TRIM PCT, Percent scaler 16k # doesn't work
+  #    set: (>K:RUDDER_TRIM_SET_EX1)
+  #  - get: A:ELEVATOR TRIM PCT, Percent scaler 16k
+  #    set: (>K:ELEVATOR_TRIM_SET) # doesn't work
+  #  - get: A:AILERON TRIM PCT, Percent scaler 16k # doesn't work
+  #    set: (>K:AILERON_TRIM_SET_EX1)
+    
+  # SPEED BRAKE
+  - get: L:A32NX_SPOILERS_HANDLE_POSITION # SPEED BRAKE AXIS
+    set: "`${value * 16384} (>K:SPOILERS_SET)`"
+  - get: L:A32NX_SPOILERS_ARMED # GND SPOILER ARM
+    set: (>K:SPOILERS_ARM_TOGGLE)
