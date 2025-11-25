@@ -98,6 +98,7 @@ public static class SimConnectExtensions
             case "bcd16":
             case "bco16":
             case "feet":
+            case "percent":
                 return SIMCONNECT_DATATYPE.INT32;
         }
 
