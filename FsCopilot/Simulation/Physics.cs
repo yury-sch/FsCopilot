@@ -30,7 +30,7 @@ public struct Physics
     /// <summary>
     /// Heading indicator taken from the aircraft gyro.
     /// </summary>
-    [SimVar("PLANE HEADING DEGREES GYRO", "Degrees", 6)] public int HdgDegGyro;
+    [SimVar("PLANE HEADING DEGREES GYRO", "Degrees", 6)] public double HdgDegGyro;
     /// <summary>
     /// Heading relative to true north - although the name mentions degrees the units used are radians.
     /// </summary>
@@ -88,7 +88,7 @@ public struct Physics
             AltFeet = br.ReadDouble(),
             Pitch = br.ReadDouble(),
             Bank = br.ReadDouble(),
-            HdgDegGyro = br.ReadInt32(),
+            HdgDegGyro = br.ReadDouble(),
             HdgDegTrue = br.ReadDouble(),
             VerticalSpeed = br.ReadDouble(),
             GForce = br.ReadDouble(),

@@ -132,10 +132,12 @@ public partial class Node : ObservableObject, IDisposable
         Title = title.ToString();
         
         _sub = sim.Stream(getVar, units)
-            .Throttle(TimeSpan.FromMilliseconds(250))
+            .Sample(TimeSpan.FromMilliseconds(250))
+            .Do(value => Log.Information("[DEVELOP] RECV {Name} {Value}", getVar, value))
             .WithPreviousFirstPair()
             .Subscribe(pair => Dispatcher.UIThread.Post(() =>
             {
+                if (SubNodes.Count >= 20) SubNodes.Clear();
                 SubNodes.Add(new(_sim, def, pair.Curr, pair.Prev));
                 PulseOnce(TimeSpan.FromMilliseconds(1200));
             }));
