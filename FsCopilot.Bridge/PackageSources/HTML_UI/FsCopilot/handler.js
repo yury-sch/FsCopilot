@@ -7,14 +7,14 @@ class FsCopilotHandler {
         SimVar.SetSimVarValue('L:FsCopilotHandlerId', 'Number', this.panelId)
 
         this.network = new FsCopilotNetwork();
-        this.events = new HTMLEvents();
+        this.events = new HtmlEvents();
         this.watcher = new VarWatcher();
         this.network.addEventListener('message', data => this.onMessage(data))
         this.network.addEventListener('close', () => this.watcher.clear());
         if (instrument.isInteractive) {
-            this.network.addEventListener('open', () => this.events.startDocumentListener());
+            this.network.addEventListener('open', () => this.events.start());
         }
-        this.network.addEventListener('close', () => this.events.clear());
+        this.network.addEventListener('close', () => this.events.stop());
         this.watcher.addEventListener('update', ev => {
             if (!this.canProcess()) return;
             this.network.send({
@@ -68,12 +68,12 @@ class FsCopilotHandler {
             }
             case 'button': {
                 if (this.instrument.instrumentIdentifier !== data.instrument) break;
-                HTMLEvents.setPanel(data.name);
+                HtmlEvents.setPanel(data.name);
                 break;
             }
             case 'input': {
                 if (this.instrument.instrumentIdentifier !== data.instrument) break;
-                HTMLEvents.setInput(data.name, data.value);
+                HtmlEvents.setInput(data.name, data.value);
                 break;
             }
         }
