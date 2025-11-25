@@ -211,7 +211,7 @@ public class SimClient : IDisposable
 
     public IObservable<object> Stream(string name, string sUnits)
     {
-        if (name.StartsWith("L:")) return SimVar(name, "number", SIMCONNECT_DATATYPE.FLOAT32);
+        if (name.StartsWith("L:")) return SimVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits, SIMCONNECT_DATATYPE.FLOAT32);
         if (name.StartsWith("Z:")) return ZVar(name);
         if (name.StartsWith("A:")) return SimVar(name[2..], sUnits);
         if (name.StartsWith("H:")) return HVar(name);
