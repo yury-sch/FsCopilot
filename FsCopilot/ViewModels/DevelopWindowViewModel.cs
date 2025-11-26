@@ -5,15 +5,17 @@ using System.Globalization;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Avalonia.Threading;
 using Connection;
 using Serilog;
 using Simulation;
+using System.Reactive;
+using System.Reactive.Subjects;
 
 public partial class DevelopWindowViewModel : ViewModelBase
 {
     private readonly SimClient _sim;
+    private Subject<Unit> _reload = new();
 
     public ObservableCollection<Node> Nodes { get; set; } = [];
     // public ObservableCollection<Node> InstrumentNode = [];
@@ -25,6 +27,7 @@ public partial class DevelopWindowViewModel : ViewModelBase
         var latestTree = new SerialDisposable();
         
         sim.Aircraft
+            .Merge(_reload.WithLatestFrom(sim.Aircraft, (_, a) => a))
             .Subscribe(path => Dispatcher.UIThread.Post(() =>
             {
                 latestTree.Disposable = PopulateTreeAndAttach(path);
@@ -86,6 +89,12 @@ public partial class DevelopWindowViewModel : ViewModelBase
             d.Add(varNode);
             return varNode;
         }
+    }
+
+    [RelayCommand]
+    private void Reload()
+    {
+        _reload.OnNext(Unit.Default);
     }
 }
 

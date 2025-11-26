@@ -44,4 +44,9 @@
         <Setter Property="Margin" Value="0, 0, 10, 0"></Setter>
         <Setter Property="Foreground" Value="white"></Setter>
     </Style>
+    
+    <Style Selector="Button.Reload">
+        <Setter Property="Margin" Value="10, 0, 0, 0"></Setter>
+        <Setter Property="CornerRadius" Value="10"></Setter>
+    </Style>
 </Styles>

@@ -84,11 +84,18 @@
                 </ScrollViewer>
             </Border>
 
-            <Border Grid.Row="1"
+            <DockPanel Grid.Row="1">
+                <Button DockPanel.Dock="Right"
+                        Classes="Reload" 
+                        Command="{Binding ReloadCommand}">
+                    <PathIcon Data="{StaticResource arrow_sync_regular}" />
+                </Button>
+            <Border DockPanel.Dock="Left"
                     Classes="Card Badge">
-                <TextBlock Classes="Badge" 
-                           Text="{Binding Loaded}" />
+                    <TextBlock Classes="Badge" 
+                               Text="{Binding Loaded}" />
             </Border>
+            </DockPanel>
 
         </Grid>
 
