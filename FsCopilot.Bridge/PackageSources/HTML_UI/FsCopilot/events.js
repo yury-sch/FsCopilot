@@ -1,157 +1,135 @@
-﻿const clickEvents = ["click", "mouseup", "mousedown"].map(eventType => {
-    let evt = new MouseEvent(eventType, {
-        cancelable: true,
-        bubbles: true
-    })
-    evt.FsCopilot = true
-    return evt
-})
-const inputEvent = new Event('input', {
-    bubbles: true
-});
-const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set
+﻿const nativeInputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
 
 class HtmlEvents extends Emitter {
     constructor() {
         super();
-        this._bindedInputs = {};
-        this._documentListenerLoop = null;
-        this._mouseListener = (e) => {
-            if (e.FsCopilot) return;
-            if (e.button !== 0) return; // only left button click
-
-            let currentWorking = e.target
-            while (currentWorking != null && currentWorking.id == '') {
-                currentWorking = currentWorking.parentNode
-            }
-
-            if (!currentWorking) return;
-            this.dispatchEvent('button', {elementId: currentWorking.id});
+        this._watched = {
+            input: new WeakSet(),
+            keypress: new WeakSet(),
+            keydown: new WeakSet()
         };
-    }
 
-    start() {
-        this.stop();
-        document.addEventListener('mouseup', this._mouseListener, false);
+        this._onMouse = (ev) => {
+            if (ev.selfEmit || ev.button !== 0) return;
 
-        // const addElement = this._addElement.bind(this)
+            let el = ev.target;
+            while (el && !el.id) el = el.parentNode;
+            if (!el) return;
 
-        this._documentListenerLoop = setInterval(() => {
-            document.querySelectorAll('*').forEach((element) => {
-                // addElement(element)
-                this._addButton(element);
-                this._addInput(element);
-            })
-        }, 500);
-    }
-
-    stop() {
-        this._bindedInputs = {};
-        if (!!this._documentListenerLoop) {
-            clearInterval(this._documentListenerLoop);
-            this._documentListenerLoop = null;    
+            this.dispatchEvent('emit', {type:'mouseup', id: el.id});
+        };
+        this._onInput = (ev) => {
+            if (ev.selfEmit) return;
+            this.dispatchEvent('emit', {type: 'input', id: ev.target.id, value: ev.target.value});
         }
-        document.removeEventListener('mouseup', this._mouseListener, false);
-    }
+        this._onKeypress = (ev) => {
+            console.log('keypress', ev.keyCode);
+            if (ev.selfEmit) return;
+            this.dispatchEvent('emit', {type: 'keypress', id: ev.target.id, value: ev.keyCode});
+        };
+        this._onKeydown = (ev) => {
+            if (ev.selfEmit) return;
+            this.dispatchEvent('emit', {type: 'keydown', id: ev.target.id, value: ev.keyCode});
+        };
 
-    // _addElement(element) {
-    //     this._addButton(element)
-    //     this._addInput(element)
-    // }
+        document.addEventListener('mouseup', this._onMouse, false);
+        document.querySelectorAll('*').forEach(el => this._initElement(el));
 
-    _addButton(el) {
-        if (el.id != '') return;
-
-        const getAttributesAsOneString = (element) => {
-            let longString = ''
-
-            if (element.hasAttributes()) {
-                let attrs = element.attributes;
-                for (let i = attrs.length - 1; i >= 0; i--) {
-                    longString += attrs[i].name + '#' + attrs[i].value
+        new MutationObserver(muts => {
+            muts.forEach(m => m.addedNodes.forEach(n => {
+                if (n.nodeType === 1) {
+                    this._initElement(n);
+                    n.querySelectorAll('*').forEach(el => this._initElement(el));
                 }
-            }
-
-            return longString
-        }
-
-        const getHash = (string) => {
-            let hash = 0,
-                i, chr;
-            for (i = 0; i < string.length; i++) {
-                chr = string.charCodeAt(i);
-                hash = ((hash << 5) - hash) + chr;
-                hash |= 0; // Convert to 32bit integer
-            }
-            return hash;
-        }
-
-        const countParents = (element) => {
-            let count = 0
-            let workingElement = element;
-
-            while (workingElement != null) {
-                count++
-                workingElement = workingElement.parentNode
-            }
-
-            return count
-        }
-
-        const getPositionOfElementInParent = (element) => {
-            if (element.parentNode == null) return 0;
-
-            let nodes = element.parentNode.childNodes
-            for (let index = 0; index < nodes.length; index++) {
-                const otherElement = nodes[index];
-                if (otherElement.isEqualNode(element)) return index;
-            }
-
-            return 0;
-        }
-
-        const generateHTMLHash = (element) => {
-            let hash = getHash(getAttributesAsOneString(element))
-            hash += countParents(element) * getPositionOfElementInParent(element)
-            return hash
-        }
-
-        const getIdCorrected = (id) => {
-            while (document.getElementById(id) != null) id += 1;
-            return id
-        }
-
-        el.id = el.id || getIdCorrected(generateHTMLHash(el));
+            }));
+        }).observe(document.documentElement, {childList:true,subtree:true});
     }
 
-    _addInput(element) {
-        if (!(element instanceof HTMLInputElement) || this._bindedInputs[element.id] == true) return;
-
-        this._bindedInputs[element.id] = true
-
-        let cacheValue = null
-        element.oninput = () => {
-            if (cacheValue == element.value) return;
-            cacheValue = element.value
-            this.dispatchEvent('input', {elementId: element.id, value: element.value});
+    /**
+     * Static entrypoint used to replay events back into the DOM
+     * (simulating user input on a specific element by id).
+     *
+     * @param {'mouseup'|'input'|'keypress'|'keydown'} type
+     * @param {string} id
+     * @param {string|number} [value]
+     */
+    static dispatch(type, id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        switch (type) {
+            case 'mouseup':
+                ['mousedown', 'mouseup', 'click']
+                    .forEach(evt => el.dispatchEvent(new MouseEvent(evt, {bubbles: true, cancelable: true, selfEmit: true})));
+                break;
+            case 'input':
+                nativeInputSetter.call(el, value);
+                el.dispatchEvent(new InputEvent('input', {bubbles: true, data: value, selfEmit: true}));
+                break;
+            case 'keypress':
+                el.dispatchEvent(new KeyboardEvent('keypress', {bubbles: true, keyCode: value, selfEmit: true}));
+                break;
+            case 'keydown':
+                el.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, keyCode: value, selfEmit: true}));
+                break;
         }
     }
-    
-    static setInput(element, value) {
-        element = document.getElementById(element);
-        nativeInputSetter.call(element, value);
-        element.dispatchEvent(inputEvent);
+
+    _initElement(el) {
+        if (!(el instanceof HTMLElement)) return;
+        this._assignId(el);
+        this._attachListeners(el);
     }
 
-    static setPanel(buttonName) {
-        const button = document.getElementById(buttonName)
-        clickEvents.forEach(evt => {
-            button.dispatchEvent(evt)
-        });
+    _assignId(el) {
+        if (el.id) return;
+
+        const pathParts = [];
+        let node = el;
+        while (node && node.nodeType === 1) {
+            let index = 0;
+            let sib = node;
+            while ((sib = sib.previousElementSibling)) index++;
+            pathParts.push(node.tagName + ':' + index);
+            node = node.parentElement;
+        }
+        pathParts.reverse();
+
+        const attrs = el.getAttributeNames()
+            .sort()
+            .map(name => `${name}=${el.getAttribute(name)}`)
+            .join('|');
+
+        const str = pathParts.join('/') + '|' + attrs;
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+
+        let id = 'fsc_' + Math.abs(hash);
+        while (document.getElementById(id)) {
+            id += '1';
+        }
+
+        el.id = id;
     }
 
-    // static processInput(element, value) {
-    //     FsCopilotHTMLTrigger.nativeInputSetter.call(element, value);
-    //     element.dispatchEvent(inputEvent);
-    // }
+    _attachListeners(el) {
+        const attr = el.getAttribute('fsc-listeners');
+        const has = type => attr ? attr.split(',').includes(type) : false;
+        const subscribe = (type, handler) => {
+            const bucket = this._watched[type];
+            if (!bucket || bucket.has(el)) return;
+            bucket.add(el);
+            el.addEventListener(type, handler, false);
+        };
+
+        if (el instanceof HTMLInputElement) {
+            subscribe(el, 'input', this._onInput);
+            return;
+        }
+
+        if (has('keypress')) subscribe('keypress', this._onKeypress);
+        if (has('keydown')) subscribe('keydown', this._onKeydown);
+    }
 }

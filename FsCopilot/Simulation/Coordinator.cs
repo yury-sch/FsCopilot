@@ -3,7 +3,6 @@ namespace FsCopilot.Simulation;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text.RegularExpressions;
 using Connection;
 using Network;
 using Serilog;
@@ -24,7 +23,7 @@ public class Coordinator : IDisposable
         _masterSwitch = masterSwitch;
         _sim = sim;
         peer2Peer.RegisterPacket<Update, Update.Codec>();
-        peer2Peer.RegisterPacket<InstrumentInteraction, InstrumentInteraction.Codec>();
+        peer2Peer.RegisterPacket<Interact, InteractCodec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
 
@@ -35,11 +34,11 @@ public class Coordinator : IDisposable
         AddLink<Payload, Payload.Codec>(master: false);
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
 
-        _d.Add(_sim.InstrumentEvents
-            .Subscribe(update => _peer2Peer.SendAll(new InstrumentInteraction(update))));
+        _d.Add(_sim.Interactions
+            .Subscribe(interact => _peer2Peer.SendAll(interact)));
 
-        _d.Add(_peer2Peer.Stream<InstrumentInteraction>()
-            .Subscribe(update => _sim.Interact(update.Json)));
+        _d.Add(_peer2Peer.Stream<Interact>()
+            .Subscribe(update => _sim.Set(update)));
     }
 
     public void Dispose()
@@ -194,21 +193,18 @@ public class Coordinator : IDisposable
             }
         }
     }
-
-    private record InstrumentInteraction(string Json)
+    
+    private class InteractCodec : IPacketCodec<Interact>
     {
-        public class Codec : IPacketCodec<InstrumentInteraction>
+        public void Encode(Interact packet, BinaryWriter bw)
         {
-            public void Encode(InstrumentInteraction packet, BinaryWriter bw)
-            {
-                bw.Write(packet.Json);
-            }
+            
+            
+        }
 
-            public InstrumentInteraction Decode(BinaryReader br)
-            {
-                var json = br.ReadString();
-                return new(json);
-            }
+        public Interact Decode(BinaryReader br)
+        {
+            throw new NotImplementedException();
         }
     }
 }

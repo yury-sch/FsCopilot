@@ -4,6 +4,26 @@ var handler = null;
 var templateToLoad = null;
 var jsLoaded = false;
 
+(function() {
+    const orig = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, listener, options) {
+        if (this instanceof HTMLElement) {
+            const attr = 'fsc-listeners';
+            const current = this.getAttribute(attr);
+            if (current) {
+                const list = current.split(',');
+                if (!list.includes(type)) {
+                    list.push(type);
+                    this.setAttribute(attr, list.join(','));
+                }
+            } else {
+                this.setAttribute(attr, type);
+            }
+        }
+        return orig.call(this, type, listener, options);
+    };
+})();
+
 Include.addImports(['/FsCopilot/common.js'], () =>
 Include.addImports(['/FsCopilot/network.js'], () =>
 Include.addImports(['/FsCopilot/events.js'], () =>

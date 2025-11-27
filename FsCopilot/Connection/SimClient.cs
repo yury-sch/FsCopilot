@@ -1,17 +1,16 @@
-using System.Globalization;
-using Serilog;
+using System.Text.Json.Serialization;
 
 namespace FsCopilot.Connection;
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using Microsoft.FlightSimulator.SimConnect;
 using WatsonWebsocket;
+using Serilog;
 
 public class SimClient : IDisposable
 {
@@ -24,14 +23,14 @@ public class SimClient : IDisposable
     // private readonly ConcurrentDictionary<string, ushort> _lVars = new();
     private uint _defId = 100;
     private uint _requestId = 100;
-    private readonly Subject<string> _instrumentEvents = new();
     private readonly WatsonWsServer _socket;
-    private readonly IObservable<(JsonElement Json, string Raw)> _socketMessages;
+    private readonly IObservable<VarPayload> _varMessages;
+    private readonly IObservable<string> _hEvents;
+    // private readonly IObservable<(JsonElement Json, string Raw)> _socketMessages;
 
     public IObservable<bool> Connected => _headless.Connected;
     public IObservable<string> Aircraft => _headless.Aircraft;
-    
-    public IObservable<string> InstrumentEvents => _instrumentEvents;
+    public IObservable<Interact> Interactions { get; }
 
     public SimClient(string appName)
     {
@@ -43,23 +42,36 @@ public class SimClient : IDisposable
         
         // Set("L:FsCopilotStarted", true);
 
-        _socketMessages = Observable
+       var socketMessages = Observable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
                 h => _socket.MessageReceived += h,
                 h => _socket.MessageReceived -= h)
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
             .Do(json => Log.Debug("[SimConnect] RECV: {json}", json))
-            .Select(json => (JsonDocument.Parse(json).RootElement, json))
+            .Select(json => JsonDocument.Parse(json))
+            // .Select(json => (JsonDocument.Parse(json).RootElement, json))
             .Replay(0).RefCount();
 
-        _socketMessages.Subscribe(row =>
-        {
-            var type = row.Json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-            if (type is "button" or "input")
-            {
-                _instrumentEvents.OnNext(row.Raw);
-            }
-        });
+       _varMessages = socketMessages
+           .Where(m => m.RootElement.TryGetProperty("type", out var type)
+                       && type.ValueKind == JsonValueKind.String
+                       && type.GetString()!.Equals("var"))
+           .Select(m => m.Deserialize<VarPayload>()!)
+           .Replay(0).RefCount();
+
+       _hEvents = socketMessages
+           .Where(m => m.RootElement.TryGetProperty("type", out var type)
+                       && type.ValueKind == JsonValueKind.String
+                       && type.GetString()!.Equals("hevent"))
+           .Select(m => m.Deserialize<HEventPayload>()!.Name)
+           .Replay(0).RefCount();
+
+       Interactions = socketMessages
+           .Where(m => m.RootElement.TryGetProperty("type", out var type)
+                       && type.ValueKind == JsonValueKind.String
+                       && type.GetString()!.Equals("interact"))
+            .Select(m => m.Deserialize<Interact>()!)
+            .Replay(0).RefCount();
 
         // _headless.Configure(sim =>
         // {
@@ -92,6 +104,12 @@ public class SimClient : IDisposable
         
         _headless.Post(sim => sim.SetDataOnSimObject(defId, 
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
+    }
+
+    public void Set(Interact interact)
+    {
+        var msg = Envelope("interact", interact);
+        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, msg)));
     }
     
     public void Set(string eventName, object value) =>
@@ -161,8 +179,8 @@ public class SimClient : IDisposable
 
     private void SetClientVar(string name, object value)
     {
-        var payload = $$"""{"type":"set","name":"{{name}}", "value":"{{value}}"}""";
-        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, payload)));
+        var msg = Envelope("set", new SetPayload(name, value));
+        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, msg)));
     }
 
     public IObservable<T> Stream<T>() where T : struct => 
@@ -276,21 +294,11 @@ public class SimClient : IDisposable
     private IObservable<object> ZVar(string name) => 
         (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
         {
-            var sub = _socketMessages.Subscribe(row =>
-            {
-                var json = row.Json;
-                var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-                if (type == "var"
-                    && json.TryGetProperty("name", out var keyProp) && keyProp.ToString() == name
-                    && json.TryGetProperty("value", out var valueProp))
-                {
-                    var strValue = valueProp.ToString();
-                    if (int.TryParse(strValue, out var iValue)) observer.OnNext(iValue);
-                    else if (double.TryParse(strValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var dValue)) observer.OnNext(dValue);
-                }
-            });
-            
-            var watch = $$"""{"type":"watch","name":"{{name}}", "units":"number"}""";
+            var sub = _varMessages
+                .Where(var => var.Name.Equals(name))
+                .Subscribe(var => observer.OnNext(var.Value % 1 == 0 ? (int)var.Value : var.Value));
+
+            var watch = Envelope("watch", new WatchPayload(name, "number"));
             var conSub = Observable
                 .FromEventPattern<EventHandler<ConnectionEventArgs>, ConnectionEventArgs>(
                     h => _socket.ClientConnected += h,
@@ -303,7 +311,7 @@ public class SimClient : IDisposable
             {
                 conSub.Dispose();
                 sub.Dispose();
-                var unwatch = $$"""{"type":"unwatch","name":"{{name}}"}""";
+                var unwatch = Envelope("unwatch", new UnWatchPayload(name));
                 _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, unwatch)));
             };
         }).Replay(1).RefCount());
@@ -311,29 +319,49 @@ public class SimClient : IDisposable
     private IObservable<object> HVar(string name) => 
         (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
         {
-            var sub = _socketMessages.Subscribe(row =>
-            {
-                var  json = row.Json;
-                var type = json.TryGetProperty("type", out var typeProp) ? typeProp.ToString() : string.Empty;
-                if (type == "hevent"
-                    && json.TryGetProperty("name", out var keyProp) && keyProp.ToString() == name[2..])
-                {
-                    observer.OnNext(DefaultHValue);
-                }
-            });
+            var sub = _hEvents
+                .Where(ev => ev.Equals(name[2..]))
+                .Subscribe(row => observer.OnNext(DefaultHValue));
     
             return () => sub.Dispose();
         }).Replay(1).RefCount());
 
-
-    public void Interact(string raw)
+    private static string Envelope<T>(string type, T message)
     {
-        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, raw)));
+        using var buffer = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(buffer))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("type", type);
+            var elem = JsonSerializer.SerializeToElement(message);
+            foreach (var prop in elem.EnumerateObject())
+                prop.WriteTo(writer);
+            writer.WriteEndObject();    
+        }
+        return Encoding.UTF8.GetString(buffer.ToArray());
     }
 
     private enum DEF : uint;
     private enum REQ : uint;
     private enum EVT : uint;
     private enum GRP { DUMMY, INPUTS }
+
+    private record VarPayload(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("value")] double Value);
+    
+    private record HEventPayload(
+        [property: JsonPropertyName("name")] string Name);
+    
+    private record SetPayload(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("value")] object Value);
+    
+    private record WatchPayload(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("units")] string Units);
+    
+    private record UnWatchPayload(
+        [property: JsonPropertyName("name")] string Name);
 }
 
