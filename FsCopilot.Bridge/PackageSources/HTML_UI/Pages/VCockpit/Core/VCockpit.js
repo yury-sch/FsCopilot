@@ -6,19 +6,17 @@ var jsLoaded = false;
 
 (function() {
     const orig = EventTarget.prototype.addEventListener;
+    const store = new WeakMap();
+    window.fscListeners = store;
+    
     EventTarget.prototype.addEventListener = function(type, listener, options) {
         if (this instanceof HTMLElement) {
-            const attr = 'fsc-listeners';
-            const current = this.getAttribute(attr);
-            if (current) {
-                const list = current.split(',');
-                if (!list.includes(type)) {
-                    list.push(type);
-                    this.setAttribute(attr, list.join(','));
-                }
-            } else {
-                this.setAttribute(attr, type);
+            let set = store.get(this);
+            if (!set) {
+                set = new Set();
+                store.set(this, set);
             }
+            set.add(type);
         }
         return orig.call(this, type, listener, options);
     };

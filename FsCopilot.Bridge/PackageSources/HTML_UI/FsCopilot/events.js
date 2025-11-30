@@ -115,8 +115,14 @@ class HtmlEvents extends Emitter {
     }
 
     _attachListeners(el) {
-        const attr = el.getAttribute('fsc-listeners');
-        const has = type => attr ? attr.split(',').includes(type) : false;
+        const store = window.fscListeners;
+
+        const has = (type) => {
+            if (!store) return false;
+            const set = store.get(el);
+            return !!set && set.has(type);
+        };
+
         const subscribe = (type, handler) => {
             const bucket = this._watched[type];
             if (!bucket || bucket.has(el)) return;
@@ -125,7 +131,7 @@ class HtmlEvents extends Emitter {
         };
 
         if (el instanceof HTMLInputElement) {
-            subscribe(el, 'input', this._onInput);
+            subscribe('input', this._onInput);
             return;
         }
 
