@@ -15,10 +15,10 @@ public static class SimConnectExtensions
             .ThenBy(x => x.f.MetadataToken)
             .ToArray();
 
-        foreach (var (_, attr) in fields)
+        foreach (var (f, attr) in fields)
         {
-            var dt = InferDataType(attr!.Units);
-            // var dt = InferDataType(f.FieldType, attr!.Units);
+            // var dt = InferDataType(attr!.Units);
+            var dt = InferDataType(f.FieldType);
             sim.AddToDataDefinition(defId, attr!.Name, attr!.Units, dt, 0f, SimConnect.SIMCONNECT_UNUSED);
         }
     }
@@ -103,5 +103,10 @@ public static class SimConnectExtensions
         }
 
         return SIMCONNECT_DATATYPE.FLOAT64;
+    }
+    
+    private static SIMCONNECT_DATATYPE InferDataType(Type type)
+    {
+        return type == typeof(int) ? SIMCONNECT_DATATYPE.INT32 : SIMCONNECT_DATATYPE.FLOAT64;
     }
 }
