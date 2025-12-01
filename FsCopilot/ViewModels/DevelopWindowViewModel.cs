@@ -1,4 +1,6 @@
-﻿namespace FsCopilot.ViewModels;
+﻿using System.Diagnostics;
+
+namespace FsCopilot.ViewModels;
 
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -15,11 +17,16 @@ using System.Reactive.Subjects;
 public partial class DevelopWindowViewModel : ViewModelBase
 {
     private readonly SimClient _sim;
-    private Subject<Unit> _reload = new();
+    private readonly Subject<Unit> _reload = new();
+    private readonly List<Recorded<Physics>> _trace = [];
+    private readonly  SerialDisposable _recording = new();
+    private readonly  SerialDisposable _playing = new();
 
     public ObservableCollection<Node> Nodes { get; set; } = [];
     // public ObservableCollection<Node> InstrumentNode = [];
     [ObservableProperty] private string _loaded;
+    [ObservableProperty] private bool _isPlaying;
+    [ObservableProperty] private bool _isRecording;
 
     public DevelopWindowViewModel(SimClient sim)
     {
@@ -95,6 +102,60 @@ public partial class DevelopWindowViewModel : ViewModelBase
     private void Reload()
     {
         _reload.OnNext(Unit.Default);
+    }
+
+    [RelayCommand]
+    private void Record()
+    {
+        var codec = new Physics.Codec();
+        IsRecording = !IsRecording;
+        if (IsRecording)
+        {
+            _trace.Clear();
+            _recording.Disposable = _sim.Stream<Physics>().Select(p =>
+            {
+                using var ms = new MemoryStream();
+                using var bw = new BinaryWriter(ms);
+                codec.Encode(p, bw);
+                ms.Position = 0;
+                using var br = new BinaryReader(ms);
+                return codec.Decode(br);
+            }).Record(_trace);
+        }
+        else
+        {
+            _recording.Disposable?.Dispose();
+        }
+    }
+
+    [RelayCommand]
+    private void Play()
+    {
+        IsPlaying = !IsPlaying;
+
+        if (IsPlaying)
+        {
+            _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", true);
+            _sim.Set("K:FREEZE_ALTITUDE_SET", true);
+            _sim.Set("K:FREEZE_ATTITUDE_SET", true);
+            var s = _sim.Stream<Physics>().Subscribe(_ => { });
+            _playing.Disposable = _trace.Playback()
+                .Subscribe(
+                    x => _sim.Set(x),
+                    _ => { },
+                    () =>
+                    {
+                        IsPlaying = false;
+                        s.Dispose();
+                        _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", false);
+                        _sim.Set("K:FREEZE_ALTITUDE_SET", false);
+                        _sim.Set("K:FREEZE_ATTITUDE_SET", false);
+                    });
+        }
+        else
+        {
+            _playing.Disposable?.Dispose();
+        }
     }
 }
 

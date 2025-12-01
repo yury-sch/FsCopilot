@@ -16,6 +16,10 @@
         Background="Transparent"
         ExtendClientAreaToDecorationsHint="True">
 
+    <Window.Resources>
+        <vm:InverseBoolConverter x:Key="Inverse"/>
+    </Window.Resources>
+
     <Window.Styles>
         <StyleInclude Source="./DevelopWindowStyles.axaml" />
     </Window.Styles>
@@ -38,7 +42,8 @@
         </ExperimentalAcrylicBorder>
         
 
-        <Grid Classes="Wrapper" RowDefinitions="*,Auto">
+        <Grid Classes="Wrapper" 
+              RowDefinitions="*,Auto">
             <Border Grid.Row="0"
                     Classes="Card Tree">
                 <ScrollViewer Classes="Tree"
@@ -86,15 +91,32 @@
 
             <DockPanel Grid.Row="1">
                 <Button DockPanel.Dock="Right"
-                        Classes="Reload" 
+                        Classes="Tool" 
                         Command="{Binding ReloadCommand}">
                     <PathIcon Data="{StaticResource arrow_sync_regular}" />
                 </Button>
-            <Border DockPanel.Dock="Left"
-                    Classes="Card Badge">
-                    <TextBlock Classes="Badge" 
-                               Text="{Binding Loaded}" />
-            </Border>
+                
+                <Button DockPanel.Dock="Right"
+                        Classes="Tool" 
+                        Classes.Recording="{Binding IsRecording}"
+                        IsEnabled="{Binding IsPlaying, Converter={StaticResource Inverse}}"
+                        Command="{Binding RecordCommand}">
+                    <PathIcon Data="{StaticResource record_regular}" />
+                </Button>
+                
+                <Button DockPanel.Dock="Right"
+                        Classes="Tool"
+                        Classes.Playing="{Binding IsPlaying}"
+                        IsEnabled="{Binding IsRecording, Converter={StaticResource Inverse}}"
+                        Command="{Binding PlayCommand}">
+                    <PathIcon Data="{StaticResource play_regular}" />
+                </Button>
+                
+                <Border DockPanel.Dock="Left"
+                        Classes="Card Badge">
+                        <TextBlock Classes="Badge" 
+                                   Text="{Binding Loaded}" />
+                </Border>
             </DockPanel>
 
         </Grid>

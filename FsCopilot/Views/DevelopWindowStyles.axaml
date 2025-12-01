@@ -45,8 +45,18 @@
         <Setter Property="Foreground" Value="white"></Setter>
     </Style>
     
-    <Style Selector="Button.Reload">
+    <Style Selector="Button.Tool">
         <Setter Property="Margin" Value="10, 0, 0, 0"></Setter>
         <Setter Property="CornerRadius" Value="10"></Setter>
+    </Style>    
+    
+    <Style Selector="Button.Recording">
+        <Setter Property="Background" Value="Red"></Setter>
+        <Setter Property="Foreground" Value="White"></Setter>
+    </Style>
+    
+    <Style Selector="Button.Playing">
+        <Setter Property="Background" Value="Green"></Setter>
+        <Setter Property="Foreground" Value="White"></Setter>
     </Style>
 </Styles>
