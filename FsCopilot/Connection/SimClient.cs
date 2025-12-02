@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace FsCopilot.Connection;
 
 using System.Collections.Concurrent;
@@ -24,7 +22,7 @@ public class SimClient : IDisposable
     private uint _defId = 100;
     private uint _requestId = 100;
     private readonly WatsonWsServer _socket;
-    private readonly IObservable<VarPayload> _varMessages;
+    private readonly IObservable<WatchedVar> _varMessages;
     private readonly IObservable<string> _hEvents;
     // private readonly IObservable<(JsonElement Json, string Raw)> _socketMessages;
 
@@ -48,29 +46,22 @@ public class SimClient : IDisposable
                 h => _socket.MessageReceived -= h)
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
             .Do(json => Log.Debug("[SimConnect] RECV: {json}", json))
-            .Select(json => JsonDocument.Parse(json))
-            // .Select(json => (JsonDocument.Parse(json).RootElement, json))
+            .Select(json => JsonDocument.Parse(json).RootElement)
             .Replay(0).RefCount();
 
        _varMessages = socketMessages
-           .Where(m => m.RootElement.TryGetProperty("type", out var type)
-                       && type.ValueKind == JsonValueKind.String
-                       && type.GetString()!.Equals("var"))
-           .Select(m => m.Deserialize<VarPayload>()!)
+           .Where(json => json.String("type").Equals("var"))
+           .Select(json => new WatchedVar(json.String("name"), json.Double("value")))
            .Replay(0).RefCount();
 
        _hEvents = socketMessages
-           .Where(m => m.RootElement.TryGetProperty("type", out var type)
-                       && type.ValueKind == JsonValueKind.String
-                       && type.GetString()!.Equals("hevent"))
-           .Select(m => m.Deserialize<HEventPayload>()!.Name)
+           .Where(json => json.String("type").Equals("hevent"))
+           .Select(json => json.String("name"))
            .Replay(0).RefCount();
 
        Interactions = socketMessages
-           .Where(m => m.RootElement.TryGetProperty("type", out var type)
-                       && type.ValueKind == JsonValueKind.String
-                       && type.GetString()!.Equals("interact"))
-            .Select(m => m.Deserialize<Interact>()!)
+           .Where(json => json.String("type").Equals("interact"))
+            .Select(json => new Interact(json.String("instrument"), json.String("event"), json.String("id"), json.StringOrNull("value")))
             .Replay(0).RefCount();
 
         // _headless.Configure(sim =>
@@ -108,7 +99,13 @@ public class SimClient : IDisposable
 
     public void Set(Interact interact)
     {
-        var msg = Envelope("interact", interact);
+        var msg = Envelope("interact", writer =>
+        {
+            writer.WriteString("instrument", interact.Instrument);
+            writer.WriteString("event", interact.Event);
+            writer.WriteString("id", interact.Id);
+            writer.WriteString("value", interact.Value);
+        });
         _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, msg)));
     }
     
@@ -179,7 +176,11 @@ public class SimClient : IDisposable
 
     private void SetClientVar(string name, object value)
     {
-        var msg = Envelope("set", new SetPayload(name, value));
+        var msg = Envelope("set", writer =>
+        {
+            writer.WriteString("name", name);
+            writer.WritePrimitive("value", value);
+        });
         _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, msg)));
     }
 
@@ -297,8 +298,12 @@ public class SimClient : IDisposable
             var sub = _varMessages
                 .Where(var => var.Name.Equals(name))
                 .Subscribe(var => observer.OnNext(var.Value % 1 == 0 ? (int)var.Value : var.Value));
-
-            var watch = Envelope("watch", new WatchPayload(name, "number"));
+            
+            var watch = Envelope("watch", writer =>
+            {
+                writer.WriteString("name", name);
+                writer.WriteString("units", "number");
+            });
             var conSub = Observable
                 .FromEventPattern<EventHandler<ConnectionEventArgs>, ConnectionEventArgs>(
                     h => _socket.ClientConnected += h,
@@ -311,7 +316,7 @@ public class SimClient : IDisposable
             {
                 conSub.Dispose();
                 sub.Dispose();
-                var unwatch = Envelope("unwatch", new UnWatchPayload(name));
+                var unwatch = Envelope("unwatch", writer => writer.WriteString("name", name));
                 _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, unwatch)));
             };
         }).Replay(1).RefCount());
@@ -326,16 +331,14 @@ public class SimClient : IDisposable
             return () => sub.Dispose();
         }).Replay(1).RefCount());
 
-    private static string Envelope<T>(string type, T message)
+    private static string Envelope(string type, Action<Utf8JsonWriter> write)
     {
         using var buffer = new MemoryStream();
         using (var writer = new Utf8JsonWriter(buffer))
         {
             writer.WriteStartObject();
             writer.WriteString("type", type);
-            var elem = JsonSerializer.SerializeToElement(message);
-            foreach (var prop in elem.EnumerateObject())
-                prop.WriteTo(writer);
+            write(writer);
             writer.WriteEndObject();    
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
@@ -346,22 +349,5 @@ public class SimClient : IDisposable
     private enum EVT : uint;
     private enum GRP { DUMMY, INPUTS }
 
-    private record VarPayload(
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("value")] double Value);
-    
-    private record HEventPayload(
-        [property: JsonPropertyName("name")] string Name);
-    
-    private record SetPayload(
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("value")] object Value);
-    
-    private record WatchPayload(
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("units")] string Units);
-    
-    private record UnWatchPayload(
-        [property: JsonPropertyName("name")] string Name);
+    private record WatchedVar(string Name, double Value);
 }
-
