@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace FsCopilot.ViewModels;
+﻿namespace FsCopilot.ViewModels;
 
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -14,17 +12,26 @@ using Simulation;
 using System.Reactive;
 using System.Reactive.Subjects;
 
-public partial class DevelopWindowViewModel : ViewModelBase
+public partial class DevelopWindowViewModel : ViewModelBase, IDisposable
 {
+    private readonly CompositeDisposable _d = new();
     private readonly SimClient _sim;
     private readonly Subject<Unit> _reload = new();
-    private readonly List<Recorded<Physics>> _trace = [];
-    private readonly  SerialDisposable _recording = new();
-    private readonly  SerialDisposable _playing = new();
+    private readonly SerialDisposable _recording = new();
+    private readonly SerialDisposable _playing = new();
+    
+    private readonly IObservable<Physics> _physics;
+    private readonly IObservable<Control> _controls;
+    private readonly IObservable<Throttle> _throttle;
+    private readonly IObservable<Fuel> _fuel;
+    private readonly IObservable<Payload> _payload;
+    private readonly IObservable<Control.Flaps> _flaps;
+    // private readonly Subject<Trace.Var> _vars = new();
+    private Trace? _trace;
 
     public ObservableCollection<Node> Nodes { get; set; } = [];
     // public ObservableCollection<Node> InstrumentNode = [];
-    [ObservableProperty] private string _loaded;
+    [ObservableProperty] private string _loaded = string.Empty;
     [ObservableProperty] private bool _isPlaying;
     [ObservableProperty] private bool _isRecording;
 
@@ -32,95 +39,90 @@ public partial class DevelopWindowViewModel : ViewModelBase
     {
         _sim = sim;
         var latestTree = new SerialDisposable();
+        _d.Add(latestTree);
         
-        sim.Aircraft
+        _d.Add(sim.Aircraft
             .Merge(_reload.WithLatestFrom(sim.Aircraft, (_, a) => a))
             .Subscribe(path => Dispatcher.UIThread.Post(() =>
             {
                 latestTree.Disposable = PopulateTreeAndAttach(path);
-            }));
-    }
-    
-    // Helper method that returns IDisposable for cleanup.
-    IDisposable PopulateTreeAndAttach(string path)
-    {
-        var d = new CompositeDisposable();
+            })));
 
-        var definitions = Definitions.LoadTree($"{path}.yaml");
+        _physics = Connect<Physics>();
+        _controls = Connect<Control>();
+        _throttle = Connect<Throttle>();
+        _fuel = Connect<Fuel>();
+        _payload = Connect<Payload>();
+        _flaps = Connect<Control.Flaps>();
+    }
+
+    public void Dispose()
+    {
+        _d.Dispose();
+        _playing.Dispose();
+    }
+
+    private IObservable<T> Connect<T>() where T : struct
+    {
+        var connectable = _sim.Stream<T>().Publish();
+        _d.Add(connectable.Connect());
+        return connectable;
+    }
+
+    private IDisposable PopulateTreeAndAttach(string path)
+    {
+        var tree = Definitions.LoadTree($"{path}.yaml");
         Nodes.Clear();
-        if (definitions == DefinitionNode.Empty)
+        if (tree == DefinitionNode.Empty)
         {
             Loaded = $"Failed to load {path} configuration";
-            return d;
+            return Disposable.Empty;
         }
-        foreach (var node in PopulateTree(definitions, d)) Nodes.Add(node);
-        // Nodes.Add(new("Instrument events", InstrumentNode));
+
+        var nodes = PopulateTree(_sim, tree);
+        foreach (var node in nodes) Nodes.Add(node);
         Loaded = $"Loaded {path} configuration";
 
-        return d;
-    }
+        return new CompositeDisposable(nodes);
 
-    // private static Node? FindNodeByName(IEnumerable<Node> nodes, string name)
-    // {
-    //     foreach (var node in nodes)
-    //     {
-    //         if (node.Name == name) return node;
-    //
-    //         if (node.SubNodes == null) continue;
-    //         var found = FindNodeByName(node.SubNodes, name);
-    //         if (found != null) return found;
-    //     }
-    //
-    //     return null;
-    // }
-
-    private Node[] PopulateTree(DefinitionNode node, CompositeDisposable d)
-    {
-        var include = new ObservableCollection<Node>();
-        var master = new ObservableCollection<Node>();
-        var shared = new ObservableCollection<Node>();
-        
-        foreach (var i in node.Include) include.Add(new(i.Path, new(PopulateTree(i, d)), false));
-        foreach (var def in node.Master) master.Add(VarNode(def));
-        foreach (var def in node.Shared) shared.Add(VarNode(def));
-
-        var nodes = new List<Node>();
-        if (include.Count > 0) nodes.Add(new("Include", include, true));
-        if (master.Count > 0) nodes.Add(new("Master", master, true));
-        if (shared.Count > 0) nodes.Add(new("Shared", shared, true));
-        return nodes.ToArray();
-
-        Node VarNode(Definition def)
+        static Node[] PopulateTree(SimClient sim, DefinitionNode node)
         {
-            var varNode = new Node(_sim, def);
-            d.Add(varNode);
-            return varNode;
+            var include = new ObservableCollection<Node>();
+            var master = new ObservableCollection<Node>();
+            var shared = new ObservableCollection<Node>();
+        
+            foreach (var i in node.Include) include.Add(new(i.Path, new(PopulateTree(sim, i)), false));
+            foreach (var def in node.Master) master.Add(new(sim, def));
+            foreach (var def in node.Shared) shared.Add(new(sim, def));
+
+            var nodes = new List<Node>();
+            if (include.Count > 0) nodes.Add(new("Include", include, true));
+            if (master.Count > 0) nodes.Add(new("Master", master, true));
+            if (shared.Count > 0) nodes.Add(new("Shared", shared, true));
+            return nodes.ToArray();
         }
     }
 
     [RelayCommand]
-    private void Reload()
-    {
-        _reload.OnNext(Unit.Default);
-    }
+    private void Reload() => _reload.OnNext(Unit.Default);
 
     [RelayCommand]
     private void Record()
     {
-        var codec = new Physics.Codec();
         IsRecording = !IsRecording;
         if (IsRecording)
         {
-            _trace.Clear();
-            _recording.Disposable = _sim.Stream<Physics>().Select(p =>
-            {
-                using var ms = new MemoryStream();
-                using var bw = new BinaryWriter(ms);
-                codec.Encode(p, bw);
-                ms.Position = 0;
-                using var br = new BinaryReader(ms);
-                return codec.Decode(br);
-            }).Record(_trace);
+            _trace = new();
+            
+            _recording.Disposable = new CompositeDisposable(
+                _physics.Record(_trace.Physics),
+                _controls.Record(_trace.Controls),
+                _throttle.Record(_trace.Throttle),
+                _fuel.Record(_trace.Fuel),
+                _payload.Record(_trace.Payload),
+                _flaps.Record(_trace.Flaps)
+                // _vars.Record(_trace.Vars)
+            );
         }
         else
         {
@@ -131,31 +133,42 @@ public partial class DevelopWindowViewModel : ViewModelBase
     [RelayCommand]
     private void Play()
     {
-        IsPlaying = !IsPlaying;
+        IsPlaying = !IsPlaying; 
 
         if (IsPlaying)
         {
-            _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", true);
-            _sim.Set("K:FREEZE_ALTITUDE_SET", true);
-            _sim.Set("K:FREEZE_ATTITUDE_SET", true);
-            var s = _sim.Stream<Physics>().Subscribe(_ => { });
-            _playing.Disposable = _trace.Playback()
-                .Subscribe(
-                    x => _sim.Set(x),
-                    _ => { },
-                    () =>
-                    {
-                        IsPlaying = false;
-                        s.Dispose();
-                        _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", false);
-                        _sim.Set("K:FREEZE_ALTITUDE_SET", false);
-                        _sim.Set("K:FREEZE_ATTITUDE_SET", false);
-                    });
+            Freeze(true);
+            _trace ??=  new();
+            _playing.Disposable = Observable.Merge(
+                Replay(_trace.Physics), 
+                Replay(_trace.Controls), 
+                Replay(_trace.Throttle), 
+                Replay(_trace.Fuel), 
+                Replay(_trace.Payload), 
+                Replay(_trace.Flaps)
+            ).Subscribe(_ => {}, () =>
+            {
+                IsPlaying = false;
+                Freeze(false);
+            });
         }
         else
         {
             _playing.Disposable?.Dispose();
+            Freeze(false);
         }
+
+        return;
+
+        void Freeze(bool isFreeze)
+        {
+            _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", isFreeze);
+            _sim.Set("K:FREEZE_ALTITUDE_SET", isFreeze);
+            _sim.Set("K:FREEZE_ATTITUDE_SET", isFreeze);
+        }
+
+        IObservable<Unit> Replay<T>(IReadOnlyList<Recorded<T>> trace) where T : struct =>
+            trace.Playback().Do(_sim.Set).Select(_ => Unit.Default);
     }
 }
 
@@ -258,6 +271,7 @@ public partial class Node : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        foreach (var subNode in SubNodes ?? []) subNode.Dispose();
         _sub?.Dispose();
     }
 
@@ -269,4 +283,17 @@ public partial class Node : ObservableObject, IDisposable
             out var val4);
         _sim.Set(eventName, val0, val1, val2, val3, val4);
     }
+}
+
+public class Trace
+{
+    public List<Recorded<Physics>> Physics { get; } = [];
+    public List<Recorded<Control>> Controls { get; } = [];
+    public List<Recorded<Throttle>> Throttle { get; } = [];
+    public List<Recorded<Fuel>> Fuel { get; } = [];
+    public List<Recorded<Payload>> Payload { get; } = [];
+    public List<Recorded<Control.Flaps>> Flaps { get; } = [];
+    // public List<Recorded<Var>> Vars { get; set; } = [];
+
+    // public record Var(string Name, object Value);
 }

@@ -1,9 +1,8 @@
-﻿using Avalonia.Input;
-
-namespace FsCopilot.ViewModels;
+﻿namespace FsCopilot.ViewModels;
 
 using System.Globalization;
 using Avalonia.Data.Converters;
+using Avalonia.Input;
 
 public class ViewModelBase : ObservableObject;
 
