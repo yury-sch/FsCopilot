@@ -48,7 +48,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Definitions\**\*">
+        <Content Include="..\Definitions\**\*">
+            <Link>Definitions\%(RecursiveDir)%(Filename)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <CopyToPublishDirectory>Always</CopyToPublishDirectory>
         </Content>
@@ -73,10 +74,6 @@
             <CopyToPublishDirectory>Always</CopyToPublishDirectory>
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Community\" />
     </ItemGroup>
 
 </Project>
