@@ -70,6 +70,9 @@ shared:
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
     set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
+    set: (>K:GPS_OBS)
+    skp: H:AS1000_PFD_SOFTKEYS_5
   - get: A:NAV OBS:1, Degrees # CRS CTR 
     set: (>K:VOR1_SET)
   - get: A:NAV OBS:2, Degrees # CRS CTR
