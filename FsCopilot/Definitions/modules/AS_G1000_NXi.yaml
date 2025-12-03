@@ -25,17 +25,29 @@ shared:
     set: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : `${value} (>A:AUTOPILOT ALTITUDE LOCK VAR:1)`"
     
   - get: H:AS1000_PFD_SOFTKEYS_1
+    set: (>B:AS1000_PFD_1_Softkey_1_Push)
   - get: H:AS1000_PFD_SOFTKEYS_2
+    set: (>B:AS1000_PFD_1_Softkey_2_Push)
   - get: H:AS1000_PFD_SOFTKEYS_3
+    set: (>B:AS1000_PFD_1_Softkey_3_Push)
   - get: H:AS1000_PFD_SOFTKEYS_4
+    set: (>B:AS1000_PFD_1_Softkey_4_Push)
   - get: H:AS1000_PFD_SOFTKEYS_5
+    set: (>B:AS1000_PFD_1_Softkey_5_Push)
   - get: H:AS1000_PFD_SOFTKEYS_6
+    set: (>B:AS1000_PFD_1_Softkey_6_Push)
   - get: H:AS1000_PFD_SOFTKEYS_7
+    set: (>B:AS1000_PFD_1_Softkey_7_Push)
   - get: H:AS1000_PFD_SOFTKEYS_8
+    set: (>B:AS1000_PFD_1_Softkey_8_Push)
   - get: H:AS1000_PFD_SOFTKEYS_9
+    set: (>B:AS1000_PFD_1_Softkey_9_Push)
   - get: H:AS1000_PFD_SOFTKEYS_10
+    set: (>B:AS1000_PFD_1_Softkey_10_Push)
   - get: H:AS1000_PFD_SOFTKEYS_11
+    set: (>B:AS1000_PFD_1_Softkey_11_Push)
   - get: H:AS1000_PFD_SOFTKEYS_12
+    set: (>B:AS1000_PFD_1_Softkey_12_Push)
   - get: L:PFD_CDI_Source # CDI
     set: (>K:AP_NAV_SELECT_SET)
     skp: H:AS1000_PFD_SOFTKEYS_6
@@ -77,30 +89,46 @@ shared:
     set: (>K:VOR1_SET)
   - get: A:NAV OBS:2, Degrees # CRS CTR
     set: (>K:VOR2_SET)
-    #  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
     #  - get: A:GPS OBS VALUE, Degrees # CRS CTR
     #    set: (>K:GPS_OBS_SET)
     #  - get: L:CRS_FIX_1 # CRS CTR
   - get: H:AS1000_PFD_CLR
+    set: (>B:AS1000_PFD_1_Clear_Push)
   - get: H:AS1000_PFD_ENT_Push
-  - get: H:AS1000_PFD_PPL_Push
+    set: (>B:AS1000_PFD_1_Enter_Push)
+  - get: H:AS1000_PFD_FPL_Push
+    set: (>B:AS1000_PFD_1_FlightPlan_Push)
   - get: H:AS1000_PFD_PROC_Push
+    set: (>B:AS1000_PFD_1_Procedure_Push)
   - get: H:AS1000_PFD_DIRECTTO
+    set: (>B:AS1000_PFD_1_DirectTo_Push)
   - get: H:AS1000_PFD_MENU_Push
+    set: (>B:AS1000_PFD_1_Menu_Push)
   - get: H:AS1000_PFD_JOYSTICK_PUSH
+    set: (>B:AS1000_PFD_1_Range_Cursor_Push)
   - get: H:AS1000_PFD_RANGE_INC
+    set: (>B:AS1000_PFD_1_Range_Zoom_Out)
   - get: H:AS1000_PFD_RANGE_DEC
+    set: (>B:AS1000_PFD_1_Range_Zoom_In)
   - get: H:AS1000_PFD_JOYSTICK_LEFT
+    set: (>B:AS1000_PFD_1_Range_Pan_X_Left)
   - get: H:AS1000_PFD_JOYSTICK_RIGHT
+    set: (>B:AS1000_PFD_1_Range_Pan_X_Right)
   - get: H:AS1000_PFD_JOYSTICK_UP
+    set: (>B:AS1000_PFD_1_Range_Pan_Y_Up)
   - get: H:AS1000_PFD_JOYSTICK_DOWN
+    set: (>B:AS1000_PFD_1_Range_Pan_Y_Down)
   - get: H:AS1000_PFD_FMS_Lower_INC
+    set: (>B:AS1000_PFD_1_FMS_Outer_Inc)
   - get: H:AS1000_PFD_FMS_Lower_DEC
+    set: (>B:AS1000_PFD_1_FMS_Outer_Dec)
   - get: H:AS1000_PFD_FMS_Upper_INC
+    set: (>B:AS1000_PFD_1_FMS_Inner_Inc)
   - get: H:AS1000_PFD_FMS_Upper_DEC
+    set: (>B:AS1000_PFD_1_FMS_Inner_Dec)
   - get: H:AS1000_PFD_FMS_Upper_PUSH
-
-#  - get: L:AS1000_PFD_STATE
+    set: (>B:AS1000_PFD_1_FMS_Inner_Button_Push)
+  #  - get: L:AS1000_PFD_STATE
 #  - get: L:AS1000_PFD_Brightness
 #  #    cancel_h_events: true
 #  - get: L:AS1000_PFD_Brightness_IsAuto
@@ -153,36 +181,66 @@ shared:
     set: (>K:AP_SPD_VAR_SET)
 
   - get: H:AS1000_MFD_SOFTKEYS_1
+    set: (>B:AS1000_MFD_1_Softkey_1_Push)
   - get: H:AS1000_MFD_SOFTKEYS_2
+    set: (>B:AS1000_MFD_1_Softkey_2_Push)
   - get: H:AS1000_MFD_SOFTKEYS_3
+    set: (>B:AS1000_MFD_1_Softkey_3_Push)
   - get: H:AS1000_MFD_SOFTKEYS_4
+    set: (>B:AS1000_MFD_1_Softkey_4_Push)
   - get: H:AS1000_MFD_SOFTKEYS_5
+    set: (>B:AS1000_MFD_1_Softkey_5_Push)
   - get: H:AS1000_MFD_SOFTKEYS_6
+    set: (>B:AS1000_MFD_1_Softkey_6_Push)
   - get: H:AS1000_MFD_SOFTKEYS_7
+    set: (>B:AS1000_MFD_1_Softkey_7_Push)
   - get: H:AS1000_MFD_SOFTKEYS_8
+    set: (>B:AS1000_MFD_1_Softkey_8_Push)
   - get: H:AS1000_MFD_SOFTKEYS_9
+    set: (>B:AS1000_MFD_1_Softkey_9_Push)
   - get: H:AS1000_MFD_SOFTKEYS_10
+    set: (>B:AS1000_MFD_1_Softkey_10_Push)
   - get: H:AS1000_MFD_SOFTKEYS_11
+    set: (>B:AS1000_MFD_1_Softkey_11_Push)
   - get: H:AS1000_MFD_SOFTKEYS_12
+    set: (>B:AS1000_MFD_1_Softkey_12_Push)
 
   - get: H:AS1000_MFD_JOYSTICK_PUSH
+    set: (>B:AS1000_MFD_1_Range_Cursor_Push)
   - get: H:AS1000_MFD_RANGE_INC
+    set: (>B:AS1000_MFD_1_Range_Zoom_Out)
   - get: H:AS1000_MFD_RANGE_DEC
+    set: (>B:AS1000_MFD_1_Range_Zoom_In)
   - get: H:AS1000_MFD_JOYSTICK_LEFT
+    set: (>B:AS1000_MFD_1_Range_Pan_X_Left)
   - get: H:AS1000_MFD_JOYSTICK_RIGHT
+    set: (>B:AS1000_MFD_1_Range_Pan_X_Right)
   - get: H:AS1000_MFD_JOYSTICK_UP
+    set: (>B:AS1000_MFD_1_Range_Pan_Y_Up)
   - get: H:AS1000_MFD_JOYSTICK_DOWN
+    set: (>B:AS1000_MFD_1_Range_Pan_Y_Down)
   - get: H:AS1000_MFD_CLR
+    set: (>B:AS1000_MFD_1_Clear_Push)
   - get: H:AS1000_MFD_ENT_Push
-  - get: H:AS1000_MFD_PPL_Push
+    set: (>B:AS1000_MFD_1_Enter_Push)
+  - get: H:AS1000_MFD_FPL_Push
+    set: (>B:AS1000_MFD_1_FlightPlan_Push)
   - get: H:AS1000_MFD_PROC_Push
+    set: (>B:AS1000_MFD_1_Procedure_Push)
   - get: H:AS1000_MFD_DIRECTTO
+    set: (>B:AS1000_MFD_1_DirectTo_Push)
   - get: H:AS1000_MFD_MENU_Push
+    set: (>B:AS1000_MFD_1_Menu_Push)
   - get: H:AS1000_MFD_FMS_Lower_INC
+    set: (>B:AS1000_MFD_1_FMS_Outer_Inc)
   - get: H:AS1000_MFD_FMS_Lower_DEC
+    set: (>B:AS1000_MFD_1_FMS_Outer_Dec)
   - get: H:AS1000_MFD_FMS_Upper_INC
+    set: (>B:AS1000_MFD_1_FMS_Inner_Inc)
   - get: H:AS1000_MFD_FMS_Upper_DEC
+    set: (>B:AS1000_MFD_1_FMS_Inner_Dec)
   - get: H:AS1000_MFD_FMS_Upper_PUSH
+    set: (>B:AS1000_MFD_1_FMS_Inner_Button_Push)
 
 #  - get: L:AS1000_MFD_Brightness
 #  #      cancel_h_events: true
