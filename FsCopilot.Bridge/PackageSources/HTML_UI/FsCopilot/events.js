@@ -56,20 +56,31 @@ class HtmlEvents extends Emitter {
     static dispatch(type, id, value) {
         const el = document.getElementById(id);
         if (!el) return;
+        let evt;
         switch (type) {
             case 'mouseup':
                 ['mousedown', 'mouseup', 'click']
-                    .forEach(evt => el.dispatchEvent(new MouseEvent(evt, {bubbles: true, cancelable: true, selfEmit: true})));
+                    .forEach(evType => {
+                        evt = new MouseEvent(evType, {bubbles: true, cancelable: true});
+                        evt.selfEmit = true;
+                        el.dispatchEvent(evt);
+                    });
                 break;
             case 'input':
                 nativeInputSetter.call(el, value);
-                el.dispatchEvent(new InputEvent('input', {bubbles: true, data: value, selfEmit: true}));
+                evt = new InputEvent('input', {bubbles: true, data: value})
+                evt.selfEmit = true;
+                el.dispatchEvent(evt);
                 break;
             case 'keypress':
-                el.dispatchEvent(new KeyboardEvent('keypress', {bubbles: true, keyCode: value, selfEmit: true}));
+                evt = new KeyboardEvent('keypress', {bubbles: true, keyCode: value});
+                evt.selfEmit = true;
+                el.dispatchEvent(evt);
                 break;
             case 'keydown':
-                el.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, keyCode: value, selfEmit: true}));
+                evt = new KeyboardEvent('keydown', {bubbles: true, keyCode: value});
+                evt.selfEmit = true;
+                el.dispatchEvent(evt);
                 break;
         }
     }

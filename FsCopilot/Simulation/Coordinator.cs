@@ -31,6 +31,7 @@ public class Coordinator : IDisposable
         AddLink<Control, Control.Codec>(master: true);
         AddLink<Throttle, Throttle.Codec>(master: true);
         AddLink<Fuel, Fuel.Codec>(master: true);
+        // AddLink<Buses, Buses.Codec>(master: true);
         AddLink<Payload, Payload.Codec>(master: false);
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
 
@@ -109,12 +110,12 @@ public class Coordinator : IDisposable
         var master = !def.Shared;
         object? currentValue = null;
         var getVar = def.Get;
-        Skip.Next(getVar);
+        if (getVar[0] != 'H') Skip.Next(getVar);
         
         _cSubs.Add(_sim.Stream(getVar, def.Units)
             .Do(value => currentValue = value)
-            .Delay(getVar[0] == 'H' ? TimeSpan.FromMilliseconds(200) : TimeSpan.Zero)
             .Where(_ => !master || _masterSwitch.IsMaster)
+            .Delay(getVar[0] == 'H' ? TimeSpan.FromMilliseconds(500) : TimeSpan.Zero)
             .Where(_ => !Skip.Should(getVar))
             .Subscribe(value =>
             {
@@ -198,13 +199,21 @@ public class Coordinator : IDisposable
     {
         public void Encode(Interact packet, BinaryWriter bw)
         {
-            
-            
+            bw.Write(packet.Instrument);
+            bw.Write(packet.Event);
+            bw.Write(packet.Id);
+            bw.Write(packet.Value != null);
+            if (packet.Value != null) bw.Write(packet.Value);
         }
 
         public Interact Decode(BinaryReader br)
         {
-            throw new NotImplementedException();
+            var instrument = br.ReadString();
+            var @event = br.ReadString();
+            var id = br.ReadString();
+            var hasValue = br.ReadBoolean();
+            var value = hasValue ? br.ReadString() : null; 
+            return new(instrument, @event, id, value);
         }
     }
 }
