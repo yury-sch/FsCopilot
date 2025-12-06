@@ -29,6 +29,7 @@ public class SimClient : IDisposable
     public IObservable<bool> Connected => _headless.Connected;
     public IObservable<string> Aircraft => _headless.Aircraft;
     public IObservable<Interact> Interactions { get; }
+    public IObservable<SimConfig> Config { get; }
 
     public SimClient(string appName)
     {
@@ -64,6 +65,11 @@ public class SimClient : IDisposable
             .Select(json => new Interact(json.String("instrument"), json.String("event"), json.String("id"), json.StringOrNull("value")))
             .Replay(0).RefCount();
 
+       Config = socketMessages
+           .Where(json => json.String("type").Equals("config"))
+           .Select(json => new SimConfig(json.BoolOrNull("control") == null, json.BoolOrNull("control") ?? false))
+           .Replay(0).RefCount();
+
         // _headless.Configure(sim =>
         // {
         //     var nextId = (EVT)Interlocked.Increment(ref _defId);
@@ -95,6 +101,15 @@ public class SimClient : IDisposable
         
         _headless.Post(sim => sim.SetDataOnSimObject(defId, 
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
+    }
+
+    public void Set(SimConfig config)
+    {
+        var msg = Envelope("config", writer =>
+        {
+            writer.WriteBoolean("control", config.Control);
+        });
+        _ = Task.WhenAll(_socket.ListClients().Select(c => _socket.SendAsync(c.Guid, msg)));
     }
 
     public void Set(Interact interact)

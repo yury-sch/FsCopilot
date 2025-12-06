@@ -46,6 +46,12 @@ public class MasterSwitch : IDisposable
             .Where(_ => !IsMaster)
             .Subscribe(_ => UpdateFreeze()));
         
+        _d.Add(_sim.Config.Where(c => c.Undefined).Subscribe(_ => _sim.Set(new SimConfig(false, _master.Value))));
+        _d.Add(_master.Subscribe(val => _sim.Set(new SimConfig(false, val))));
+        _d.Add(_sim.Config.Where(c => !c.Undefined).Subscribe(c =>
+        {
+            if (c.Control) TakeControl();
+        }));
     }
 
     private void UpdateFreeze()

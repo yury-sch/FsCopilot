@@ -11,7 +11,12 @@ public static class JsonExtensions
     
     public static string? StringOrNull(this JsonElement el, string prop)
         => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
-            ? v.GetString()!
+            ? v.GetString()
+            : null;
+    
+    public static bool? BoolOrNull(this JsonElement el, string prop)
+        => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.True
+            ? v.GetBoolean()
             : null;
 
     public static double Double(this JsonElement el, string prop, double fallback = 0)
