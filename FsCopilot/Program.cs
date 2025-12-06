@@ -21,7 +21,7 @@ sealed class Program
                 shared: true,
                 retainedFileCountLimit: null,
                 fileSizeLimitBytes: null,
-                outputTemplate: "[{Timestamp:HH:mm:ss}] {Message:lj}{NewLine}{Exception}",
+                outputTemplate: "[{Timestamp:HH:mm:ss.fff}] {Message:lj}{NewLine}{Exception}",
                 restrictedToMinimumLevel: isDev || isDebug ? LogEventLevel.Debug : LogEventLevel.Information
             )
             .CreateLogger();
