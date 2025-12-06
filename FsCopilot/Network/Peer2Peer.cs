@@ -164,7 +164,7 @@ public class Peer2Peer : IAsyncDisposable
                     bw.Write(lep.ToString());
                 bw.Write(_schema);
             }, _discoveryHost);
-            await Task.Delay(20000, ct);
+            await Task.Delay(!_connections.IsEmpty ? 10000 : 1000, ct);
         }
     }
 
