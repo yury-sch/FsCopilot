@@ -1,9 +1,9 @@
 class FsCopilotHandler {
     constructor(instrument) {
-        this.panelId = Math.floor(Math.random() * 100000)
         // Only one panel should fire event
+        this.panelId = Math.floor(Math.random() * 100000);
         console.log(`[FsCopilot] Created handler ${this.panelId} for instrument ${instrument.instrumentIdentifier}`);
-        SimVar.SetSimVarValue('L:FsCopilotHandlerId', 'Number', this.panelId)
+        SimVar.SetSimVarValue('L:FsCopilotHandlerId', 'Number', this.panelId);
 
         this.network = new FsCopilotNetwork();
         this.watcher = new VarWatcher();
@@ -28,10 +28,12 @@ class FsCopilotHandler {
         });
         this.network.addEventListener('close', () => this.watcher.clear());
         this.watcher.addEventListener('update', ev => {
-            if (!this._canProcess()) return;
+            if (!this._canProcess()) {
+                this.watcher.clear();
+                return;
+            }
             this.network.send({type: 'var', name: ev.name, value: ev.value});
         });
-        
         if (instrument.isInteractive) {
             const events = new HtmlEvents();
             events.addEventListener('emit', ev => {
@@ -41,9 +43,7 @@ class FsCopilotHandler {
     }
 
     _canProcess() {
-        const isLast = SimVar.GetSimVarValue('L:FsCopilotHandlerId', 'Number') == this.panelId;
-        if (!isLast) this.watcher.clear();
-        return isLast;
+        return SimVar.GetSimVarValue('L:FsCopilotHandlerId', 'Number') == this.panelId;
     }
 
     interact(name) {
