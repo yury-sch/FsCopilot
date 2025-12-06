@@ -3,7 +3,7 @@
 #    get: A:AUTOPILOT PITCH HOLD REF, Degrees
 
 shared:
-# PFD
+  # PFD
   - get: A:NAV VOLUME:1, Percent # VOL
     set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
   - get: A:NAV VOLUME:2, Percent # VOL
@@ -55,6 +55,7 @@ shared:
     set: (>K:TOGGLE_GPS_DRIVES_NAV1)
   - get: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32 # ADF ACTIVE
     set: (>K:ADF_ACTIVE_SET)
+    skp: H:AS1000_PFD_ENT_Push
   - get: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32 # ADF STANDBY
     set: (>K:ADF_STBY_SET)
   - get: A:ADF SOUND:1, Bool # ADF SOUND
@@ -65,7 +66,7 @@ shared:
   - get: A:TRANSPONDER IDENT:1, Bool # Ident
     set: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
     skp: H:AS1000_PFD_SOFTKEYS_9
-    
+
   - get: A:COM VOLUME:1, Percent # VOL
     set: "`${value} (>K:COM1_VOLUME_SET)`"
   - get: A:COM VOLUME:2, Percent # VOL
@@ -85,12 +86,12 @@ shared:
   - get: A:GPS OBS ACTIVE, Bool # CRS CTR
     set: (>K:GPS_OBS)
     skp: H:AS1000_PFD_SOFTKEYS_5
+  - get: A:GPS OBS VALUE, Degrees # CRS CTR
+    set: (>K:GPS_OBS_SET)
   - get: A:NAV OBS:1, Degrees # CRS CTR 
     set: (>K:VOR1_SET)
   - get: A:NAV OBS:2, Degrees # CRS CTR
     set: (>K:VOR2_SET)
-    #  - get: A:GPS OBS VALUE, Degrees # CRS CTR
-    #    set: (>K:GPS_OBS_SET)
     #  - get: L:CRS_FIX_1 # CRS CTR
   - get: H:AS1000_PFD_CLR
     set: (>B:AS1000_PFD_1_Clear_Push)
@@ -132,8 +133,10 @@ shared:
 #  - get: L:AS1000_PFD_Brightness
 #  #    cancel_h_events: true
 #  - get: L:AS1000_PFD_Brightness_IsAuto
+  - get: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
+    set: (>K:AUTO_THROTTLE_TO_GA)
 
-# MID 
+  # MID 
   - get: A:COM TRANSMIT:1, Bool # COM1 MIC
     set: "value ? '0 (>K:PILOT_TRANSMITTER_SET)' : '1 (>K:PILOT_TRANSMITTER_SET)'"
   - get: A:COM TRANSMIT:1, Bool # COM1 MIC
@@ -154,9 +157,9 @@ shared:
     set: (>K:RADIO_ADF_IDENT_TOGGLE)
   - get: A:NAV SOUND:2, Bool # NAV2
     set: (>K:RADIO_VOR2_IDENT_TOGGLE)
-  - get: L:G1000_REV_FORCE # Display backup  
-
-# MFD
+  - get: L:G1000_REV_FORCE # Display backup
+  
+  # MFD
   - get: A:AUTOPILOT MASTER, Bool # On/off flag
     set: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
   - get: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
@@ -273,8 +276,6 @@ shared:
 #    set: "value ? '(>K:AP_MANAGED_SPEED_IN_MACH_ON)' : '(>K:AP_MANAGED_SPEED_IN_MACH_OFF)'"
 #  - get: A:AUTOPILOT MAX BANK ID, Number
 #    set: (>K:AP_MAX_BANK_SET)
-#  - get: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
-#    set: (>K:AUTO_THROTTLE_TO_GA)
 #  - get: A:AUTOPILOT WING LEVELER, Bool
 #    set: "value ? '(>K:AP_WING_LEVELER_ON)' : '(>K:AP_WING_LEVELER_OFF)'"
 #  - get: A:AUTOPILOT YAW DAMPER, Bool
