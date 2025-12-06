@@ -55,6 +55,7 @@ public partial class App : Application
                 {
                     DataContext = new MainWindowViewModel(peer2Peer, simConnect, control, coordinator)
                 };
+                desktop.Exit += (_, _) => control.TakeControl();
             }
             else
             {

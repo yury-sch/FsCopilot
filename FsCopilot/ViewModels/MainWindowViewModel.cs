@@ -53,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-            await _masterSwitch.Join();
+            _masterSwitch.Join();
             result = await _peer2Peer.Connect(ConnectionCode, cts.Token);
             ConnectionCode = string.Empty;
         }
