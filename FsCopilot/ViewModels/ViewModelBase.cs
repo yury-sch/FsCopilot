@@ -1,4 +1,7 @@
-﻿namespace FsCopilot.ViewModels;
+﻿using System.Collections;
+using Avalonia.Media;
+
+namespace FsCopilot.ViewModels;
 
 using System.Globalization;
 using Avalonia.Data.Converters;
@@ -41,5 +44,22 @@ public sealed class BoolToWaitConverter : IValueConverter
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value is true ? new Cursor(StandardCursorType.Wait) : null;
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+public sealed class QualityToBrushConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not int quality)
+            return Brushes.Gray;
+
+        if (parameter is null || !int.TryParse(parameter.ToString(), out int barIndex))
+            barIndex = 1;
+        
+        return quality == barIndex;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }

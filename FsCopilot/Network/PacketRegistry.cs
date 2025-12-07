@@ -13,11 +13,11 @@ internal sealed class PacketRegistry
     private readonly List<IPacketCodecAdapter> _byId = [];
     private readonly Dictionary<Type, byte> _idByType = new();
 
-    public void RegisterPacket<TPacket, TCodec>()
+    public PacketRegistry RegisterPacket<TPacket, TCodec>()
         where TCodec : IPacketCodec<TPacket>, new()
     {
         var t = typeof(TPacket);
-        if (_idByType.TryGetValue(t, out _)) return;
+        if (_idByType.TryGetValue(t, out _)) return this;
 
         var id = _byId.Count;
         var codec = new TCodec();
@@ -25,6 +25,8 @@ internal sealed class PacketRegistry
 
         _byId.Add(adapter);
         _idByType.Add(t, (byte)id);
+
+        return this;
     }
 
     public bool TryGetCodec<TPacket>(out byte id, [MaybeNullWhen(false)] out IPacketCodecAdapter codec)

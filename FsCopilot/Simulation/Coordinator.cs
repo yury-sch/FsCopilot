@@ -9,7 +9,7 @@ using Serilog;
 
 public class Coordinator : IDisposable
 {
-    private readonly Peer2Peer _peer2Peer;
+    private readonly IPeer2Peer _peer2Peer;
     private readonly MasterSwitch _masterSwitch;
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
@@ -17,7 +17,7 @@ public class Coordinator : IDisposable
     private readonly BehaviorSubject<bool?> _configured = new(null);
     public IObservable<bool?> Configured => _configured;
 
-    public Coordinator(SimClient sim, Peer2Peer peer2Peer, MasterSwitch masterSwitch)
+    public Coordinator(SimClient sim, IPeer2Peer peer2Peer, MasterSwitch masterSwitch)
     {
         _peer2Peer = peer2Peer;
         _masterSwitch = masterSwitch;
@@ -27,17 +27,16 @@ public class Coordinator : IDisposable
         
         _d.Add(sim.Aircraft.Subscribe(Load));
 
-        AddLink<Physics, Physics.Codec>(master: true);
-        AddLink<Control, Control.Codec>(master: true);
-        AddLink<Throttle, Throttle.Codec>(master: true);
-        AddLink<Fuel, Fuel.Codec>(master: true);
+        AddLink<Physics, Physics.Codec>(master: true, unreliable: true);
+        AddLink<Control, Control.Codec>(master: true, unreliable: true);
+        AddLink<Throttle, Throttle.Codec>(master: true, unreliable: true);
+        AddLink<Fuel, Fuel.Codec>(master: true, unreliable: true);
         // AddLink<Buses, Buses.Codec>(master: true);
-        AddLink<Payload, Payload.Codec>(master: false);
-        AddLink<Control.Flaps, Control.Flaps.Codec>(master: false);
+        AddLink<Payload, Payload.Codec>(master: false, unreliable: true);
+        AddLink<Control.Flaps, Control.Flaps.Codec>(master: false, unreliable: false);
 
         _d.Add(_sim.Interactions
             .Subscribe(interact => _peer2Peer.SendAll(interact)));
-
         _d.Add(_peer2Peer.Stream<Interact>()
             .Subscribe(update => _sim.Set(update)));
     }
@@ -91,18 +90,27 @@ public class Coordinator : IDisposable
     //     }));
     // }
 
-    private void AddLink<TPacket, TCodec>(bool master)
+    private void AddLink<TPacket, TCodec>(bool master, bool unreliable)
         where TPacket : struct where TCodec : IPacketCodec<TPacket>, new()
     {
         _peer2Peer.RegisterPacket<TPacket, TCodec>();
 
         _d.Add(_sim.Stream<TPacket>()
+            .Catch<TPacket, Exception>(ex =>
+            {
+                Log.Error(ex, "[SimConnect] Error while subscribing to {Packet}", typeof(TPacket).Name);
+                return Observable.Empty<TPacket>();
+            })
             .Where(_ => !master || _masterSwitch.IsMaster)
-            .Subscribe(update => _peer2Peer.SendAll(update)));
+            .Subscribe(update => _peer2Peer.SendAll(update, unreliable)));
 
         _d.Add(_peer2Peer.Stream<TPacket>()
             .Where(_ => !master || !_masterSwitch.IsMaster)
-            .Subscribe(update => _sim.Set(update)));
+            .Subscribe(update =>
+            {
+                try { _sim.Set(update); }
+                catch (Exception e) { Log.Error(e, "[SimConnect] Error while sending packet {Packet}", typeof(TPacket).Name); }
+            }));
     }
 
     private void AddLink(Definition def)

@@ -7,7 +7,7 @@
     </Design.PreviewWith>
 
     <Style Selector="SelectableTextBlock">
-        <Setter Property="SelectionBrush" Value="#7F000000" />
+        <Setter Property="SelectionBrush" Value="Gray" />
         <Setter Property="SelectionForegroundBrush" Value="#8ec6ff" />
         <Setter Property="FontFamily" Value="Courier New"></Setter>
     </Style>
@@ -56,6 +56,24 @@
         <Setter Property="CornerRadius" Value="8"></Setter>
         <Setter Property="Padding" Value="10"></Setter>
     </Style>
+    
+    <Style Selector="TextBlock.JoinedSession">
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+    </Style>
+    
+    <Style Selector="Border.JoinedSession">
+        <Setter Property="Background" Value="#66000000"></Setter>
+        <Setter Property="BorderBrush" Value="#99FFFFFF"></Setter>
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+    </Style>
+    
+    <Style Selector="SelectableTextBlock.JoinedSession">
+        <Setter Property="VerticalAlignment" Value="Center"></Setter>
+        <Setter Property="Foreground" Value="#8ec6ff"></Setter>
+        <Setter Property="FontWeight" Value="Bold"></Setter>
+        <Setter Property="FontSize" Value="16"></Setter>
+    </Style>
 
     <Style Selector="Button.Connect">
         <Setter Property="Background" Value="#8ec6ff"></Setter>
@@ -71,6 +89,19 @@
     </Style>
 
     <Style Selector="Button.TakeControl">
+        <Setter Property="Background" Value="#8ec6ff"></Setter>
+        <Setter Property="Foreground" Value="Black"></Setter>
+        <Setter Property="CornerRadius" Value="8"></Setter>
+        <Setter Property="Padding" Value="10"></Setter>
+        <Setter Property="Margin" Value="10,0,00,0"></Setter>
+    </Style>
+    
+    <Style Selector="Button.TakeControl:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#5facfc"></Setter>
+        <Setter Property="Foreground" Value="Black"></Setter>
+    </Style>
+
+    <Style Selector="Button.Left">
         <Setter Property="CornerRadius" Value="8"></Setter>
         <Setter Property="Padding" Value="10"></Setter>
         <Setter Property="Margin" Value="10,0,00,0"></Setter>
@@ -90,15 +121,11 @@
         <Setter Property="Foreground" Value="White"></Setter>
     </Style>
 
-    <Style Selector="TextBlock.SessionCode">
+    <Style Selector="TextBlock.ClientName">
         <Setter Property="Foreground" Value="Gray"></Setter>
     </Style>
 
-    <Style Selector="TextBlock.SessionCode">
-        <Setter Property="Foreground" Value="Gray"></Setter>
-    </Style>
-
-    <Style Selector="SelectableTextBlock.SessionCode">
+    <Style Selector="SelectableTextBlock.PeerId">
         <Setter Property="Foreground" Value="#8ec6ff"></Setter>
         <Setter Property="FontSize" Value="16"></Setter>
     </Style>

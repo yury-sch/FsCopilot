@@ -12,22 +12,24 @@ using Simulation;
 
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
-    [ObservableProperty] private string _sessionCode;
+    [ObservableProperty] private string _clientName;
+    [ObservableProperty] private string _peerId;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private string _aircraft;
     [ObservableProperty] private string _connectionCode = string.Empty;
     [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _connected;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isSimConnected;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isConnectionTimeout;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isVersionMismatch;
+    // [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isVersionMismatch;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isNotSupported;
     [ObservableProperty] private bool _showTakeControl;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private IPEndPoint? _address;
+    // [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private IPEndPoint? _address;
     [ObservableProperty] private string _version = App.Version;
 
     public string ErrorMessage =>
-        Address == null ? "No internet connection. Please check your network." :
+        // Address == null ? "No internet connection. Please check your network." :
         IsConnectionTimeout ? "Connection attempt timed out." :
-        IsVersionMismatch ? "Connection failed due to version mismatch." :
+        // IsVersionMismatch ? "Connection failed due to version mismatch." :
         !IsSimConnected ? "Microsoft Flight Simulator is not running!" :
         IsNotSupported ? $"{Aircraft} is not supported." :
         string.Empty;
@@ -37,42 +39,43 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     
     // [ObservableProperty] private string? _selectedConfiguration;
 
-    private readonly Peer2Peer _peer2Peer;
+    private readonly IPeer2Peer _peer2Peer;
     private readonly MasterSwitch _masterSwitch;
     private readonly Subject<bool> _unsubscribe = new();
 
-    private bool CanConnect() => !IsBusy;
-    [RelayCommand(CanExecute = nameof(CanConnect))]
-    private async Task Connect()
+    private bool CanJoin() => !IsBusy;
+    [RelayCommand(CanExecute = nameof(CanJoin))]
+    private async Task Join()
     {
         IsConnectionTimeout = false;
-        IsVersionMismatch = false;
+        // IsVersionMismatch = false;
         IsBusy = true;
-        ConnectionResult result;
+        bool result;
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
             _masterSwitch.Join();
             result = await _peer2Peer.Connect(ConnectionCode, cts.Token);
-            ConnectionCode = string.Empty;
         }
         finally
         {
             IsBusy = false;
-            ConnectCommand.NotifyCanExecuteChanged(); // re-enable button
+            JoinCommand.NotifyCanExecuteChanged(); // re-enable button
         }
         
-        if (result == ConnectionResult.Cancelled)
+        if (!result)
         {
             IsConnectionTimeout = true;
             _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsConnectionTimeout = false);
         }
-        else if (result == ConnectionResult.VersionMismatch)
-        {
-            IsVersionMismatch = true;
-            _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsVersionMismatch = false);
-        }
+    }
+
+    [RelayCommand]
+    private void Left()
+    {
+        _masterSwitch.TakeControl();
+        _peer2Peer.Disconnect();
     }
 
     [RelayCommand]
@@ -97,7 +100,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     //     for (var i = 0; i < Connections.Count; i++) Connections[i].HasSeparatorAfter = i < Connections.Count - 1;
     // }
 
-    public MainWindowViewModel(Peer2Peer peer2Peer, 
+    public MainWindowViewModel(string peerId,
+        string name,
+        IPeer2Peer peer2Peer, 
         SimClient sim, 
         MasterSwitch masterSwitch, 
         Coordinator coordinator)
@@ -106,7 +111,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _masterSwitch = masterSwitch;
         // _configuration = configuration;
 
-        SessionCode = peer2Peer.PeerId;
+        ClientName = name;
+        PeerId = peerId;
         
         sim.Aircraft
             // .Sample(TimeSpan.FromMilliseconds(250))
@@ -127,26 +133,29 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             // .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(x => Dispatcher.UIThread.Post(() => IsSimConnected = x));
 
-        peer2Peer.DiscoveredEndpoint
-            .Sample(TimeSpan.FromMilliseconds(250))
-            .TakeUntil(_unsubscribe)
-            .Subscribe(x => Dispatcher.UIThread.Post(() => Address = x));
-        
-        var connections = Observable.Merge(
-                Observable.Interval(TimeSpan.FromSeconds(1)).Select(_ => peer2Peer.Connections),
-                peer2Peer.ConnectionEstablished.Select(_ => peer2Peer.Connections),
-                peer2Peer.ConnectionLost.Select(_ => peer2Peer.Connections));
+        // peer2Peer.DiscoveredEndpoint
+        //     .Sample(TimeSpan.FromMilliseconds(250))
+        //     .TakeUntil(_unsubscribe)
+        //     .Subscribe(x => Dispatcher.UIThread.Post(() => Address = x));
             
-        connections
+        peer2Peer.Peers
             .Sample(TimeSpan.FromMilliseconds(250))
             .TakeUntil(_unsubscribe)
-            .Subscribe(items => Dispatcher.UIThread.Post(() => 
+            .Subscribe(peers => Dispatcher.UIThread.Post(() => 
             { 
                 var i = 0;
                 Connections.Clear();
-                foreach (var connection in items)
-                    Connections.Add(new(connection.PeerId, connection.Rtt)
-                        { HasSeparatorAfter = i++ < items.Count - 1 }); 
+                foreach (var peer in peers)
+                    Connections.Add(new()
+                    {
+                        PeerId = peer.PeerId,
+                        Name = string.IsNullOrWhiteSpace(peer.Name) ? "Unknown" : peer.Name, 
+                        Rtt = peer.Rtt, 
+                        Loss = peer.Loss, 
+                        Status = peer.Status,
+                        HasSeparatorAfter = i++ < peers.Count - 1
+                    });
+                Connected = Connections.Any();
             }));
         
         masterSwitch.Master
@@ -173,20 +182,55 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         // Connections.CollectionChanged -= NumerateConnections;
     }
 
-    public partial class Connection : ObservableObject
+    public partial class Connection
+        : ObservableObject
     {
-        [ObservableProperty]
-        private string _peerId;
-
-        [ObservableProperty]
-        private uint _rtt;
+        private Peer.State _status;
         
-        public bool HasSeparatorAfter { get; set; }
+        [ObservableProperty]
+        private string _peerId = string.Empty;
+        
+        [ObservableProperty]
+        private string _name = string.Empty;
 
-        public Connection(string peerId, uint rtt)
+        [ObservableProperty]
+        private int _rtt;
+
+        [ObservableProperty]
+        private double _loss;
+
+        [ObservableProperty]
+        private string _statusText = string.Empty;
+
+        public Peer.State Status
         {
-            _peerId = peerId;
-            _rtt = rtt;
+            get => _status;
+            set
+            {
+                _status = value;
+                StatusText = value switch
+                {
+                    Peer.State.Pending => "Pending connection.",
+                    Peer.State.Rejected => "Connection failed due to version mismatch.",
+                    Peer.State.Failed => "Connection failed.",
+                    _ => string.Empty
+                };
+            }
+        }
+
+        public bool HasSeparatorAfter { get; set; }
+        
+        public int QualityLevel
+        {
+            get
+            {
+                if (Status != Peer.State.Success) return 0;
+                if (Loss > 10 || Rtt > 800) return 5;
+                if (Loss > 5 || Rtt > 400) return 4;
+                if (Loss > 2 || Rtt > 200) return 3;
+                if (Loss > 0.5 || Rtt > 100) return 2;
+                return 1;
+            }
         }
     }
 }

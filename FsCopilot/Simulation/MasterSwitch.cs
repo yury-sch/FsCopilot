@@ -8,6 +8,8 @@ using Network;
 
 public class MasterSwitch : IDisposable
 {
+    private static readonly string PeerId = Guid.NewGuid().ToString();
+    
     private readonly SimClient _sim;
     // private readonly Peer2Peer _peer2Peer;
     private readonly BehaviorSubject<bool> _master = new(true);
@@ -16,7 +18,7 @@ public class MasterSwitch : IDisposable
     public bool IsMaster => _master.Value;
     public IObservable<bool> Master => _master;
 
-    public MasterSwitch(SimClient sim, Peer2Peer p2p)
+    public MasterSwitch(SimClient sim, IPeer2Peer p2p)
     {
         _sim = sim;
 
@@ -25,7 +27,7 @@ public class MasterSwitch : IDisposable
         _d.Add(p2p.Stream<SetMaster>()
             .Subscribe(setMaster =>
             {
-                var newMaster = setMaster.Peer == p2p.PeerId;
+                var newMaster = setMaster.Peer == PeerId;
                 if (newMaster != IsMaster) _master.OnNext(newMaster);
             }));
 
@@ -33,7 +35,7 @@ public class MasterSwitch : IDisposable
         
         _d.Add(_master.DistinctUntilChanged()
             .Where(isMaster => isMaster)
-            .Subscribe(_ => p2p.SendAll(new SetMaster(p2p.PeerId))));
+            .Subscribe(_ => p2p.SendAll(new SetMaster(PeerId))));
 
         // _d.Add(simConnect.Connected
         //     .Where(connected => connected)

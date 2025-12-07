@@ -21,6 +21,7 @@
         <vm:StringEmptyToBoolConverter x:Key="Empty"/>
         <vm:InverseBoolConverter x:Key="Inverse"/>
         <vm:BoolToWaitConverter x:Key="Wait"/>
+        <vm:QualityToBrushConverter x:Key="QualityToBrush"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -68,12 +69,12 @@
                         </PathIcon>
                     </Border>
                     <DockPanel DockPanel.Dock="Left">
-                        <SelectableTextBlock Classes="SessionCode"
-                                             DockPanel.Dock="Bottom"
-                                             Text="{Binding SessionCode}" />
-                        <TextBlock Classes="SessionCode"
+                        <SelectableTextBlock Classes="PeerId"
+                                   DockPanel.Dock="Bottom"
+                                   Text="{Binding PeerId}" />
+                        <TextBlock Classes="ClientName"
                                    DockPanel.Dock="Top"
-                                   Text="Your Code" />
+                                   Text="{Binding ClientName}" />
                     </DockPanel>
                 </DockPanel>
             </Border>
@@ -85,7 +86,7 @@
                         <PathIcon Classes="CardTitle"
                                   Data="{StaticResource plug_disconnected_regular}" />
                         <TextBlock Classes="CardTitle"
-                                   Text="Join" />
+                                   Text="Connection" />
                     </DockPanel>
 
                     <DockPanel>
@@ -95,16 +96,21 @@
                                 IsEnabled="{Binding ShowTakeControl}"
                                 Command="{Binding TakeControlCommand}"/>
                         <Button DockPanel.Dock="Right"
+                                Classes="Left"
+                                Content="Left"
+                                Command="{Binding LeftCommand}"
+                                IsEnabled="{Binding Connected}" />
+                        <Button DockPanel.Dock="Right"
                                 Classes="Connect"
-                                Content="Connect"
-                                Command="{Binding ConnectCommand}"
+                                Content="Join"
+                                Command="{Binding JoinCommand}"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource Inverse}}" />
-                        
                         <TextBox Classes="Connect"
                                  IsEnabled="{Binding IsBusy, Converter={StaticResource Inverse}}"
-                                 Watermark="Client session code...."
+                                 Watermark="Client code"
                                  Text="{Binding ConnectionCode}" />
                     </DockPanel>
+                    
                     <TextBlock Classes="Note"
                                Text="Note: Make sure that all clients see each other after connecting." />
                 </StackPanel>
@@ -150,7 +156,7 @@
                                   Data="{StaticResource person_board_regular}" />
                         <TextBlock DockPanel.Dock="Left"
                                    Classes="CardTitle"
-                                   Text="Connections" />
+                                   Text="Onboard" />
                     </DockPanel>
 
                     <ScrollViewer Classes="Connections"
@@ -165,19 +171,61 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
-                                        <DockPanel>
-                                            <DockPanel>
-                                                <!-- <Button DockPanel.Dock="Right" -->
-                                                <!--         Content="Disconnect" /> -->
-                                                <SelectableTextBlock DockPanel.Dock="Top"
-                                                                     Text="{Binding PeerId}"
-                                                                     Foreground="#8ec6ff"
-                                                                     FontSize="16" />
-                                                <TextBlock DockPanel.Dock="Bottom"
-                                                           Foreground="#94a3b8"
-                                                           Text="{Binding Rtt, StringFormat='Latency ~{0} ms'}" />
-                                            </DockPanel>
-                                        </DockPanel>
+                                        <StackPanel Orientation="Horizontal" 
+                                                    Spacing="10" 
+                                                    VerticalAlignment="Center">
+                                                
+                                                <PathIcon Foreground="#4CAF50"
+                                                          Height="22"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=1}"
+                                                          Data="{StaticResource cellular_data_1_regular}" />
+                                                <PathIcon Foreground="#8BC34A"
+                                                          Height="22"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=2}"
+                                                          Data="{StaticResource cellular_data_2_regular}" />
+                                                <PathIcon Foreground="#FFC107"
+                                                          Height="22"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=3}"
+                                                          Data="{StaticResource cellular_data_3_regular}" />
+                                                <PathIcon Foreground="#FF9800"
+                                                          Height="22"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=4}"
+                                                          Data="{StaticResource cellular_data_4_regular}" />
+                                                <PathIcon Foreground="#F44336"
+                                                          Height="22"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=5}"
+                                                          Data="{StaticResource cellular_data_5_regular}" />
+                                                <PathIcon Foreground="#F44336"
+                                                          Height="22"
+                                                          ToolTip.Tip="{Binding StatusText}"
+                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=0}"
+                                                          Data="{StaticResource cellular_off_regular}" />
+                                                
+                                                <StackPanel>
+                                                    <StackPanel DockPanel.Dock="Top" 
+                                                                Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding PeerId}"
+                                                                   Foreground="#8ec6ff"
+                                                                   VerticalAlignment="Bottom"
+                                                                   FontSize="14" /> 
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Margin="5, 0, 0, 0"
+                                                                   FontSize="14" /> 
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Orientation="Horizontal" 
+                                                                Spacing="4" 
+                                                                VerticalAlignment="Center">
+                                                        <TextBlock Foreground="#94a3b8"
+                                                                   FontSize="11"
+                                                                   Text="{Binding Rtt, StringFormat='RTT: ~{0} ms'}" />
+                                                        <TextBlock Foreground="#94a3b8"
+                                                                   FontSize="11"
+                                                                   Text="{Binding Loss, StringFormat='Loss: {0}%'}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                        </StackPanel>
+                                        
                                         <Separator IsVisible="{Binding HasSeparatorAfter}" />
                                         <!-- <Border Height="1" Background="#94a3b8" Margin="0,10,0,10" /> -->
                                     </StackPanel>
