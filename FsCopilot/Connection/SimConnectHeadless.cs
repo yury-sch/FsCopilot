@@ -137,8 +137,7 @@ public sealed class SimConnectHeadless : IDisposable
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, "An error occurred when executing simconnect command");
-                            break;
+                            Log.Error(e, "[SimConnect] Error while executing a command");
                         }
                         ran++;
                     }
@@ -162,8 +161,7 @@ public sealed class SimConnectHeadless : IDisposable
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, "An error occurred when receiving data from simconnect");
-                            break;
+                            Log.Error(e, "[SimConnect] Error while processing a message");
                         }
                     }
 

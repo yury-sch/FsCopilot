@@ -2,6 +2,7 @@ namespace FsCopilot.Connection;
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
@@ -26,8 +27,8 @@ public class SimClient : IDisposable
     private readonly IObservable<string> _hEvents;
     // private readonly IObservable<(JsonElement Json, string Raw)> _socketMessages;
 
-    public IObservable<bool> Connected => _headless.Connected;
-    public IObservable<string> Aircraft => _headless.Aircraft;
+    public IObservable<bool> Connected => _headless.Connected.ObserveOn(TaskPoolScheduler.Default);
+    public IObservable<string> Aircraft => _headless.Aircraft.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<Interact> Interactions { get; }
     public IObservable<SimConfig> Config { get; }
 
@@ -45,6 +46,7 @@ public class SimClient : IDisposable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
                 h => _socket.MessageReceived += h,
                 h => _socket.MessageReceived -= h)
+            .ObserveOn(TaskPoolScheduler.Default)
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
             .Do(json => Log.Debug("[SimConnect] RECV: {json}", json))
             .Select(json => JsonDocument.Parse(json).RootElement)
@@ -204,8 +206,9 @@ public class SimClient : IDisposable
         {
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
+            var scheduler = new EventLoopScheduler();
 
-            var sub = _headless.SimObjectData.Subscribe(e =>
+            var sub = _headless.SimObjectData.ObserveOn(scheduler).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is { Length: > 0 }) observer.OnNext((T)e.dwData[0]);
@@ -220,6 +223,7 @@ public class SimClient : IDisposable
             {
                 sub.Dispose();
                 config.Dispose();
+                scheduler.Dispose();
             };
 
             void Initialize(SimConnect sim)
@@ -259,7 +263,7 @@ public class SimClient : IDisposable
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
 
-            var sub = _headless.SimObjectData.Subscribe(e =>
+            var sub = _headless.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is { Length: > 0 }) observer.OnNext(e.dwData[0]);
