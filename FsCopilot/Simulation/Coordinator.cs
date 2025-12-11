@@ -96,21 +96,20 @@ public class Coordinator : IDisposable
         _peer2Peer.RegisterPacket<TPacket, TCodec>();
 
         _d.Add(_sim.Stream<TPacket>()
-            .Catch<TPacket, Exception>(ex =>
-            {
-                Log.Error(ex, "[SimConnect] Error while subscribing to {Packet}", typeof(TPacket).Name);
-                return Observable.Empty<TPacket>();
-            })
             .Where(_ => !master || _masterSwitch.IsMaster)
-            .Subscribe(update => _peer2Peer.SendAll(update, unreliable)));
+            .Subscribe(update =>
+            {
+                try { _peer2Peer.SendAll(update, unreliable); }
+                catch (Exception e) { Log.Error(e, "[Coordinator] Error while sending packet {Packet}", typeof(TPacket).Name); }
+            }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from sim"); }));
 
         _d.Add(_peer2Peer.Stream<TPacket>()
             .Where(_ => !master || !_masterSwitch.IsMaster)
             .Subscribe(update =>
             {
                 try { _sim.Set(update); }
-                catch (Exception e) { Log.Error(e, "[SimConnect] Error while sending packet {Packet}", typeof(TPacket).Name); }
-            }));
+                catch (Exception e) { Log.Error(e, "[Coordinator] Error processing packet {Packet}", typeof(TPacket).Name); }
+            }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from client"); }));
     }
 
     private void AddLink(Definition def)
