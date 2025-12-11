@@ -3,6 +3,12 @@
 class HtmlEvents extends Emitter {
     constructor() {
         super();
+        
+        if (!HtmlEvents._id2El) {
+            HtmlEvents._id2El = new Map();
+            HtmlEvents._el2Id = new Map();
+        }
+        
         this._watched = {
             input: new WeakSet(),
             keypress: new WeakSet(),
@@ -13,23 +19,22 @@ class HtmlEvents extends Emitter {
             if (ev.selfEmit || ev.button !== 0) return;
 
             let el = ev.target;
-            while (el && !el.id) el = el.parentNode;
+            while (el && !HtmlEvents._el2Id.get(el)) el = el.parentNode;
             if (!el) return;
-
-            this.dispatchEvent('emit', {type:'mouseup', id: el.id});
+            this.dispatchEvent('emit', {type:'mouseup', id: HtmlEvents._el2Id.get(el)});
         };
         this._onInput = (ev) => {
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'input', id: ev.target.id, value: ev.target.value});
+            this.dispatchEvent('emit', {type: 'input', id: HtmlEvents._el2Id.get(ev.target), value: ev.target.value});
         }
         this._onKeypress = (ev) => {
             console.log('keypress', ev.keyCode);
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'keypress', id: ev.target.id, value: ev.keyCode});
+            this.dispatchEvent('emit', {type: 'keypress', id: HtmlEvents._el2Id.get(ev.target), value: ev.keyCode});
         };
         this._onKeydown = (ev) => {
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'keydown', id: ev.target.id, value: ev.keyCode});
+            this.dispatchEvent('emit', {type: 'keydown', id: HtmlEvents._el2Id.get(ev.target), value: ev.keyCode});
         };
 
         document.addEventListener('mouseup', this._onMouse, false);
@@ -54,7 +59,7 @@ class HtmlEvents extends Emitter {
      * @param {string|number} [value]
      */
     static dispatch(type, id, value) {
-        const el = document.getElementById(id);
+        const el = HtmlEvents._id2El.get(id);
         if (!el) return;
         let evt;
         switch (type) {
@@ -92,7 +97,7 @@ class HtmlEvents extends Emitter {
     }
 
     _assignId(el) {
-        if (el.id) return;
+        if (HtmlEvents._el2Id.has(el)) return;
 
         const pathParts = [];
         let node = el;
@@ -105,12 +110,14 @@ class HtmlEvents extends Emitter {
         }
         pathParts.reverse();
 
-        const attrs = el.getAttributeNames()
-            .sort()
-            .map(name => `${name}=${el.getAttribute(name)}`)
-            .join('|');
+        // const attrs = el.getAttributeNames()
+        //     .filter(name => name !== 'id')
+        //     .sort()
+        //     .map(name => `${name}=${el.getAttribute(name)}`)
+        //     .join('|');
 
-        const str = pathParts.join('/') + '|' + attrs;
+        // const str = pathParts.join('/') + '|' + attrs;
+        const str = pathParts.join('/');
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -122,7 +129,9 @@ class HtmlEvents extends Emitter {
             id += '1';
         }
 
-        el.id = id;
+        // el.id = id;
+        HtmlEvents._el2Id.set(el, id);
+        HtmlEvents._id2El.set(id, el);
     }
 
     _attachListeners(el) {
