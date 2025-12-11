@@ -47,6 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanJoin))]
     private async Task Join()
     {
+        if (ConnectionCode.Length != 8) return;
         IsConnectionTimeout = false;
         // IsVersionMismatch = false;
         IsBusy = true;
