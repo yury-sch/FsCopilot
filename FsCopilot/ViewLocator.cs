@@ -2,7 +2,7 @@ namespace FsCopilot;
 
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using ViewModels;
+using ReactiveUI;
 
 public class ViewLocator : IDataTemplate
 {
@@ -23,8 +23,5 @@ public class ViewLocator : IDataTemplate
         return new TextBlock { Text = "Not Found: " + name };
     }
 
-    public bool Match(object? data)
-    {
-        return data is ViewModelBase;
-    }
+    public bool Match(object? data) => data is IReactiveObject;
 }

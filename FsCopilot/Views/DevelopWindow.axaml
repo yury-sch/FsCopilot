@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewModels="clr-namespace:FsCopilot.ViewModels"
         xmlns:viewModels1="clr-namespace:FsCopilot.ViewModels"
+        xmlns:fsCopilot="clr-namespace:FsCopilot"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="FsCopilot.Views.DevelopWindow"
-        x:DataType="viewModels1:DevelopWindowViewModel"
+        x:DataType="viewModels1:DevelopViewModel"
         Width="600"
         Height="800"
         Icon="/Assets/fscopilot.ico"
@@ -17,7 +18,7 @@
         ExtendClientAreaToDecorationsHint="True">
 
     <Window.Resources>
-        <vm:InverseBoolConverter x:Key="Inverse"/>
+        <fsCopilot:InverseBool x:Key="Inverse"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -27,7 +28,7 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <viewModels1:MainWindowViewModel />
+        <viewModels1:MainViewModel />
     </Design.DataContext>
 
     <Panel>
