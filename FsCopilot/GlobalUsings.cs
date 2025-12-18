@@ -14,6 +14,4 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Avalonia;
 global using Avalonia.Controls;
-global using CommunityToolkit.Mvvm.ComponentModel;
-global using CommunityToolkit.Mvvm.Input;
 global using Serilog;
