@@ -1,6 +1,5 @@
 ﻿namespace FsCopilot;
 
-using Serilog;
 using Serilog.Events;
 
 sealed class Program

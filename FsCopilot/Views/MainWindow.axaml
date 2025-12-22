@@ -218,10 +218,10 @@
                                                                 VerticalAlignment="Center">
                                                         <TextBlock Foreground="#94a3b8"
                                                                    FontSize="11"
-                                                                   Text="{Binding Rtt, StringFormat='RTT: ~{0} ms'}" />
+                                                                   Text="{Binding Ping, StringFormat='PING: ~{0} ms'}" />
                                                         <TextBlock Foreground="#94a3b8"
                                                                    FontSize="11"
-                                                                   Text="{Binding Loss, StringFormat='Loss: {0}%'}" />
+                                                                   Text="{Binding Transport}" />
                                                     </StackPanel>
                                                 </StackPanel>
                                         </StackPanel>

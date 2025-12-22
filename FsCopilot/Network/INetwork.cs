@@ -1,9 +1,7 @@
 namespace FsCopilot.Network;
 
-public interface IPeer2Peer
+public interface INetwork
 {
-    // IObservable<IPEndPoint?> DiscoveredEndpoint { get; }
-    
     IObservable<ICollection<Peer>> Peers { get; }
     
     Task<bool> Connect(string target, CancellationToken ct);

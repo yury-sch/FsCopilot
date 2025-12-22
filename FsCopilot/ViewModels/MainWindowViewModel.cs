@@ -1,10 +1,6 @@
 ﻿namespace FsCopilot.ViewModels;
 
 using System.Collections.ObjectModel;
-using System.Net;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Threading.Tasks;
 using Avalonia.Threading;
 using Connection;
 using Network;
@@ -39,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     
     // [ObservableProperty] private string? _selectedConfiguration;
 
-    private readonly IPeer2Peer _peer2Peer;
+    private readonly INetwork _net;
     private readonly MasterSwitch _masterSwitch;
     private readonly Subject<bool> _unsubscribe = new();
 
@@ -57,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
             _masterSwitch.Join();
-            result = await _peer2Peer.Connect(ConnectionCode, cts.Token);
+            result = await _net.Connect(ConnectionCode, cts.Token);
         }
         finally
         {
@@ -76,7 +72,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private void Left()
     {
         _masterSwitch.TakeControl();
-        _peer2Peer.Disconnect();
+        _net.Disconnect();
     }
 
     [RelayCommand]
@@ -103,12 +99,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public MainWindowViewModel(string peerId,
         string name,
-        IPeer2Peer peer2Peer, 
+        INetwork net, 
         SimClient sim, 
         MasterSwitch masterSwitch, 
         Coordinator coordinator)
     {
-        _peer2Peer = peer2Peer;
+        _net = net;
         _masterSwitch = masterSwitch;
         // _configuration = configuration;
 
@@ -139,7 +135,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         //     .TakeUntil(_unsubscribe)
         //     .Subscribe(x => Dispatcher.UIThread.Post(() => Address = x));
             
-        peer2Peer.Peers
+        net.Peers
             .Sample(TimeSpan.FromMilliseconds(250))
             .TakeUntil(_unsubscribe)
             .Subscribe(peers => Dispatcher.UIThread.Post(() => 
@@ -151,8 +147,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     {
                         PeerId = peer.PeerId,
                         Name = string.IsNullOrWhiteSpace(peer.Name) ? "Unknown" : peer.Name, 
-                        Rtt = peer.Rtt, 
-                        Loss = peer.Loss, 
+                        Ping = peer.Ping, 
+                        Transport = peer.Transport.ToString("G"), 
                         Status = peer.Status,
                         HasSeparatorAfter = i++ < peers.Count - 1
                     });
@@ -195,10 +191,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         private string _name = string.Empty;
 
         [ObservableProperty]
-        private int _rtt;
+        private int _ping;
 
         [ObservableProperty]
-        private double _loss;
+        private string _transport;
 
         [ObservableProperty]
         private string _statusText = string.Empty;
@@ -226,10 +222,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             get
             {
                 if (Status != Peer.State.Success) return 0;
-                if (Loss > 10 || Rtt > 800) return 5;
-                if (Loss > 5 || Rtt > 400) return 4;
-                if (Loss > 2 || Rtt > 200) return 3;
-                if (Loss > 0.5 || Rtt > 100) return 2;
+                if (Ping > 800) return 5;
+                if (Ping > 400) return 4;
+                if (Ping > 200) return 3;
+                if (Ping > 100) return 2;
                 return 1;
             }
         }

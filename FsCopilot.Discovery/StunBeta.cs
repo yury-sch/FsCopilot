@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
+public class StunBeta(ILogger<StunBeta> logger) : BackgroundService
 {
     private static readonly byte[] HostProtocolVersion = Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
     

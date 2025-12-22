@@ -2,15 +2,9 @@
 
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Text;
 using Avalonia.Threading;
 using Connection;
-using Serilog;
 using Simulation;
-using System.Reactive;
-using System.Reactive.Subjects;
 
 public partial class DevelopWindowViewModel : ViewModelBase, IDisposable
 {

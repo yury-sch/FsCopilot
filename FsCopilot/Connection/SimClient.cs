@@ -1,15 +1,9 @@
 namespace FsCopilot.Connection;
 
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using Microsoft.FlightSimulator.SimConnect;
 using WatsonWebsocket;
-using Serilog;
 
 public class SimClient : IDisposable
 {
