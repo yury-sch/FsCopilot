@@ -10,7 +10,9 @@ public interface INetwork
 
     void SendAll<TPacket>(TPacket packet, bool unreliable = false) where TPacket : notnull;
 
-    void RegisterPacket<TPacket, TCodec>() where TCodec : IPacketCodec<TPacket>, new();
+    void RegisterPacket<TPacket, TCodec>() 
+        where TPacket : notnull
+        where TCodec : IPacketCodec<TPacket>, new();
 
     IObservable<TPacket> Stream<TPacket>();
 }

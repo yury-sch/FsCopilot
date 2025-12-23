@@ -148,7 +148,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         PeerId = peer.PeerId,
                         Name = string.IsNullOrWhiteSpace(peer.Name) ? "Unknown" : peer.Name, 
                         Ping = peer.Ping, 
-                        Transport = peer.Transport.ToString("G"), 
+                        IsDirect = peer.Transport == Peer.TransportKind.Direct, 
                         Status = peer.Status,
                         HasSeparatorAfter = i++ < peers.Count - 1
                     });
@@ -194,7 +194,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         private int _ping;
 
         [ObservableProperty]
-        private string _transport;
+        private bool _isDirect;
 
         [ObservableProperty]
         private string _statusText = string.Empty;

@@ -219,9 +219,16 @@
                                                         <TextBlock Foreground="#94a3b8"
                                                                    FontSize="11"
                                                                    Text="{Binding Ping, StringFormat='PING: ~{0} ms'}" />
-                                                        <TextBlock Foreground="#94a3b8"
-                                                                   FontSize="11"
-                                                                   Text="{Binding Transport}" />
+                                                        <Border Classes="Direct"
+                                                                IsVisible="{Binding IsDirect}">
+                                                            <TextBlock Classes="Direct" 
+                                                                       Text="direct" />
+                                                        </Border>
+                                                        <Border Classes="Relay"
+                                                                IsVisible="{Binding IsDirect, Converter={StaticResource Inverse}}">
+                                                            <TextBlock Classes="Relay" 
+                                                                       Text="relay" />
+                                                        </Border>
                                                     </StackPanel>
                                                 </StackPanel>
                                         </StackPanel>

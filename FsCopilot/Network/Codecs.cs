@@ -1,9 +1,11 @@
 namespace FsCopilot.Network;
 
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using LiteNetLib;
 
 internal interface IPacketCodecAdapter
 {
@@ -11,14 +13,14 @@ internal interface IPacketCodecAdapter
     object Decode(BinaryReader br);
 }
 
-internal sealed class PacketRegistry
+internal sealed class Codecs
 {
     private readonly List<IPacketCodecAdapter> _byId = [];
     private readonly Dictionary<Type, byte> _idByType = new();
     
     public string Schema { get; private set; } = string.Empty;
 
-    public PacketRegistry RegisterPacket<TPacket, TCodec>()
+    public Codecs Add<TPacket, TCodec>()
         where TCodec : IPacketCodec<TPacket>, new()
     {
         var t = typeof(TPacket);
@@ -35,16 +37,57 @@ internal sealed class PacketRegistry
         return this;
     }
 
-    public bool TryGetCodec<TPacket>(out byte id, [MaybeNullWhen(false)] out IPacketCodecAdapter codec)
+    private bool TryGet<TPacket>(out byte id, [MaybeNullWhen(false)] out IPacketCodecAdapter codec)
     {
         codec = null;
-        return _idByType.TryGetValue(typeof(TPacket), out id) && TryGetCodec(id, out codec);
+        return _idByType.TryGetValue(typeof(TPacket), out id) && TryGet(id, out codec);
     }
 
-    public bool TryGetCodec(byte id, [MaybeNullWhen(false)] out IPacketCodecAdapter codec)
+    private bool TryGet(byte id, [MaybeNullWhen(false)] out IPacketCodecAdapter codec)
     {
         codec = id < (uint)_byId.Count ? _byId[id] : null;
         return codec is not null;
+    }
+
+    public byte[] Encode<TPacket>(TPacket packet) where TPacket: notnull
+    {
+        if (!TryGet<TPacket>(out var packetId, out var codec)) return [];
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms, Encoding.UTF8, true);
+        bw.Write(packetId);
+        codec.Encode(packet, bw);
+        bw.Flush();
+        return ms.ToArray();
+    }
+
+    public object? Decode(NetPacketReader reader)
+    {
+        var length = reader.AvailableBytes;
+        var buffer = ArrayPool<byte>.Shared.Rent(length);
+        try
+        {
+            reader.GetBytes(buffer, length);
+
+            using var ms = new MemoryStream(buffer, 0, length, writable: false, publiclyVisible: true);
+            using var br = new BinaryReader(ms, Encoding.UTF8, true);
+
+            var packetType = br.ReadByte();
+            if (!TryGet(packetType, out var codec)) return null;
+
+            try
+            {
+                return codec.Decode(br);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+            reader.Recycle();
+        }
     }
 
     private sealed class CodecAdapter<T>(IPacketCodec<T> inner) : IPacketCodecAdapter

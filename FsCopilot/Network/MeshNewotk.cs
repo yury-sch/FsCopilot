@@ -1,6 +1,5 @@
 namespace FsCopilot.Network;
 
-using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,15 +19,18 @@ public sealed class MeshNetwork : INetwork, IDisposable
     private readonly CancellationTokenSource _cts = new();
     private readonly EventBasedNatPunchListener _natListener = new();
     private readonly EventBasedNetListener _netListener = new();
-    private readonly ConcurrentDictionary<string, Peer> _peers = new();
+    // private readonly ConcurrentDictionary<string, Peer> _peers = new();
     private readonly ConcurrentDictionary<Type, object> _streams = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _relayFallback = new();
     private readonly Subject<Unit> _publish = new();
-    private readonly PacketRegistry _packetRegistry = new PacketRegistry()
-        .RegisterPacket<PeerTag, PeerTag.Codec>()
-        .RegisterPacket<PeerList, PeerList.Codec>()
-        .RegisterPacket<Ping, Ping.Codec>()
-        .RegisterPacket<Pong, Pong.Codec>();
+    private readonly Codecs _codecs = new Codecs()
+            // .Add<PeerName, PeerName.Codec>()
+            .Add<PeerTags, PeerTags.Codec>()
+            // .Add<Ping, Ping.Codec>()
+            // .Add<Pong, Pong.Codec>()
+            ;
+    
+    private readonly ConcurrentDictionary<NetPeer, string> _peerNames = new();
     
     private readonly string _host;
     private readonly string _peerId;
@@ -61,9 +63,25 @@ public sealed class MeshNetwork : INetwork, IDisposable
         _netListener.PeerDisconnectedEvent += OnPeerDisconnected;
         _netListener.NetworkReceiveEvent += OnMessage;
 
-        Peers = _publish
+        var peers = new List<NetPeer>();
+        Peers = Observable.Interval(TimeSpan.FromSeconds(1))
             .ObserveOn(TaskPoolScheduler.Default)
-            .Select(_ => _peers.Values.Where(p => p.PeerId != _peerId).ToList())
+            .Select(_ =>
+            {
+                _net.GetPeersNonAlloc(peers, ConnectionState.Any);
+                return peers.Select(p => new Peer(
+                        p.Tag as string ?? string.Empty, 
+                        _peerNames.TryGetValue(p, out var peerName) ? peerName : string.Empty, 
+                        p.Ping,
+                        p.ConnectionState switch
+                        {
+                            ConnectionState.Outgoing => Peer.State.Pending,
+                            ConnectionState.Connected => Peer.State.Success,
+                            _ => Peer.State.Failed
+                        }, 
+                        p.Address.Equals(_stunEndpoint?.Address) ? Peer.TransportKind.Relay : Peer.TransportKind.Direct))
+                    .ToArray();
+            })
             .Publish()
             .RefCount();
 
@@ -98,11 +116,11 @@ public sealed class MeshNetwork : INetwork, IDisposable
                     _nextHelloTime = DateTime.UtcNow + HelloInterval;
                 }
                 
-                if (DateTime.UtcNow >= _nextLatencyPing)
-                {
-                    SendAll(new Ping(DateTime.UtcNow.Ticks), unreliable: true);
-                    _nextLatencyPing = DateTime.UtcNow + LatencyInterval;
-                }
+                // if (DateTime.UtcNow >= _nextLatencyPing)
+                // {
+                //     SendAll(new Ping(Stopwatch.GetTimestamp()), unreliable: true);
+                //     _nextLatencyPing = DateTime.UtcNow + LatencyInterval;
+                // }
 
                 await Task.Delay(15, ct).ConfigureAwait(false);
             }
@@ -115,210 +133,146 @@ public sealed class MeshNetwork : INetwork, IDisposable
     {
         var parts = token.Split('|');
         if (parts.Length < 3) return;
-        var isRelay = parts[0].Equals("RELAY");
+        // var isRelay = parts[0].Equals("RELAY");
         
-        var targetPeer = parts.First(p => p != _peerId);
-        
-         // Add for direct attempt and update for relay mode
-        _peers.AddOrUpdate(
-            targetPeer,
-            _ => new(
-                PeerId: targetPeer,
-                Name: string.Empty,
-                Ping: 0,
-                Status: Peer.State.Pending,
-                Transport: isRelay ? Peer.TransportKind.Relay : Peer.TransportKind.Direct),
-            (_, old) => old with
-            {
-                Status = Peer.State.Pending,
-                Transport = isRelay ? Peer.TransportKind.Relay : Peer.TransportKind.Direct
-            });
-        _publish.OnNext(Unit.Default);
+        var targetPeer = parts.Skip(1).First(p => p != _peerId);
+        Log.Debug("[Network] NAT {Peer} -> {Address}",targetPeer, endpoint);
 
-        // Start fallback ONLY for direct attempts
-        if (!isRelay) ScheduleRelayFallback(targetPeer);
-
-        _net.Connect(endpoint, $"{_peerId}|{targetPeer}|{_packetRegistry.Schema}");
+        var peer = _net.Connect(endpoint, $"{_peerId}|{targetPeer}|{_codecs.Schema}");
+        if (peer != null) peer.Tag = targetPeer; // already awaiting
     }
 
     private void OnConnectionRequest(ConnectionRequest request)
     {
-        if (_packetRegistry.Schema.Equals(request.Data.GetString())) request.Accept();
-        else request.Reject(NetDataWriter.FromString(_peerId));
+        var token = request.Data.GetString();
+        var parts = token.Split("|");
+        if (parts.Length < 3) return;
+        var targetPeer = parts.First(p => p != _peerId);
+        var schema = parts[2];
+        if (!_codecs.Schema.Equals(schema))
+        {
+            request.Reject(NetDataWriter.FromString(_peerId));
+            return;
+        }
+
+        var peer = request.Accept();
+        peer.Tag = targetPeer;
     }
 
     private void OnConnectionSuccess(NetPeer peer)
     {
-        if (!_packetRegistry.TryGetCodec<PeerTag>(out var packetId, out var codec)) return;
-        var tag = new PeerTag(_peerId, _selfName);
-
-        using var ms = new MemoryStream();
-        using var bw = new BinaryWriter(ms, Encoding.UTF8, true);
-
-        bw.Write(packetId);
-        codec.Encode(tag, bw);
-        bw.Flush();
-        var data = ms.ToArray();
+        var peerId = peer.Tag as string ?? string.Empty;
+        Log.Debug("[Network] CON {Peer} -> {Address}", peerId, new IPEndPoint(peer.Address, peer.Port));
         
-        peer.Send(data, DeliveryMethod.ReliableOrdered);
-    }
-
-    private void OnPeerTag(NetPeer peer, PeerTag tag)
-    {
-        peer.Tag = tag;
-
-        if (_relayFallback.TryRemove(tag.PeerId, out var t))
+        if (_relayFallback.TryRemove(peerId, out var t))
         {
             t.Cancel();
             t.Dispose();
         }
         
-        UpdatePeer(tag.PeerId, p => p with
-        {
-            Name = tag.Name,
-            Status = Peer.State.Success,
-            Transport = Peer.TransportKind.Direct
-        });
+        // var data = _codecs.Encode(new PeerName(_selfName));
+        // peer.Send(data, DeliveryMethod.ReliableUnordered);
         
-        Log.Debug("[Network] Broadcasting peer list: {Ids}", string.Join(", ", _peers.Keys));
-        
-        if (!_packetRegistry.TryGetCodec<PeerList>(out var packetId, out var codec)) return;
-        var peerList = new PeerList(_peers.Values.Select(p => new PeerTag(p.PeerId, p.Name)).ToArray());
-
-        using var ms = new MemoryStream();
-        using var bw = new BinaryWriter(ms, Encoding.UTF8, true);
-
-        bw.Write(packetId);
-        codec.Encode(peerList, bw);
-        bw.Flush();
-        var data = ms.ToArray();
- 
-        peer.Send(data, DeliveryMethod.ReliableOrdered);
-    }
-
-    private void OnPeerList(NetPeer _, PeerList list)
-    {
-        var anyNew = false;
-
-        foreach (var peer in list.Peers)
-        {
-            if (string.IsNullOrEmpty(peer.PeerId)) continue;
-            if (peer.PeerId == _peerId) continue;
-
-            // If we already know, we don’t bother the server again.
-            if (!_peers.TryAdd(peer.PeerId, new(
-                    PeerId: peer.PeerId,
-                    Name: peer.Name,
-                    Ping: 0,
-                    Status: Peer.State.Pending,
-                    Transport: Peer.TransportKind.Direct))) continue;
-
-            Log.Debug("[Network] Discovered peer via list: {PeerId}", peer.PeerId);
-            anyNew = true;
-
-            SendDirectConnectionRequest(peer.PeerId);
-        }
-
-        if (anyNew) _publish.OnNext(Unit.Default);
-    }
-
-    private void OnPing(NetPeer peer, Ping ping)
-    {
-        if (!_packetRegistry.TryGetCodec<Pong>(out var pongId, out var pongCodec)) return;
-
-        using var rms = new MemoryStream();
-        using var rbw = new BinaryWriter(rms, Encoding.UTF8, true);
-
-        rbw.Write(pongId);
-        pongCodec.Encode(new Pong(ping.TicksUtc), rbw);
-        rbw.Flush();
-
-        peer.Send(rms.ToArray(), DeliveryMethod.Unreliable);
-    }
-
-    private void OnPong(NetPeer peer, Pong pong)
-    {
-        if (peer.Tag is not PeerTag tag) return;
-        var nowTicks = DateTime.UtcNow.Ticks;
-        var rttTicks = nowTicks - pong.TicksUtc;
-        if (rttTicks <= 0) return;
-        var rttMs = TimeSpan.FromTicks(rttTicks).TotalMilliseconds;
-
-        // Store one-way estimate (RTT/2) in Peer.Ping
-        var oneWayMs = (int)Math.Round(rttMs / 2.0);
-        UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
+        var peers = new List<NetPeer>();
+        _net.GetPeersNonAlloc(peers, ConnectionState.Any);
+        var peerList = new PeerTags(peers
+            .Select(p => new PeerTags.Tag(p.Tag as string ?? string.Empty, _peerNames.TryGetValue(p, out var peerName) ? peerName : string.Empty))
+            .Prepend(new(_peerId, _selfName))
+            .ToArray());
+        var data = _codecs.Encode(peerList);
+        if (data.Length == 0) return;
+        peer.Send(data, DeliveryMethod.ReliableUnordered);
     }
 
     private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
     {
-        if (info.Reason == DisconnectReason.ConnectionRejected)
-        {
-            var peerId = info.AdditionalData.GetString();
-            UpdatePeer(peerId, p => p with { Status = Peer.State.Rejected });
-            Log.Information("[Network] Peer {PeerId} rejected connection", peerId);
-            return;
-        }
+        var peerId = peer.Tag as string ?? string.Empty;
+        Log.Debug("[Network] REJ {PeerId} -> {Address} ({Reason})", peerId, new IPEndPoint(peer.Address, peer.Port), info.Reason);
+        
+        // if (info.Reason == DisconnectReason.ConnectionRejected)
+        // {
+        //     // var peerId = info.AdditionalData.GetString();
+        //     // UpdatePeer(tag.PeerId, p => p with { Status = Peer.State.Rejected });
+        //     Log.Debug("[Network] Peer {PeerId} rejected connection", peerId);
+        //     return;
+        // }
+        //
+        // if (info.Reason is DisconnectReason.RemoteConnectionClose or DisconnectReason.DisconnectPeerCalled)
+        // {
+        //     // if (_peers.TryRemove(tag.PeerId, out _)) _publish.OnNext(Unit.Default);
+        //     return;
+        // }
 
-        if (peer.Tag is not PeerTag tag) return;
-        if (info.Reason == DisconnectReason.RemoteConnectionClose)
-        {
-            if (_peers.TryRemove(tag.PeerId, out _)) _publish.OnNext(Unit.Default);
-            return;
-        }
-
-        UpdatePeer(tag.PeerId, p => p with { Status = Peer.State.Failed });
-        Log.Information("[Network] Peer {PeerId} disconnected by reason {Reason}", tag.PeerId, info.Reason);
+        // UpdatePeer(tag.PeerId, p => p with { Status = Peer.State.Failed });
     }
 
     private void OnMessage(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)
     {
-        var length = reader.AvailableBytes;
-        var buffer = ArrayPool<byte>.Shared.Rent(length);
-
-        try
+        var packet = _codecs.Decode(reader);
+        if (packet == null)
         {
-            reader.GetBytes(buffer, length);
-
-            using var ms = new MemoryStream(buffer, 0, length, writable: false, publiclyVisible: true);
-            using var br = new BinaryReader(ms, Encoding.UTF8, true);
-
-            var packetType = br.ReadByte();
-            if (!_packetRegistry.TryGetCodec(packetType, out var codec)) return;
-
-            object packet;
-            try
-            {
-                packet = codec.Decode(br);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "[Network] An error occurred while decoding {DataType}", packetType);
-                return;
-            }
-
-            if (packet is PeerTag hello) OnPeerTag(peer, hello);
-            if (packet is PeerList list) OnPeerList(peer, list);
-            if (packet is Ping ping) OnPing(peer, ping);
-            if (packet is Pong pong) OnPong(peer, pong);
-
-            if (!_streams.TryGetValue(packet.GetType(), out var subjObj)) return;
-            var onNextMethod = subjObj.GetType().GetMethod("OnNext");
-            onNextMethod!.Invoke(subjObj, [packet]);
+            Log.Error("[Network] An error occurred while decoding message {Data}", reader.RawData);
+            return;
         }
-        finally
+        
+        if (packet is PeerTags tags) OnPeerTags(peer, tags);
+        // if (packet is Ping ping) OnPing(peer, ping);
+        // if (packet is Pong pong) OnPong(peer, pong);
+        // if (packet is PeerName name) OnPeerName(peer, name);
+
+        if (!_streams.TryGetValue(packet.GetType(), out var subjObj)) return;
+        var onNextMethod = subjObj.GetType().GetMethod("OnNext");
+        onNextMethod!.Invoke(subjObj, [packet]);
+    }
+
+    // private void OnPeerName(NetPeer peer, PeerName name)
+    // {
+    //     _peerNames.AddOrUpdate(peer, name.Name, (key, value) => name.Name);
+    // }
+
+    private void OnPeerTags(NetPeer peer, PeerTags tags)
+    {
+        var peers = new List<NetPeer>();
+        _net.GetPeersNonAlloc(peers, ConnectionState.Any);
+        
+        foreach (var tag in tags.Peers)
         {
-            ArrayPool<byte>.Shared.Return(buffer);
-            reader.Recycle();
+            if (tag.PeerId == _peerId) continue;
+            _peerNames.AddOrUpdate(peer, tag.Name, (_, _) => tag.Name);
+            
+            if (!peers.Any(p => p.Tag.Equals(tag.PeerId))) AskIntroduce(tag.PeerId);
         }
     }
+
+    // private void OnPing(NetPeer peer, Ping ping)
+    // {
+    //     var data = _codecs.Encode(new Pong(ping.TicksUtc));
+    //     if (data.Length == 0) return;
+    //     peer.Send(data, DeliveryMethod.Unreliable);
+    // }
+    //
+    // private void OnPong(NetPeer peer, Pong pong)
+    // {
+    //     if (peer.Tag is not PeerTag tag) return;
+    //     var nowTicks = Stopwatch.GetTimestamp();
+    //     var rtt = (nowTicks - pong.TicksUtc) * 1000.0 / Stopwatch.Frequency;
+    //     if (rtt <= 0) return;
+    //     // var rttMs = TimeSpan.FromTicks(rttTicks).TotalMilliseconds;
+    //
+    //     // Store one-way estimate (RTT/2) in Peer.Ping
+    //     var oneWayMs = (int)Math.Round(rtt / 2.0);
+    //     UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
+    // }
 
     public async Task<bool> Connect(string targetPeerId, CancellationToken ct)
     {
         try
         {
             await Introduce(ct);
+        
+            // UpdatePeer(targetPeerId, peer => peer);
 
-            SendDirectConnectionRequest(targetPeerId);
+            AskIntroduce(targetPeerId);
 
             return true;
         }
@@ -329,34 +283,17 @@ public sealed class MeshNetwork : INetwork, IDisposable
         catch (Exception e)
         {
             Log.Error(e, "[Network] Failed to connect to discovery host {Host}", _host);
-            
             return false;
         }
     }
 
-    public void Disconnect()
-    {
-        _net.DisconnectAll();
-        _peers.Clear();
-        _publish.OnNext(Unit.Default);
-    }
+    public void Disconnect() => _net.DisconnectAll();
 
     public void SendAll<TPacket>(TPacket packet, bool unreliable = false) where TPacket : notnull
     {
-        if (!_packetRegistry.TryGetCodec<TPacket>(out var packetId, out var codec)) return;
-
-        byte[] data;
-        using (var ms = new MemoryStream())
-        using (var bw = new BinaryWriter(ms, Encoding.UTF8, true))
-        {
-            bw.Write(packetId);
-            codec.Encode(packet, bw);
-            bw.Flush();
-            data = ms.ToArray();
-        }
-
+        var data = _codecs.Encode(packet);
+        if (data.Length == 0) return;
         var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
-
         _net.SendToAll(data, method);
     }
 
@@ -366,10 +303,8 @@ public sealed class MeshNetwork : INetwork, IDisposable
 
     public void RegisterPacket<TPacket, TCodec>()
         where TPacket : notnull
-        where TCodec : IPacketCodec<TPacket>, new()
-    {
-        _packetRegistry.RegisterPacket<TPacket, TCodec>();
-    }
+        where TCodec : IPacketCodec<TPacket>, new() =>
+        _codecs.Add<TPacket, TCodec>();
 
     private async Task Introduce(CancellationToken ct)
     {
@@ -378,28 +313,20 @@ public sealed class MeshNetwork : INetwork, IDisposable
             var ips = await Dns.GetHostAddressesAsync(_host, ct);
             var ip = ips.First(x => x.AddressFamily is AddressFamily.InterNetworkV6 or AddressFamily.InterNetwork);
             _stunEndpoint = new(ip, StunPort);
+            _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_codecs.Schema}");
         }
-        catch (Exception e)
-        {
-            _stunEndpoint = null;
-            return;
-        }
-        
-        if (_stunEndpoint == null) return;
-        
-        _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_packetRegistry.Schema}");
+        catch (Exception) { /* ignore */ }
     }
 
-    private void SendDirectConnectionRequest(string targetPeerId)
+    private void AskIntroduce(string targetPeerId)
     {
         if (_stunEndpoint == null) return;
 
-        var msg = $"DIRECT|{_peerId}|{targetPeerId}";
-        var writer = new NetDataWriter();
-        writer.Put(msg);
+        _net.SendUnconnectedMessage(NetDataWriter.FromString($"DIRECT|{_peerId}|{targetPeerId}"), _stunEndpoint);
+        Log.Debug("[Network] DIR {SelfId} -> {TargetId}", _peerId, targetPeerId);
 
-        _net.SendUnconnectedMessage(writer, _stunEndpoint);
-        Log.Debug("[Network] DIRECT {SelfId} -> {TargetId}", _peerId, targetPeerId);
+        // Start fallback ONLY for direct attempts
+        // ScheduleRelayFallback(targetPeerId);
     }
     
     private void ScheduleRelayFallback(string targetPeerId)
@@ -420,88 +347,79 @@ public sealed class MeshNetwork : INetwork, IDisposable
                 await Task.Delay(DirectGrace, cts.Token).ConfigureAwait(false);
 
                 // If we already succeeded - no fallback
-                if (_peers.TryGetValue(targetPeerId, out var p) && p.Status == Peer.State.Success) return;
+                // if (_peers.TryGetValue(targetPeerId, out var p) && p.Status == Peer.State.Success) return;
 
                 // Ask STUN to introduce us to relay-as-peer
                 if (_stunEndpoint != null)
                 {
-                    _net.SendUnconnectedMessage(NetDataWriter.FromString($"RELAY|{_peerId}|{targetPeerId}"), _stunEndpoint);
-                    Log.Debug("[Network] RELAY {SelfId} -> {TargetId}", _peerId, targetPeerId);
+                    
+                    var peer = _net.Connect(_stunEndpoint, $"{_peerId}|{targetPeerId}|{_codecs.Schema}");
+                    if (peer != null) peer.Tag = targetPeerId;
+                    // _net.SendUnconnectedMessage(NetDataWriter.FromString($"RELAY|{_peerId}|{targetPeerId}"), _stunEndpoint);
+                    Log.Debug("[Network] RLY {SelfId} -> {TargetId}", _peerId, targetPeerId);
                 }
             }
             catch (OperationCanceledException) { /* normal */ }
             catch (Exception e) { Log.Error(e, "[Network] Relay fallback timer failed for {PeerId}", targetPeerId); }
         }, CancellationToken.None);
     }
-    
-    private void UpdatePeer(string peerId, Func<Peer, Peer> updater)
-    {
-        while (true)
-        {
-            if (!_peers.TryGetValue(peerId, out var oldValue)) return;
-            var newValue = updater(oldValue);
-            if (_peers.TryUpdate(peerId, newValue, oldValue)) break;
-        }
-        _publish.OnNext(Unit.Default);
-    }
 
-    private record PeerTag(string PeerId, string Name)
-    {
-        public sealed class Codec : IPacketCodec<PeerTag>
-        {
-            public void Encode(PeerTag packet, BinaryWriter bw)
-            {
-                bw.Write(packet.PeerId);
-                bw.Write(packet.Name);
-            }
+    // private record PeerName(string Name)
+    // {
+    //     public sealed class Codec : IPacketCodec<PeerName>
+    //     {
+    //         public void Encode(PeerName packet, BinaryWriter bw) => bw.Write(packet.Name);
+    //
+    //         public PeerName Decode(BinaryReader br) => new(br.ReadString());
+    //     }
+    // }
 
-            public PeerTag Decode(BinaryReader br)
-            {
-                var peerId = br.ReadString();
-                var name = br.ReadString();
-                return new(peerId, name);
-            }
-        }
-    }
-
-    private record PeerList(PeerTag[] Peers)
+    private record PeerTags(PeerTags.Tag[] Peers)
     {
-        public sealed class Codec : IPacketCodec<PeerList>
+        public sealed class Codec : IPacketCodec<PeerTags>
         {
-            private readonly PeerTag.Codec _helloCodec = new();
-            
-            public void Encode(PeerList packet, BinaryWriter bw)
+            public void Encode(PeerTags packet, BinaryWriter bw)
             {
                 bw.Write(packet.Peers.Length);
-                foreach (var peer in packet.Peers) _helloCodec.Encode(peer, bw);
+                foreach (var peer in packet.Peers)
+                {
+                    bw.Write(peer.PeerId);
+                    bw.Write(peer.Name);
+                }
             }
-
-            public PeerList Decode(BinaryReader br)
+    
+            public PeerTags Decode(BinaryReader br)
             {
                 var count = br.ReadInt32();
-                var peers = new PeerTag[count];
+                var peers = new Tag[count];
                 for (var i = 0; i < count; i++)
-                    peers[i] = _helloCodec.Decode(br);
+                {
+                    var peerId = br.ReadString();
+                    var name = br.ReadString();
+                    peers[i] = new(peerId, name);
+                }
                 return new(peers);
             }
         }
+
+        public record Tag(string PeerId, string Name);
     }
 
-    private record Ping(long TicksUtc)
-    {
-        public sealed class Codec : IPacketCodec<Ping>
-        {
-            public void Encode(Ping p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-            public Ping Decode(BinaryReader br) => new(br.ReadInt64());
-        }
-    }
-
-    private record Pong(long TicksUtc)
-    {
-        public sealed class Codec : IPacketCodec<Pong>
-        {
-            public void Encode(Pong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-            public Pong Decode(BinaryReader br) => new(br.ReadInt64());
-        }
-    }
+    // private record Ping(long TicksUtc)
+    // {
+    //     public sealed class Codec : IPacketCodec<Ping>
+    //     {
+    //         public void Encode(Ping p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+    //         public Ping Decode(BinaryReader br) => new(br.ReadInt64());
+    //     }
+    // }
+    //
+    // private record Pong(long TicksUtc)
+    // {
+    //     public sealed class Codec : IPacketCodec<Pong>
+    //     {
+    //         public void Encode(Pong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+    //         public Pong Decode(BinaryReader br) => new(br.ReadInt64());
+    //     }
+    // }
 }
