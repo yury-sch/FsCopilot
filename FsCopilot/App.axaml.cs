@@ -48,17 +48,17 @@ public partial class App : Application
             {
                 var peerId = Random.String(8);
                 var name = Environment.UserName;
-                var peer2Peer = new DirectNetwork("p2p.fscopilot.com", peerId, name);
+                var net = new MeshNetwork("p2p.fscopilot.com", peerId, name);
                 var simConnect = new SimClient("FS Copilot");
-                var control = new MasterSwitch(simConnect, peer2Peer);
-                var coordinator = new Coordinator(simConnect, peer2Peer, control);
+                var control = new MasterSwitch(simConnect, net);
+                var coordinator = new Coordinator(simConnect, net, control);
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(peerId, name, peer2Peer, simConnect, control, coordinator)
+                    DataContext = new MainWindowViewModel(peerId, name, net, simConnect, control, coordinator)
                 };
                 desktop.Exit += (_, _) =>
                 {
-                    peer2Peer.Disconnect();
+                    net.Disconnect();
                     control.TakeControl();
                 };
             }

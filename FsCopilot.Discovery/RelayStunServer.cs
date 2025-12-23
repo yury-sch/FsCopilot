@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteNetLib;
+using LiteNetLib.Utils;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -155,8 +156,14 @@ public sealed class RelayStunServer : BackgroundService
     // =========================
     // STUN: HELLO (NatIntroduceRequest)
     // =========================
-    private void OnNatIntroductionRequest(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, string selfId)
+    private void OnNatIntroductionRequest(IPEndPoint localEndPoint, IPEndPoint remoteEndPoint, string token)
     {
+        var parts = token.Split('|');
+        if (parts.Length != 2) return;
+        
+        var selfId = parts[0];
+        var schema = parts[1];
+        
         if (string.IsNullOrWhiteSpace(selfId))
         {
             _logger.LogWarning("Invalid selfId in HELLO from {Remote}", remoteEndPoint);
@@ -164,7 +171,7 @@ public sealed class RelayStunServer : BackgroundService
         }
 
         var now = DateTime.UtcNow;
-        var info = new PeerInfo(localEndPoint, remoteEndPoint, now);
+        var info = new PeerInfo(localEndPoint, remoteEndPoint, schema, now);
 
         _peers[selfId] = info;
         _peerIdByExternal[new EndPointKey(remoteEndPoint)] = selfId;
@@ -173,7 +180,7 @@ public sealed class RelayStunServer : BackgroundService
     }
 
     // =========================
-    // STUN: Unconnected commands (CALL / DIRECT / RELAY)
+    // STUN: Unconnected commands (DIRECT / RELAY)
     // =========================
     private void OnUnconnectedMessage(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
     {
@@ -188,10 +195,7 @@ public sealed class RelayStunServer : BackgroundService
 
         try
         {
-            if (text.StartsWith("CALL|", StringComparison.Ordinal))
-                HandleCall(text);
-            
-            else if (text.StartsWith("DIRECT|", StringComparison.Ordinal))
+            if (text.StartsWith("DIRECT|", StringComparison.Ordinal))
                 HandleDirect(text);
 
             else if (text.StartsWith("RELAY|", StringComparison.Ordinal))
@@ -204,36 +208,6 @@ public sealed class RelayStunServer : BackgroundService
         {
             _logger.LogError(e, "Error while processing unconnected message '{Text}' from {Remote}", text, remoteEndPoint);
         }
-    }
-
-    private void HandleCall(string text)
-    {
-        // text = "CALL|SELFID|TARGETID"
-        var parts = text.Split('|');
-        if (parts.Length != 3) return;
-
-        var a = parts[1].Trim();
-        var b = parts[2].Trim();
-
-        if (!_peers.TryGetValue(a, out var aInfo))
-        {
-            _logger.LogWarning("CALL from {A}, but not registered", a);
-            return;
-        }
-        if (!_peers.TryGetValue(b, out var bInfo))
-        {
-            _logger.LogInformation("CALL {A} -> {B}: target not found", a, b);
-            return;
-        }
-
-        var token = $"{a}|{b}";
-
-        _logger.LogInformation("CALL {A} ({AExt}) -> {B} ({BExt}) => NatIntroduce", a, aInfo.External, b, bInfo.External);
-
-        _stunNet.NatPunchModule.NatIntroduce(
-            aInfo.Internal, aInfo.External,
-            bInfo.Internal, bInfo.External,
-            token);
     }
 
     private void HandleDirect(string text)
@@ -293,10 +267,8 @@ public sealed class RelayStunServer : BackgroundService
             key,
             _ => new RelaySession(a, b, now),
             (_, old) => old with { LastTouched = now });
-
-        // Token format: client code "token.Split('|').Last(p => p != _peerId)" still works.
-        // Example: RLY|A|B
-        var token = $"RLY|{a}|{b}";
+        
+        var token = $"RELAY|{a}|{b}";
 
         // IMPORTANT: we introduce EACH peer with RELAY endpoint as "the other side".
         // This causes both clients to receive NatIntroductionSuccess(endpoint=relayPublic, token=...)
@@ -321,9 +293,21 @@ public sealed class RelayStunServer : BackgroundService
     // =========================
     private void OnRelayConnectionRequest(ConnectionRequest request)
     {
-        // We can accept all, but we will only bridge peers that:
-        // 1) are known (HELLO was received)
-        // 2) belong to some active relay session
+        var token = request.Data.GetString();
+        var parts = token.Split('|');
+        if (parts.Length < 2) return;
+        var sourceId = parts[0];
+        var targetId = parts[1];
+        
+        if (!_peers.TryGetValue(sourceId, out var source)) return;
+        if (!_peers.TryGetValue(targetId, out var target)) return;
+
+        if (!source.Schema.Equals(target.Schema))
+        {
+            request.Reject(NetDataWriter.FromString(targetId));
+            return;
+        }
+        
         request.Accept();
     }
 
@@ -461,7 +445,7 @@ public sealed class RelayStunServer : BackgroundService
     // =========================
     // Types
     // =========================
-    private sealed record PeerInfo(IPEndPoint Internal, IPEndPoint External, DateTime LastSeen);
+    private sealed record PeerInfo(IPEndPoint Internal, IPEndPoint External, string Schema, DateTime LastSeen);
 
     private readonly record struct EndPointKey(IPAddress Address, int Port)
     {

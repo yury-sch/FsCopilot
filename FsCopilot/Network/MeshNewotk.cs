@@ -8,7 +8,7 @@ using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-public sealed class DirectNetwork : INetwork, IDisposable
+public sealed class MeshNetwork : INetwork, IDisposable
 {
     private const int StunPort = 3481;
     
@@ -19,7 +19,7 @@ public sealed class DirectNetwork : INetwork, IDisposable
     
     private readonly CancellationTokenSource _cts = new();
     private readonly EventBasedNatPunchListener _natListener = new();
-    private readonly EventBasedNetListener _directListener = new();
+    private readonly EventBasedNetListener _netListener = new();
     private readonly ConcurrentDictionary<string, Peer> _peers = new();
     private readonly ConcurrentDictionary<Type, object> _streams = new();
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _relayFallback = new();
@@ -27,39 +27,39 @@ public sealed class DirectNetwork : INetwork, IDisposable
     private readonly PacketRegistry _packetRegistry = new PacketRegistry()
         .RegisterPacket<PeerTag, PeerTag.Codec>()
         .RegisterPacket<PeerList, PeerList.Codec>()
-        .RegisterPacket<LatencyPing, LatencyPing.Codec>()
-        .RegisterPacket<LatencyPong, LatencyPong.Codec>();
+        .RegisterPacket<Ping, Ping.Codec>()
+        .RegisterPacket<Pong, Pong.Codec>();
     
     private readonly string _host;
     private readonly string _peerId;
     private readonly string _selfName;
-    private readonly NetManager _direct;
+    private readonly NetManager _net;
 
     private IPEndPoint? _stunEndpoint;
     private DateTime _nextHelloTime = DateTime.MinValue;
 
     public IObservable<ICollection<Peer>> Peers { get; }
 
-    public DirectNetwork(string host, string peerId, string name)
+    public MeshNetwork(string host, string peerId, string name)
     {
         _host = host;
         _peerId = peerId;
         _selfName = name;
 
-        _direct = new(_directListener)
+        _net = new(_netListener)
         {
             NatPunchEnabled = true,
             UnconnectedMessagesEnabled = true,
             DisconnectTimeout = 15000
         };
-        _direct.NatPunchModule.Init(_natListener);
-        _direct.Start();
+        _net.NatPunchModule.Init(_natListener);
+        _net.Start();
 
         _natListener.NatIntroductionSuccess += OnNatIntroduction;
-        _directListener.ConnectionRequestEvent += OnDirectConnectionRequest;
-        _directListener.PeerConnectedEvent += OnDirectConnectionSuccess;
-        _directListener.PeerDisconnectedEvent += OnDirectPeerDisconnected;
-        _directListener.NetworkReceiveEvent += OnDirectMessage;
+        _netListener.ConnectionRequestEvent += OnConnectionRequest;
+        _netListener.PeerConnectedEvent += OnConnectionSuccess;
+        _netListener.PeerDisconnectedEvent += OnPeerDisconnected;
+        _netListener.NetworkReceiveEvent += OnMessage;
 
         Peers = _publish
             .ObserveOn(TaskPoolScheduler.Default)
@@ -67,13 +67,13 @@ public sealed class DirectNetwork : INetwork, IDisposable
             .Publish()
             .RefCount();
 
-        Task.Run(() => DirectPollLoop(_cts.Token), _cts.Token);
+        Task.Run(() => Loop(_cts.Token), _cts.Token);
     }
 
     public void Dispose()
     {
         _cts.Cancel();
-        _direct.Stop();
+        _net.Stop();
         _publish.OnCompleted();
 
         foreach (var subj in _streams.Values)
@@ -83,14 +83,14 @@ public sealed class DirectNetwork : INetwork, IDisposable
         }
     }
 
-    private async Task DirectPollLoop(CancellationToken ct)
+    private async Task Loop(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
             try
             {
-                _direct.PollEvents();
-                _direct.NatPunchModule.PollEvents();
+                _net.PollEvents();
+                _net.NatPunchModule.PollEvents();
 
                 if (DateTime.UtcNow >= _nextHelloTime)
                 {
@@ -100,33 +100,24 @@ public sealed class DirectNetwork : INetwork, IDisposable
                 
                 if (DateTime.UtcNow >= _nextLatencyPing)
                 {
-                    SendAll(new LatencyPing(DateTime.UtcNow.Ticks), unreliable: true);
+                    SendAll(new Ping(DateTime.UtcNow.Ticks), unreliable: true);
                     _nextLatencyPing = DateTime.UtcNow + LatencyInterval;
                 }
 
                 await Task.Delay(15, ct).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
-            {
-                // normal
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "[Network] Loop error");
-            }
+            catch (OperationCanceledException) { /* normal */ }
+            catch (Exception e) { Log.Error(e, "[Network] Loop error"); }
         }
     }
 
     private void OnNatIntroduction(IPEndPoint endpoint, NatAddressType type, string token)
     {
-        // token examples:
-        // Direct: "A|B"
-        // Relay : "RLY|A|B"
-        var isRelay = token.StartsWith("RLY|", StringComparison.Ordinal);
-
-        // Keep your existing "find other peer" logic, it still works.
-        // For "RLY|A|B" this will return the "other id" correctly.
-        var targetPeer = token.Split('|').Last(p => p != _peerId && p != "RLY");
+        var parts = token.Split('|');
+        if (parts.Length < 3) return;
+        var isRelay = parts[0].Equals("RELAY");
+        
+        var targetPeer = parts.First(p => p != _peerId);
         
          // Add for direct attempt and update for relay mode
         _peers.AddOrUpdate(
@@ -140,23 +131,23 @@ public sealed class DirectNetwork : INetwork, IDisposable
             (_, old) => old with
             {
                 Status = Peer.State.Pending,
-                Transport = isRelay ? Peer.TransportKind.Relay : old.Transport
+                Transport = isRelay ? Peer.TransportKind.Relay : Peer.TransportKind.Direct
             });
         _publish.OnNext(Unit.Default);
 
         // Start fallback ONLY for direct attempts
         if (!isRelay) ScheduleRelayFallback(targetPeer);
 
-        _direct.Connect(endpoint, _packetRegistry.Schema);
+        _net.Connect(endpoint, $"{_peerId}|{targetPeer}|{_packetRegistry.Schema}");
     }
 
-    private void OnDirectConnectionRequest(ConnectionRequest request)
+    private void OnConnectionRequest(ConnectionRequest request)
     {
         if (_packetRegistry.Schema.Equals(request.Data.GetString())) request.Accept();
         else request.Reject(NetDataWriter.FromString(_peerId));
     }
 
-    private void OnDirectConnectionSuccess(NetPeer peer)
+    private void OnConnectionSuccess(NetPeer peer)
     {
         if (!_packetRegistry.TryGetCodec<PeerTag>(out var packetId, out var codec)) return;
         var tag = new PeerTag(_peerId, _selfName);
@@ -231,25 +222,22 @@ public sealed class DirectNetwork : INetwork, IDisposable
         if (anyNew) _publish.OnNext(Unit.Default);
     }
 
-    private void OnLatencyPing(NetPeer peer, LatencyPing ping)
+    private void OnPing(NetPeer peer, Ping ping)
     {
-        // Reply immediately with the same timestamp.
-        // This yields end-to-end RTT independent of transport (direct/relay).
-        if (!_packetRegistry.TryGetCodec<LatencyPong>(out var pongId, out var pongCodec)) return;
+        if (!_packetRegistry.TryGetCodec<Pong>(out var pongId, out var pongCodec)) return;
 
         using var rms = new MemoryStream();
         using var rbw = new BinaryWriter(rms, Encoding.UTF8, true);
 
         rbw.Write(pongId);
-        pongCodec.Encode(new LatencyPong(ping.TicksUtc), rbw);
+        pongCodec.Encode(new Pong(ping.TicksUtc), rbw);
         rbw.Flush();
 
         peer.Send(rms.ToArray(), DeliveryMethod.Unreliable);
     }
 
-    private void OnLatencyPong(NetPeer peer, LatencyPong pong)
+    private void OnPong(NetPeer peer, Pong pong)
     {
-        // We can only attribute latency if we know peerId (PeerTag handshake done).
         if (peer.Tag is not PeerTag tag) return;
         var nowTicks = DateTime.UtcNow.Ticks;
         var rttTicks = nowTicks - pong.TicksUtc;
@@ -261,7 +249,7 @@ public sealed class DirectNetwork : INetwork, IDisposable
         UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
     }
 
-    private void OnDirectPeerDisconnected(NetPeer peer, DisconnectInfo info)
+    private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
     {
         if (info.Reason == DisconnectReason.ConnectionRejected)
         {
@@ -282,7 +270,7 @@ public sealed class DirectNetwork : INetwork, IDisposable
         Log.Information("[Network] Peer {PeerId} disconnected by reason {Reason}", tag.PeerId, info.Reason);
     }
 
-    private void OnDirectMessage(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)
+    private void OnMessage(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)
     {
         var length = reader.AvailableBytes;
         var buffer = ArrayPool<byte>.Shared.Rent(length);
@@ -310,8 +298,8 @@ public sealed class DirectNetwork : INetwork, IDisposable
 
             if (packet is PeerTag hello) OnPeerTag(peer, hello);
             if (packet is PeerList list) OnPeerList(peer, list);
-            if (packet is LatencyPing ping) OnLatencyPing(peer, ping);
-            if (packet is LatencyPong pong) OnLatencyPong(peer, pong);
+            if (packet is Ping ping) OnPing(peer, ping);
+            if (packet is Pong pong) OnPong(peer, pong);
 
             if (!_streams.TryGetValue(packet.GetType(), out var subjObj)) return;
             var onNextMethod = subjObj.GetType().GetMethod("OnNext");
@@ -348,7 +336,7 @@ public sealed class DirectNetwork : INetwork, IDisposable
 
     public void Disconnect()
     {
-        _direct.DisconnectAll();
+        _net.DisconnectAll();
         _peers.Clear();
         _publish.OnNext(Unit.Default);
     }
@@ -369,7 +357,7 @@ public sealed class DirectNetwork : INetwork, IDisposable
 
         var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
 
-        _direct.SendToAll(data, method);
+        _net.SendToAll(data, method);
     }
 
     public IObservable<TPacket> Stream<TPacket>() =>
@@ -399,36 +387,23 @@ public sealed class DirectNetwork : INetwork, IDisposable
         
         if (_stunEndpoint == null) return;
         
-        _direct.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, _peerId);
+        _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_packetRegistry.Schema}");
     }
 
     private void SendDirectConnectionRequest(string targetPeerId)
     {
         if (_stunEndpoint == null) return;
 
-        var msg = $"CALL|{_peerId}|{targetPeerId}";
+        var msg = $"DIRECT|{_peerId}|{targetPeerId}";
         var writer = new NetDataWriter();
         writer.Put(msg);
 
-        _direct.SendUnconnectedMessage(writer, _stunEndpoint);
-        Log.Debug("[Network] CALL {SelfId} -> {TargetId}", _peerId, targetPeerId);
-    }
-    
-    private void SendRelayConnectionRequest(string targetPeerId)
-    {
-        if (_stunEndpoint == null) return;
-
-        var msg = $"RELAY|{_peerId}|{targetPeerId}";
-        var writer = new NetDataWriter();
-        writer.Put(msg);
-
-        _direct.SendUnconnectedMessage(writer, _stunEndpoint);
-        Log.Debug("[Network] RELAY {SelfId} -> {TargetId}", _peerId, targetPeerId);
+        _net.SendUnconnectedMessage(writer, _stunEndpoint);
+        Log.Debug("[Network] DIRECT {SelfId} -> {TargetId}", _peerId, targetPeerId);
     }
     
     private void ScheduleRelayFallback(string targetPeerId)
     {
-        // Cancel previous timer for this peer (if any)
         if (_relayFallback.TryRemove(targetPeerId, out var old))
         {
             old.Cancel();
@@ -445,25 +420,17 @@ public sealed class DirectNetwork : INetwork, IDisposable
                 await Task.Delay(DirectGrace, cts.Token).ConfigureAwait(false);
 
                 // If we already succeeded - no fallback
-                if (_peers.TryGetValue(targetPeerId, out var p) && p.Status == Peer.State.Success)
-                    return;
-
-                // Switch to relay mode in peer list (UI / logic)
-                UpdatePeer(targetPeerId, x => x with { Transport = Peer.TransportKind.Relay });
+                if (_peers.TryGetValue(targetPeerId, out var p) && p.Status == Peer.State.Success) return;
 
                 // Ask STUN to introduce us to relay-as-peer
-                SendRelayConnectionRequest(targetPeerId);
-
-                Log.Information("[Direct] No PeerTag after {Grace}s -> RELAY request for {PeerId}", DirectGrace.TotalSeconds, targetPeerId);
+                if (_stunEndpoint != null)
+                {
+                    _net.SendUnconnectedMessage(NetDataWriter.FromString($"RELAY|{_peerId}|{targetPeerId}"), _stunEndpoint);
+                    Log.Debug("[Network] RELAY {SelfId} -> {TargetId}", _peerId, targetPeerId);
+                }
             }
-            catch (OperationCanceledException)
-            {
-                // normal
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "[Direct] Relay fallback timer failed for {PeerId}", targetPeerId);
-            }
+            catch (OperationCanceledException) { /* normal */ }
+            catch (Exception e) { Log.Error(e, "[Network] Relay fallback timer failed for {PeerId}", targetPeerId); }
         }, CancellationToken.None);
     }
     
@@ -471,11 +438,9 @@ public sealed class DirectNetwork : INetwork, IDisposable
     {
         while (true)
         {
-            if (!_peers.TryGetValue(peerId, out var oldValue))
-                return;
+            if (!_peers.TryGetValue(peerId, out var oldValue)) return;
             var newValue = updater(oldValue);
-            if (_peers.TryUpdate(peerId, newValue, oldValue))
-                break;
+            if (_peers.TryUpdate(peerId, newValue, oldValue)) break;
         }
         _publish.OnNext(Unit.Default);
     }
@@ -522,21 +487,21 @@ public sealed class DirectNetwork : INetwork, IDisposable
         }
     }
 
-    private record LatencyPing(long TicksUtc)
+    private record Ping(long TicksUtc)
     {
-        public sealed class Codec : IPacketCodec<LatencyPing>
+        public sealed class Codec : IPacketCodec<Ping>
         {
-            public void Encode(LatencyPing p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-            public LatencyPing Decode(BinaryReader br) => new(br.ReadInt64());
+            public void Encode(Ping p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+            public Ping Decode(BinaryReader br) => new(br.ReadInt64());
         }
     }
 
-    private record LatencyPong(long TicksUtc)
+    private record Pong(long TicksUtc)
     {
-        public sealed class Codec : IPacketCodec<LatencyPong>
+        public sealed class Codec : IPacketCodec<Pong>
         {
-            public void Encode(LatencyPong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-            public LatencyPong Decode(BinaryReader br) => new(br.ReadInt64());
+            public void Encode(Pong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+            public Pong Decode(BinaryReader br) => new(br.ReadInt64());
         }
     }
 }
