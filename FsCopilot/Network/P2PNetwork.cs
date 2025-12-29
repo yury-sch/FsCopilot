@@ -7,21 +7,17 @@ using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
-public sealed class MeshNetwork : INetwork, IDisposable
+public sealed class P2PNetwork : INetwork, IDisposable
 {
     private const int StunPort = 3481;
     
-    private static readonly TimeSpan HelloInterval = TimeSpan.FromSeconds(20);
-    private static readonly TimeSpan DirectGrace = TimeSpan.FromSeconds(6);
-    private static readonly TimeSpan LatencyInterval = TimeSpan.FromSeconds(1);
-    private DateTime _nextLatencyPing = DateTime.MinValue;
+    private static readonly TimeSpan IntroduceInterval = TimeSpan.FromSeconds(20);
     
     private readonly CancellationTokenSource _cts = new();
     private readonly EventBasedNatPunchListener _natListener = new();
     private readonly EventBasedNetListener _netListener = new();
     // private readonly ConcurrentDictionary<string, Peer> _peers = new();
     private readonly ConcurrentDictionary<Type, object> _streams = new();
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _relayFallback = new();
     private readonly Subject<Unit> _publish = new();
     private readonly Codecs _codecs = new Codecs()
             // .Add<PeerName, PeerName.Codec>()
@@ -30,7 +26,8 @@ public sealed class MeshNetwork : INetwork, IDisposable
             // .Add<Pong, Pong.Codec>()
             ;
     
-    private readonly ConcurrentDictionary<NetPeer, string> _peerNames = new();
+    private readonly ConcurrentDictionary<string, string> _peerNames = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, TaskCompletionSource<ConnectionResult>> _connectWaiters = new(StringComparer.Ordinal);
     
     private readonly string _host;
     private readonly string _peerId;
@@ -38,11 +35,10 @@ public sealed class MeshNetwork : INetwork, IDisposable
     private readonly NetManager _net;
 
     private IPEndPoint? _stunEndpoint;
-    private DateTime _nextHelloTime = DateTime.MinValue;
 
     public IObservable<ICollection<Peer>> Peers { get; }
 
-    public MeshNetwork(string host, string peerId, string name)
+    public P2PNetwork(string host, string peerId, string name)
     {
         _host = host;
         _peerId = peerId;
@@ -69,23 +65,20 @@ public sealed class MeshNetwork : INetwork, IDisposable
             .Select(_ =>
             {
                 _net.GetPeersNonAlloc(peers, ConnectionState.Any);
-                return peers.Select(p => new Peer(
-                        p.Tag as string ?? string.Empty, 
-                        _peerNames.TryGetValue(p, out var peerName) ? peerName : string.Empty, 
+                return peers
+                    .Where(p => p.Tag is string)
+                    .Select(p => new Peer(
+                        (string)p.Tag, 
+                        _peerNames.TryGetValue((string)p.Tag, out var peerName) ? peerName : string.Empty, 
                         p.Ping,
-                        p.ConnectionState switch
-                        {
-                            ConnectionState.Outgoing => Peer.State.Pending,
-                            ConnectionState.Connected => Peer.State.Success,
-                            _ => Peer.State.Failed
-                        }, 
-                        p.Address.Equals(_stunEndpoint?.Address) ? Peer.TransportKind.Relay : Peer.TransportKind.Direct))
+                        Peer.TransportKind.Direct))
                     .ToArray();
             })
             .Publish()
             .RefCount();
 
         Task.Run(() => Loop(_cts.Token), _cts.Token);
+        Task.Run(() => IntroduceLoop(_cts.Token), _cts.Token);
     }
 
     public void Dispose()
@@ -110,22 +103,25 @@ public sealed class MeshNetwork : INetwork, IDisposable
                 _net.PollEvents();
                 _net.NatPunchModule.PollEvents();
 
-                if (DateTime.UtcNow >= _nextHelloTime)
-                {
-                    await Introduce(ct);
-                    _nextHelloTime = DateTime.UtcNow + HelloInterval;
-                }
-                
-                // if (DateTime.UtcNow >= _nextLatencyPing)
-                // {
-                //     SendAll(new Ping(Stopwatch.GetTimestamp()), unreliable: true);
-                //     _nextLatencyPing = DateTime.UtcNow + LatencyInterval;
-                // }
-
-                await Task.Delay(15, ct).ConfigureAwait(false);
+                await Task.Delay(15, ct);
             }
             catch (OperationCanceledException) { /* normal */ }
             catch (Exception e) { Log.Error(e, "[Network] Loop error"); }
+        }
+    }
+
+    private async Task IntroduceLoop(CancellationToken ct)
+    {
+        await Task.Delay(1000, ct);
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await EnsureIntroduced(ct);
+                await Task.Delay(IntroduceInterval, ct);
+            }
+            catch (OperationCanceledException) { /* normal */ }
+            catch (Exception e) { Log.Error(e, "[Network] Failed to introduce"); }
         }
     }
 
@@ -146,14 +142,10 @@ public sealed class MeshNetwork : INetwork, IDisposable
     {
         var token = request.Data.GetString();
         var parts = token.Split("|");
-        if (parts.Length < 3) return;
+        if (parts.Length < 3) { request.Reject(); return; }
         var targetPeer = parts.First(p => p != _peerId);
         var schema = parts[2];
-        if (!_codecs.Schema.Equals(schema))
-        {
-            request.Reject(NetDataWriter.FromString(_peerId));
-            return;
-        }
+        if (!_codecs.Schema.Equals(schema)) { request.Reject(NetDataWriter.FromString(_peerId)); return; }
 
         var peer = request.Accept();
         peer.Tag = targetPeer;
@@ -163,22 +155,22 @@ public sealed class MeshNetwork : INetwork, IDisposable
     {
         var peerId = peer.Tag as string ?? string.Empty;
         Log.Debug("[Network] CON {Peer} -> {Address}", peerId, new IPEndPoint(peer.Address, peer.Port));
-        
-        if (_relayFallback.TryRemove(peerId, out var t))
-        {
-            t.Cancel();
-            t.Dispose();
-        }
-        
-        // var data = _codecs.Encode(new PeerName(_selfName));
-        // peer.Send(data, DeliveryMethod.ReliableUnordered);
-        
+
+        if (!string.IsNullOrEmpty(peerId) && _connectWaiters.TryGetValue(peerId, out var tcs))
+            tcs.TrySetResult(ConnectionResult.Success);
+
+        // дальше твой текущий код рассылки PeerTags — оставляем как есть
         var peers = new List<NetPeer>();
         _net.GetPeersNonAlloc(peers, ConnectionState.Any);
+
         var peerList = new PeerTags(peers
-            .Select(p => new PeerTags.Tag(p.Tag as string ?? string.Empty, _peerNames.TryGetValue(p, out var peerName) ? peerName : string.Empty))
+            .Where(p => p.Tag is string)
+            .Select(p => new PeerTags.Tag(
+                (string)p.Tag,
+                _peerNames.TryGetValue((string)p.Tag, out var peerName) ? peerName : string.Empty))
             .Prepend(new(_peerId, _selfName))
             .ToArray());
+
         var data = _codecs.Encode(peerList);
         if (data.Length == 0) return;
         peer.Send(data, DeliveryMethod.ReliableUnordered);
@@ -187,23 +179,24 @@ public sealed class MeshNetwork : INetwork, IDisposable
     private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
     {
         var peerId = peer.Tag as string ?? string.Empty;
-        Log.Debug("[Network] REJ {PeerId} -> {Address} ({Reason})", peerId, new IPEndPoint(peer.Address, peer.Port), info.Reason);
-        
-        // if (info.Reason == DisconnectReason.ConnectionRejected)
-        // {
-        //     // var peerId = info.AdditionalData.GetString();
-        //     // UpdatePeer(tag.PeerId, p => p with { Status = Peer.State.Rejected });
-        //     Log.Debug("[Network] Peer {PeerId} rejected connection", peerId);
-        //     return;
-        // }
-        //
-        // if (info.Reason is DisconnectReason.RemoteConnectionClose or DisconnectReason.DisconnectPeerCalled)
-        // {
-        //     // if (_peers.TryRemove(tag.PeerId, out _)) _publish.OnNext(Unit.Default);
-        //     return;
-        // }
+        Log.Debug("[Network] DIS {PeerId} -> {Address} ({Reason})",
+            peerId, new IPEndPoint(peer.Address, peer.Port), info.Reason);
 
-        // UpdatePeer(tag.PeerId, p => p with { Status = Peer.State.Failed });
+        if (string.IsNullOrEmpty(peerId))
+            return;
+
+        if (info.Reason == DisconnectReason.ConnectionRejected)
+        {
+            if (_connectWaiters.TryGetValue(peerId, out var tcs))
+                tcs.TrySetResult(ConnectionResult.Rejected);
+
+            Log.Debug("[Network] REJ {PeerId} rejected connection", peerId);
+            return;
+        }
+
+        // If we were waiting for this connection and it died -> fail
+        if (_connectWaiters.TryGetValue(peerId, out var waiter))
+            waiter.TrySetResult(ConnectionResult.Failed);
     }
 
     private void OnMessage(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod method)
@@ -238,7 +231,7 @@ public sealed class MeshNetwork : INetwork, IDisposable
         foreach (var tag in tags.Peers)
         {
             if (tag.PeerId == _peerId) continue;
-            _peerNames.AddOrUpdate(peer, tag.Name, (_, _) => tag.Name);
+            _peerNames.AddOrUpdate(tag.PeerId, tag.Name, (_, _) => tag.Name);
             
             if (!peers.Any(p => p.Tag.Equals(tag.PeerId))) AskIntroduce(tag.PeerId);
         }
@@ -264,26 +257,48 @@ public sealed class MeshNetwork : INetwork, IDisposable
     //     UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
     // }
 
-    public async Task<bool> Connect(string targetPeerId, CancellationToken ct)
+    public async Task<ConnectionResult> Connect(string targetPeerId, CancellationToken ct)
     {
+        // Already connected?
+        var peers = new List<NetPeer>();
+        _net.GetPeersNonAlloc(peers, ConnectionState.Connected);
+        if (peers.Any(p => (p.Tag as string) == targetPeerId))
+            return ConnectionResult.Success;
+
+        var tcs = new TaskCompletionSource<ConnectionResult>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        if (!_connectWaiters.TryAdd(targetPeerId, tcs))
+            return ConnectionResult.Failed;
+
         try
         {
-            await Introduce(ct);
-        
-            // UpdatePeer(targetPeerId, peer => peer);
+            await EnsureIntroduced(ct).ConfigureAwait(false);
 
             AskIntroduce(targetPeerId);
 
-            return true;
+            using var reg = ct.Register(
+                static s => ((TaskCompletionSource<ConnectionResult>)s!).TrySetResult(ConnectionResult.Failed),
+                tcs);
+
+            return await tcs.Task.ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
-            return false;
+            return ConnectionResult.Failed;
+        }
+        catch (InvalidOperationException)
+        {
+            return ConnectionResult.Failed;
         }
         catch (Exception e)
         {
-            Log.Error(e, "[Network] Failed to connect to discovery host {Host}", _host);
-            return false;
+            Log.Error(e, "[Network] Connect failed");
+            return ConnectionResult.Failed;
+        }
+        finally
+        {
+            _connectWaiters.TryRemove(targetPeerId, out _);
         }
     }
 
@@ -305,63 +320,37 @@ public sealed class MeshNetwork : INetwork, IDisposable
         where TPacket : notnull
         where TCodec : IPacketCodec<TPacket>, new() =>
         _codecs.Add<TPacket, TCodec>();
-
-    private async Task Introduce(CancellationToken ct)
+    
+    private async Task<IPEndPoint?> ResolveStunEndpoint(CancellationToken ct)
     {
         try
         {
             var ips = await Dns.GetHostAddressesAsync(_host, ct);
-            var ip = ips.First(x => x.AddressFamily is AddressFamily.InterNetworkV6 or AddressFamily.InterNetwork);
-            _stunEndpoint = new(ip, StunPort);
-            _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_codecs.Schema}");
+            var ip = ips.FirstOrDefault(x =>
+                x.AddressFamily is AddressFamily.InterNetworkV6 or AddressFamily.InterNetwork);
+            return ip is null ? null : new IPEndPoint(ip, StunPort);
         }
-        catch (Exception) { /* ignore */ }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task EnsureIntroduced(CancellationToken ct)
+    {
+        if (_stunEndpoint is null)
+            _stunEndpoint = await ResolveStunEndpoint(ct);
+
+        if (_stunEndpoint is null)
+            throw new InvalidOperationException("STUN endpoint resolution failed");
+        _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_codecs.Schema}");
     }
 
     private void AskIntroduce(string targetPeerId)
     {
         if (_stunEndpoint == null) return;
-
         _net.SendUnconnectedMessage(NetDataWriter.FromString($"DIRECT|{_peerId}|{targetPeerId}"), _stunEndpoint);
         Log.Debug("[Network] DIR {SelfId} -> {TargetId}", _peerId, targetPeerId);
-
-        // Start fallback ONLY for direct attempts
-        // ScheduleRelayFallback(targetPeerId);
-    }
-    
-    private void ScheduleRelayFallback(string targetPeerId)
-    {
-        if (_relayFallback.TryRemove(targetPeerId, out var old))
-        {
-            old.Cancel();
-            old.Dispose();
-        }
-
-        var cts = new CancellationTokenSource();
-        _relayFallback[targetPeerId] = cts;
-
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await Task.Delay(DirectGrace, cts.Token).ConfigureAwait(false);
-
-                // If we already succeeded - no fallback
-                // if (_peers.TryGetValue(targetPeerId, out var p) && p.Status == Peer.State.Success) return;
-
-                // Ask STUN to introduce us to relay-as-peer
-                if (_stunEndpoint != null)
-                {
-                    
-                    var peer = _net.Connect(_stunEndpoint, $"{_peerId}|{targetPeerId}|{_codecs.Schema}");
-                    if (peer != null) peer.Tag = targetPeerId;
-                    // _net.SendUnconnectedMessage(NetDataWriter.FromString($"RELAY|{_peerId}|{targetPeerId}"), _stunEndpoint);
-                    Log.Debug("[Network] RLY {SelfId} -> {TargetId}", _peerId, targetPeerId);
-                }
-            }
-            catch (OperationCanceledException) { /* normal */ }
-            catch (Exception e) { Log.Error(e, "[Network] Relay fallback timer failed for {PeerId}", targetPeerId); }
-        }, CancellationToken.None);
     }
 
     // private record PeerName(string Name)

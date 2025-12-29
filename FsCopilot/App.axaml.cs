@@ -48,17 +48,19 @@ public partial class App : Application
             {
                 var peerId = Random.String(8);
                 var name = Environment.UserName;
-                var net = new MeshNetwork("p2p.fscopilot.com", peerId, name);
+                var p2p = new P2PNetwork("p2p.fscopilot.com", peerId, name);
+                var relay = new RelayNetwork("p2p.fscopilot.com", peerId, name);
+                var hybrid = new HybridNetwork(p2p, relay);
                 var simConnect = new SimClient("FS Copilot");
-                var control = new MasterSwitch(simConnect, net);
-                var coordinator = new Coordinator(simConnect, net, control);
+                var control = new MasterSwitch(simConnect, hybrid);
+                var coordinator = new Coordinator(simConnect, hybrid, control);
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(peerId, name, net, simConnect, control, coordinator)
+                    DataContext = new MainWindowViewModel(peerId, name, hybrid, simConnect, control, coordinator)
                 };
                 desktop.Exit += (_, _) =>
                 {
-                    net.Disconnect();
+                    hybrid.Disconnect();
                     control.TakeControl();
                 };
             }

@@ -195,11 +195,6 @@
                                                           Height="22"
                                                           IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=5}"
                                                           Data="{StaticResource cellular_data_5_regular}" />
-                                                <PathIcon Foreground="#F44336"
-                                                          Height="22"
-                                                          ToolTip.Tip="{Binding StatusText}"
-                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=0}"
-                                                          Data="{StaticResource cellular_off_regular}" />
                                                 
                                                 <StackPanel>
                                                     <StackPanel DockPanel.Dock="Top" 

@@ -4,7 +4,7 @@ public interface INetwork
 {
     IObservable<ICollection<Peer>> Peers { get; }
     
-    Task<bool> Connect(string target, CancellationToken ct);
+    Task<ConnectionResult> Connect(string target, CancellationToken ct);
 
     void Disconnect();
 

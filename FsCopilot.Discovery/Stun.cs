@@ -1,23 +1,23 @@
-﻿namespace P2PDiscovery;
-
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Net;
 using LiteNetLib;
 
-public sealed class StunRc1 : BackgroundService
+namespace P2PDiscovery;
+
+public sealed class Stun : BackgroundService
 {
     private const int Port = 3480;
     private static readonly TimeSpan PeerTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan CleanupInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(15);
     
-    private readonly ILogger<StunRc1> _logger;
+    private readonly ILogger<Stun> _logger;
     private readonly EventBasedNetListener _listener = new();
     private readonly EventBasedNatPunchListener _natListener = new();
     private readonly NetManager _net;
     private readonly ConcurrentDictionary<string, PeerInfo> _peers = new();
 
-    public StunRc1(ILogger<StunRc1> logger)
+    public Stun(ILogger<Stun> logger)
     {
         _logger = logger;
 

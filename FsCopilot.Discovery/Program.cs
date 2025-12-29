@@ -1,10 +1,9 @@
 using P2PDiscovery;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.Configure<RelayOptions>(builder.Configuration.GetSection("Relay"));
 builder.Services.AddHostedService<StunBeta>();
-builder.Services.AddHostedService<StunRc1>();
-builder.Services.AddHostedService<RelayStunServer>();
+builder.Services.AddHostedService<Stun>();
+builder.Services.AddHostedService<Relay>();
 var app = builder.Build();
 app.MapGet("/", () => "I'm fine");
 app.Run();
