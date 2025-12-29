@@ -23,12 +23,13 @@ public sealed class Relay : BackgroundService
     {
         _logger = logger;
 
-        _net = new NetManager(_listener)
+        _net = new(_listener)
         {
             IPv6Enabled = true,
             DisconnectTimeout = 15_000,
             NatPunchEnabled = false,
-            UnconnectedMessagesEnabled = false
+            UnconnectedMessagesEnabled = false,
+            ChannelsCount = 2
         };
 
         _listener.ConnectionRequestEvent += OnConnectionRequest;
@@ -39,49 +40,42 @@ public sealed class Relay : BackgroundService
     public override Task StartAsync(CancellationToken cancellationToken)
     {
         if (!_net.Start(Port))
-            throw new InvalidOperationException($"Failed to start relay server on UDP port '{Port}'.");
-
-        _logger.LogInformation("Relay server started on UDP port {Port}", Port);
+            throw new InvalidOperationException($"Failed to start the server on UDP port '{Port}'.");
+        _logger.LogInformation("Server started on UDP port: {Port}", Port);
         return base.StartAsync(cancellationToken);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Stopping relay server...");
+        _logger.LogInformation("Stopping server...");
         _net.Stop();
         return base.StopAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
+        while (!stoppingToken.IsCancellationRequested)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
                 _net.PollEvents();
                 await Task.Delay(TickMs, stoppingToken).ConfigureAwait(false);
             }
+            catch (OperationCanceledException) { /* normal */ }
+            catch (Exception ex) { _logger.LogError(ex, "An error occurred during server event processing"); }
         }
-        catch (OperationCanceledException)
-        {
-            // normal
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Relay loop crashed");
-        }
+        
+        _logger.LogInformation("Server stopped.");
     }
-
-    // ---------------------------------
-    // Token handshake: v=1;pid=...;schema=...
-    // ---------------------------------
 
     private void OnConnectionRequest(ConnectionRequest request)
     {
         var token = request.Data.GetString();
-
+    
+        // Token handshake: pid=...;schema=...
         if (!TryParseToken(token, out var peerId, out var schemaId))
         {
+            _logger.LogError("Invalid connection request: {Request}", token);
             request.Reject(NetDataWriter.FromString("PROTOCOL_ERROR"));
             return;
         }
@@ -94,7 +88,8 @@ public sealed class Relay : BackgroundService
         }
 
         var peer = request.Accept();
-
+        if (peer == null) return;
+        
         var ps = new PeerState(peerId, schemaId, peer);
         _byPeer[peer] = ps;
         _byId[peerId] = ps;
@@ -187,6 +182,7 @@ public sealed class Relay : BackgroundService
         var targetId = reader.GetString();
         if (string.IsNullOrWhiteSpace(targetId))
         {
+            _logger.LogError("Invalid target peer {Peer}", targetId);
             SendError(from, "PROTOCOL_ERROR", "Invalid ConnectIntent payload");
             return;
         }
@@ -330,15 +326,12 @@ public sealed class Relay : BackgroundService
 
             switch (key)
             {
-                case "v": v = val; break;
                 case "pid": peerId = val; break;
                 case "schema": schemaId = val; break;
             }
         }
 
-        if (v != "1") return false;
         if (string.IsNullOrWhiteSpace(peerId)) return false;
-        if (string.IsNullOrWhiteSpace(schemaId)) return false;
 
         return true;
     }

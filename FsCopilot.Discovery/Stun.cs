@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace P2PDiscovery;
 
@@ -35,92 +36,67 @@ public sealed class Stun : BackgroundService
         _natListener.NatIntroductionRequest += OnNatIntroductionRequest;
     }
 
-    public override Task StartAsync(CancellationToken cancellationToken)
+    public override Task StartAsync(CancellationToken ct)
     {
         if (!_net.Start(Port))
-            throw new InvalidOperationException($"Failed to start NAT server on UDP port '{Port}'.");
-
-        _logger.LogInformation("NAT server started on UDP port {Port}", Port);
-        return base.StartAsync(cancellationToken);
+            throw new InvalidOperationException($"Failed to start the server on UDP port '{Port}'.");
+        _logger.LogInformation("Server started on UDP port: {Port}", Port);
+        return base.StartAsync(ct);
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
+    public override Task StopAsync(CancellationToken ct)
     {
-        _logger.LogInformation("Stopping NAT server...");
+        _logger.LogInformation("Stopping server...");
         _net.Stop();
-        return base.StopAsync(cancellationToken);
+        return base.StopAsync(ct);
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
         var lastCleanup = DateTime.UtcNow;
 
-        try
+        while (!ct.IsCancellationRequested)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            var now = DateTime.UtcNow;
+            if (now - lastCleanup >= CleanupInterval)
+            {
+                lastCleanup = now;
+                foreach (var kv in _peers)
+                {
+                    if (now - kv.Value.LastSeen <= PeerTtl) continue;
+                    if (_peers.TryRemove(kv.Key, out _)) _logger.LogInformation("STALE {PeerId} => REMOVED", kv.Key);
+                }
+            }
+            
+            try
             {
                 _net.PollEvents();
                 _net.NatPunchModule.PollEvents();
-
-                var now = DateTime.UtcNow;
-                if (now - lastCleanup >= CleanupInterval)
-                {
-                    CleanupStalePeers(now);
-                    lastCleanup = now;
-                }
-
-                try
-                {
-                    await Task.Delay(TickInterval, stoppingToken).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // normal on shutdown
-                }
+                await Task.Delay(TickInterval, ct).ConfigureAwait(false);
             }
+            catch (OperationCanceledException) { /* normal */ }
+            catch (Exception ex) { _logger.LogError(ex, "LOOP error"); }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "NAT loop crashed");
-        }
-        finally
-        {
-            _logger.LogInformation("NAT loop stopped.");
-        }
+        
+        _logger.LogInformation("Server stopped.");
     }
 
-    private void OnNatIntroductionRequest(
-        IPEndPoint localEndPoint,
-        IPEndPoint remoteEndPoint,
-        string selfId)
+    private void OnNatIntroductionRequest(IPEndPoint local, IPEndPoint remote, string selfId)
     {
         if (!IsValidPeerId(selfId))
         {
-            _logger.LogWarning("Invalid selfId '{SelfId}' in HELLO from {Remote}", selfId, remoteEndPoint);
+            _logger.LogWarning("INTRODUCE {PeerId} => INVALID ({Remote})", selfId, remote);
             return;
         }
 
         var now = DateTime.UtcNow;
-        var peer = new PeerInfo(localEndPoint, remoteEndPoint, now);
+        var peer = new PeerInfo(local, remote, now);
         var info = _peers.AddOrUpdate(selfId, peer, (_, _) => peer);
 
-        _logger.LogInformation("HELLO {PeerId}: internal={Internal}, external={External}",
-            selfId, info.Internal, info.External);
+        _logger.LogInformation("INTRODUCE {PeerId} => {External}, {Internal}", selfId, info.External, info.Internal);
     }
 
-    private void CleanupStalePeers(DateTime now)
-    {
-        foreach (var kv in _peers)
-        {
-            if (now - kv.Value.LastSeen <= PeerTtl) continue;
-            if (_peers.TryRemove(kv.Key, out _)) _logger.LogInformation("Removed stale peer {PeerId}", kv.Key);
-        }
-    }
-
-    private void OnUnconnectedMessage(
-        IPEndPoint remoteEndPoint,
-        NetPacketReader reader,
-        UnconnectedMessageType messageType)
+    private void OnUnconnectedMessage(IPEndPoint remote, NetPacketReader reader, UnconnectedMessageType messageType)
     {
         if (messageType != UnconnectedMessageType.BasicMessage)
         {
@@ -128,31 +104,27 @@ public sealed class Stun : BackgroundService
             return;
         }
 
-        var text = reader.GetString();
+        var msg = reader.GetString();
         reader.Recycle();
 
         try
         {
-            if (text.StartsWith("CALL|", StringComparison.Ordinal))
-                HandleCall(remoteEndPoint, text);
-            else
-                _logger.LogWarning("Unknown unconnected message '{Text}' from {Remote}", text, remoteEndPoint);
+            if (msg.StartsWith("CALL|", StringComparison.Ordinal)) HandleCall(remote, msg);
+            else _logger.LogWarning("MSG ? ({Remote}) '{Text}'", remote, msg);
         }
         catch (Exception e)
         {
-            _logger.LogError(e,
-                "Error while processing unconnected message '{Text}' from {Remote}",
-                text, remoteEndPoint);
+            _logger.LogError(e, "MSG ERR ({Remote}) '{Text}'", remote, msg);
         }
     }
 
-    private void HandleCall(IPEndPoint remote, string text)
+    private void HandleCall(IPEndPoint remote, string msg)
     {
         // text = "CALL|SELFID|TARGETID"
-        var parts = text.Split('|');
+        var parts = msg.Split('|');
         if (parts.Length != 3)
         {
-            _logger.LogWarning("Invalid CALL msg '{Text}' from {Remote}", text, remote);
+            _logger.LogWarning("CALL ? ({Remote}) '{Text}'", remote, msg);
             return;
         }
 
@@ -161,40 +133,34 @@ public sealed class Stun : BackgroundService
 
         if (!IsValidPeerId(selfId) || !IsValidPeerId(targetId))
         {
-            _logger.LogWarning("Invalid ids in CALL '{Text}' from {Remote}", text, remote);
+            _logger.LogWarning("CALL {SelfId} -> {TargetId} => INVALID ({Remote})", selfId, targetId, remote);
             return;
         }
 
-        if (!_peers.TryGetValue(selfId, out var selfInfo))
+        if (!_peers.TryGetValue(selfId, out var self))
         {
-            _logger.LogWarning("CALL from {SelfId}, but this peer is not registered yet", selfId);
+            _logger.LogWarning("CALL {SelfId} (NOT_FOUND) -> {TargetId} (SKIPPED) => Ignored", selfId, targetId);
             return;
         }
 
-        if (!_peers.TryGetValue(targetId, out var targetInfo))
+        if (!_peers.TryGetValue(targetId, out var target))
         {
-            _logger.LogInformation("CALL {SelfId} -> {TargetId}: target not found", selfId, targetId);
+            _logger.LogInformation("CALL {SelfId} ({SelfExt}) -> {TargetId} (NOT_FOUND) => Rejected", 
+                selfId, self.External, targetId);
+            _net.SendUnconnectedMessage(NetDataWriter.FromString($"REJECT|{selfId}|{targetId}|NOT_FOUND"), remote);
             return;
         }
 
-        _logger.LogInformation(
-            "CALL {SelfId} ({SelfExt}) -> {TargetId} ({TargetExt}) => NatIntroduce",
-            selfId, selfInfo.External, targetId, targetInfo.External);
-
-        // Perform NAT introduction: A <-> B
-        // The token can be used for debugging, but clients don't really need it.
-        var token = $"PEERS|{selfId}|{targetId}";
+        _logger.LogInformation("CALL {SelfId} ({SelfExt}) -> {TargetId} ({TargetExt}) => Introduce",
+            selfId, self.External, targetId, target.External);
 
         _net.NatPunchModule.NatIntroduce(
-            selfInfo.Internal, selfInfo.External,
-            targetInfo.Internal, targetInfo.External,
-            token);
+            self.Internal, self.External,
+            target.Internal, target.External,
+            $"PEERS|{selfId}|{targetId}");
     }
 
-    private static bool IsValidPeerId(string peerId) => !string.IsNullOrEmpty(peerId);
+    private static bool IsValidPeerId(string peerId) => !string.IsNullOrEmpty(peerId) && peerId.Length == 8;
 
-    private sealed record PeerInfo(
-        IPEndPoint Internal,
-        IPEndPoint External,
-        DateTime LastSeen);
+    private sealed record PeerInfo(IPEndPoint Internal, IPEndPoint External, DateTime LastSeen);
 }

@@ -58,6 +58,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
         _netListener.PeerConnectedEvent += OnConnectionSuccess;
         _netListener.PeerDisconnectedEvent += OnPeerDisconnected;
         _netListener.NetworkReceiveEvent += OnMessage;
+        _netListener.NetworkReceiveUnconnectedEvent += OnUnconnected;
 
         var peers = new List<NetPeer>();
         Peers = Observable.Interval(TimeSpan.FromSeconds(1))
@@ -216,6 +217,32 @@ public sealed class P2PNetwork : INetwork, IDisposable
         if (!_streams.TryGetValue(packet.GetType(), out var subjObj)) return;
         var onNextMethod = subjObj.GetType().GetMethod("OnNext");
         onNextMethod!.Invoke(subjObj, [packet]);
+    }
+    
+    private void OnUnconnected(IPEndPoint remote, NetPacketReader reader, UnconnectedMessageType type)
+    {
+        if (type != UnconnectedMessageType.BasicMessage)
+        {
+            reader.Recycle();
+            return;
+        }
+
+        var msg = reader.GetString();
+        reader.Recycle();
+
+        // REJECT|selfId|targetId|NOT_FOUND
+        if (!msg.StartsWith("REJECT|", StringComparison.Ordinal)) return;
+
+        var parts = msg.Split('|');
+        if (parts.Length < 4) return;
+
+        var selfId = parts[1];
+        var targetId = parts[2];
+        var reason = parts[3];
+
+        // If Connect(targetId) is waiting — resolve immediately
+        if (_connectWaiters.TryGetValue(targetId, out var tcs))
+            tcs.TrySetResult(ConnectionResult.Failed);
     }
 
     // private void OnPeerName(NetPeer peer, PeerName name)
