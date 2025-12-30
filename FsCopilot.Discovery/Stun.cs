@@ -131,9 +131,10 @@ public sealed class Stun : BackgroundService
         var selfId = parts[1].Trim();
         var targetId = parts[2].Trim();
 
-        if (!IsValidPeerId(selfId) || !IsValidPeerId(targetId))
+        if (!IsValidPeerId(selfId) || !IsValidPeerId(targetId) || selfId.Equals(targetId, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("CALL {SelfId} -> {TargetId} => INVALID ({Remote})", selfId, targetId, remote);
+            _net.SendUnconnectedMessage(NetDataWriter.FromString($"REJECT|{selfId}|{targetId}|NOT_FOUND"), remote);
             return;
         }
 

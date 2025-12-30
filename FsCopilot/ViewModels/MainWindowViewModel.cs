@@ -15,7 +15,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private bool _connected;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isSimConnected;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isConnectionTimeout;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isConnectionFailed;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isVersionMismatch;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(ErrorMessage))] private bool _isNotSupported;
     [ObservableProperty] private bool _showTakeControl;
@@ -24,7 +24,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public string ErrorMessage =>
         // Address == null ? "No internet connection. Please check your network." :
-        IsConnectionTimeout ? "Connection attempt timed out." :
+        IsConnectionFailed ? "Connection failed." :
         IsVersionMismatch ? "Connection failed due to version mismatch." :
         !IsSimConnected ? "Microsoft Flight Simulator is not running!" :
         IsNotSupported ? $"{Aircraft} is not supported." :
@@ -44,14 +44,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private async Task Join()
     {
         if (ConnectionCode.Length != 8) return;
-        IsConnectionTimeout = false;
+        IsConnectionFailed = false;
         IsVersionMismatch = false;
         IsBusy = true;
         ConnectionResult result;
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-
             _masterSwitch.Join();
             result = await _net.Connect(ConnectionCode, cts.Token);
             ConnectionCode = string.Empty;
@@ -64,8 +63,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         
         if (result == ConnectionResult.Failed)
         {
-            IsConnectionTimeout = true;
-            _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsConnectionTimeout = false);
+            IsConnectionFailed = true;
+            _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => IsConnectionFailed = false);
         }
         else if (result == ConnectionResult.Rejected)
         {
@@ -77,8 +76,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void Left()
     {
-        _masterSwitch.TakeControl();
         _net.Disconnect();
+        _masterSwitch.TakeControl();
     }
 
     [RelayCommand]

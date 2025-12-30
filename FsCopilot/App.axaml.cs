@@ -50,7 +50,8 @@ public partial class App : Application
                 var name = Environment.UserName;
                 var p2p = new P2PNetwork("p2p.fscopilot.com", peerId, name);
                 var relay = new RelayNetwork("p2p.fscopilot.com", peerId, name);
-                var hybrid = new HybridNetwork(p2p, relay);
+                var hybrid = relay;
+                // var hybrid = new HybridNetwork(p2p, relay);
                 var simConnect = new SimClient("FS Copilot");
                 var control = new MasterSwitch(simConnect, hybrid);
                 var coordinator = new Coordinator(simConnect, hybrid, control);

@@ -9,22 +9,17 @@ using LiteNetLib.Utils;
 
 public sealed class P2PNetwork : INetwork, IDisposable
 {
-    private const int StunPort = 3481;
+    private const int StunPort = 3480;
     
     private static readonly TimeSpan IntroduceInterval = TimeSpan.FromSeconds(20);
     
     private readonly CancellationTokenSource _cts = new();
     private readonly EventBasedNatPunchListener _natListener = new();
     private readonly EventBasedNetListener _netListener = new();
-    // private readonly ConcurrentDictionary<string, Peer> _peers = new();
     private readonly ConcurrentDictionary<Type, object> _streams = new();
     private readonly Subject<Unit> _publish = new();
     private readonly Codecs _codecs = new Codecs()
-            // .Add<PeerName, PeerName.Codec>()
-            .Add<PeerTags, PeerTags.Codec>()
-            // .Add<Ping, Ping.Codec>()
-            // .Add<Pong, Pong.Codec>()
-            ;
+            .Add<PeerTags, PeerTags.Codec>();
     
     private readonly ConcurrentDictionary<string, string> _peerNames = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ConnectionResult>> _connectWaiters = new(StringComparer.Ordinal);
@@ -77,6 +72,8 @@ public sealed class P2PNetwork : INetwork, IDisposable
             })
             .Publish()
             .RefCount();
+        
+        Stream<PeerTags>().Subscribe(OnPeerTags, _cts.Token);
 
         Task.Run(() => Loop(_cts.Token), _cts.Token);
         Task.Run(() => IntroduceLoop(_cts.Token), _cts.Token);
@@ -130,13 +127,13 @@ public sealed class P2PNetwork : INetwork, IDisposable
     {
         var parts = token.Split('|');
         if (parts.Length < 3) return;
-        // var isRelay = parts[0].Equals("RELAY");
         
         var targetPeer = parts.Skip(1).First(p => p != _peerId);
         Log.Debug("[Network] NAT {Peer} -> {Address}",targetPeer, endpoint);
 
         var peer = _net.Connect(endpoint, $"{_peerId}|{targetPeer}|{_codecs.Schema}");
-        if (peer != null) peer.Tag = targetPeer; // already awaiting
+        if (peer == null) return; // already awaiting
+        peer.Tag = targetPeer;
     }
 
     private void OnConnectionRequest(ConnectionRequest request)
@@ -146,7 +143,11 @@ public sealed class P2PNetwork : INetwork, IDisposable
         if (parts.Length < 3) { request.Reject(); return; }
         var targetPeer = parts.First(p => p != _peerId);
         var schema = parts[2];
-        if (!_codecs.Schema.Equals(schema)) { request.Reject(NetDataWriter.FromString(_peerId)); return; }
+        if (!_codecs.Schema.Equals(schema))
+        {
+            request.Reject(NetDataWriter.FromString(_peerId)); 
+            return;
+        }
 
         var peer = request.Accept();
         peer.Tag = targetPeer;
@@ -159,8 +160,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
 
         if (!string.IsNullOrEmpty(peerId) && _connectWaiters.TryGetValue(peerId, out var tcs))
             tcs.TrySetResult(ConnectionResult.Success);
-
-        // дальше твой текущий код рассылки PeerTags — оставляем как есть
+        
         var peers = new List<NetPeer>();
         _net.GetPeersNonAlloc(peers, ConnectionState.Any);
 
@@ -208,11 +208,6 @@ public sealed class P2PNetwork : INetwork, IDisposable
             Log.Error("[Network] An error occurred while decoding message {Data}", reader.RawData);
             return;
         }
-        
-        if (packet is PeerTags tags) OnPeerTags(peer, tags);
-        // if (packet is Ping ping) OnPing(peer, ping);
-        // if (packet is Pong pong) OnPong(peer, pong);
-        // if (packet is PeerName name) OnPeerName(peer, name);
 
         if (!_streams.TryGetValue(packet.GetType(), out var subjObj)) return;
         var onNextMethod = subjObj.GetType().GetMethod("OnNext");
@@ -245,12 +240,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
             tcs.TrySetResult(ConnectionResult.Failed);
     }
 
-    // private void OnPeerName(NetPeer peer, PeerName name)
-    // {
-    //     _peerNames.AddOrUpdate(peer, name.Name, (key, value) => name.Name);
-    // }
-
-    private void OnPeerTags(NetPeer peer, PeerTags tags)
+    private void OnPeerTags(PeerTags tags)
     {
         var peers = new List<NetPeer>();
         _net.GetPeersNonAlloc(peers, ConnectionState.Any);
@@ -263,26 +253,6 @@ public sealed class P2PNetwork : INetwork, IDisposable
             if (!peers.Any(p => p.Tag.Equals(tag.PeerId))) AskIntroduce(tag.PeerId);
         }
     }
-
-    // private void OnPing(NetPeer peer, Ping ping)
-    // {
-    //     var data = _codecs.Encode(new Pong(ping.TicksUtc));
-    //     if (data.Length == 0) return;
-    //     peer.Send(data, DeliveryMethod.Unreliable);
-    // }
-    //
-    // private void OnPong(NetPeer peer, Pong pong)
-    // {
-    //     if (peer.Tag is not PeerTag tag) return;
-    //     var nowTicks = Stopwatch.GetTimestamp();
-    //     var rtt = (nowTicks - pong.TicksUtc) * 1000.0 / Stopwatch.Frequency;
-    //     if (rtt <= 0) return;
-    //     // var rttMs = TimeSpan.FromTicks(rttTicks).TotalMilliseconds;
-    //
-    //     // Store one-way estimate (RTT/2) in Peer.Ping
-    //     var oneWayMs = (int)Math.Round(rtt / 2.0);
-    //     UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
-    // }
 
     public async Task<ConnectionResult> Connect(string targetPeerId, CancellationToken ct)
     {
@@ -370,25 +340,15 @@ public sealed class P2PNetwork : INetwork, IDisposable
 
         if (_stunEndpoint is null)
             throw new InvalidOperationException("STUN endpoint resolution failed");
-        _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, $"{_peerId}|{_codecs.Schema}");
+        _net.NatPunchModule.SendNatIntroduceRequest(_stunEndpoint, _peerId);
     }
 
     private void AskIntroduce(string targetPeerId)
     {
         if (_stunEndpoint == null) return;
-        _net.SendUnconnectedMessage(NetDataWriter.FromString($"DIRECT|{_peerId}|{targetPeerId}"), _stunEndpoint);
+        _net.SendUnconnectedMessage(NetDataWriter.FromString($"CALL|{_peerId}|{targetPeerId}"), _stunEndpoint);
         Log.Debug("[Network] DIR {SelfId} -> {TargetId}", _peerId, targetPeerId);
     }
-
-    // private record PeerName(string Name)
-    // {
-    //     public sealed class Codec : IPacketCodec<PeerName>
-    //     {
-    //         public void Encode(PeerName packet, BinaryWriter bw) => bw.Write(packet.Name);
-    //
-    //         public PeerName Decode(BinaryReader br) => new(br.ReadString());
-    //     }
-    // }
 
     private record PeerTags(PeerTags.Tag[] Peers)
     {
@@ -420,22 +380,4 @@ public sealed class P2PNetwork : INetwork, IDisposable
 
         public record Tag(string PeerId, string Name);
     }
-
-    // private record Ping(long TicksUtc)
-    // {
-    //     public sealed class Codec : IPacketCodec<Ping>
-    //     {
-    //         public void Encode(Ping p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-    //         public Ping Decode(BinaryReader br) => new(br.ReadInt64());
-    //     }
-    // }
-    //
-    // private record Pong(long TicksUtc)
-    // {
-    //     public sealed class Codec : IPacketCodec<Pong>
-    //     {
-    //         public void Encode(Pong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
-    //         public Pong Decode(BinaryReader br) => new(br.ReadInt64());
-    //     }
-    // }
 }

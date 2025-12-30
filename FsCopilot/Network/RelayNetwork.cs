@@ -39,7 +39,11 @@ public sealed class RelayNetwork : INetwork, IDisposable
     private readonly ConcurrentDictionary<Type, object> _streams = new();
     private readonly ConcurrentDictionary<string, TaskCompletionSource<ConnectionResult>> _connectWaiters = new(StringComparer.Ordinal);
 
-    private readonly Codecs _codes = new();
+    private readonly Codecs _codecs = new Codecs()
+        .Add<PeerTags, PeerTags.Codec>();
+            // .Add<PeerName, PeerName.Codec>()
+            // .Add<Ping, Ping.Codec>()
+            // .Add<Pong, Pong.Codec>()
 
     private IPEndPoint? _relayEndpoint;
     private volatile NetPeer? _relayPeer;
@@ -57,7 +61,8 @@ public sealed class RelayNetwork : INetwork, IDisposable
             IPv6Enabled = true,
             UnconnectedMessagesEnabled = false,
             NatPunchEnabled = false,
-            DisconnectTimeout = 15000
+            DisconnectTimeout = 15000,
+            ChannelsCount = 2
         };
 
         // Client should not accept inbound connections
@@ -76,6 +81,8 @@ public sealed class RelayNetwork : INetwork, IDisposable
             .Select(_ => _peers.Values.Where(p => p.PeerId != _peerId).ToList())
             .Publish()
             .RefCount();
+        
+        Stream<PeerTags>().Subscribe(OnPeerTags, _cts.Token);
 
         Task.Run(() => PollLoop(_cts.Token), _cts.Token);
         Task.Run(() => ReconnectLoop(_cts.Token), _cts.Token);
@@ -121,6 +128,7 @@ public sealed class RelayNetwork : INetwork, IDisposable
 
     private async Task ReconnectLoop(CancellationToken ct)
     {
+        await Task.Delay(ReconnectDelay, ct).ConfigureAwait(false);
         while (!ct.IsCancellationRequested)
         {
             try
@@ -176,22 +184,29 @@ public sealed class RelayNetwork : INetwork, IDisposable
 
     public void SendAll<TPacket>(TPacket packet, bool unreliable = false) where TPacket : notnull
     {
-        var peer = Volatile.Read(ref _relayPeer);
-        if (peer is null || peer.ConnectionState != ConnectionState.Connected)
-            return;
+        try
+        {
+            var peer = Volatile.Read(ref _relayPeer);
+            if (peer is null || peer.ConnectionState != ConnectionState.Connected)
+                return;
 
-        var data = _codes.Encode(packet);
-        if (data.Length == 0)
-            return;
+            var data = _codecs.Encode(packet);
+            if (data.Length == 0)
+                return;
 
-        var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
-        peer.Send(data, DataChannel, method);
+            var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
+            peer.Send(data, DataChannel, method);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "[Relay] SendAll error");
+        }
     }
 
     public void RegisterPacket<TPacket, TCodec>()
         where TPacket : notnull
         where TCodec : IPacketCodec<TPacket>, new() =>
-        _codes.Add<TPacket, TCodec>();
+        _codecs.Add<TPacket, TCodec>();
 
     public IObservable<TPacket> Stream<TPacket>() =>
         ((IObservable<TPacket>)_streams.GetOrAdd(typeof(TPacket), _ => new Subject<TPacket>()))
@@ -207,7 +222,7 @@ public sealed class RelayNetwork : INetwork, IDisposable
         if (_relayEndpoint is null)
             throw new InvalidOperationException("Relay endpoint resolution failed");
 
-        var token = $"v=1;pid={_peerId};schema={_codes.Schema}";
+        var token = $"v=1;pid={_peerId};schema={_codecs.Schema}";
 
         _net.Connect(_relayEndpoint, token);
 
@@ -374,7 +389,7 @@ public sealed class RelayNetwork : INetwork, IDisposable
 
     private void HandleData(NetPacketReader reader)
     {
-        var obj = _codes.Decode(reader);
+        var obj = _codecs.Decode(reader);
         if (obj is null)
             return;
 
@@ -401,6 +416,13 @@ public sealed class RelayNetwork : INetwork, IDisposable
 
         if (_connectWaiters.TryGetValue(otherPeerId, out var tcs))
             tcs.TrySetResult(ConnectionResult.Success);
+
+        var peerList = new PeerTags(_peers.Values
+            .Select(p => new PeerTags.Tag(p.PeerId, p.Name))
+            .Prepend(new(_peerId, _selfName))
+            .ToArray());
+
+        SendAll(peerList, unreliable: false);
     }
 
     private void OnLinkClosed(string otherPeerId, string code, string message)
@@ -427,4 +449,107 @@ public sealed class RelayNetwork : INetwork, IDisposable
         foreach (var kv in _connectWaiters)
             kv.Value.TrySetResult(result);
     }
+
+    private void OnPeerTags(PeerTags tags)
+    {
+        var peers = new List<NetPeer>();
+        _net.GetPeersNonAlloc(peers, ConnectionState.Any);
+        
+        foreach (var tag in tags.Peers)
+        {
+            if (tag.PeerId == _peerId) continue;
+            
+            while (true)
+            {
+                if (!_peers.TryGetValue(tag.PeerId, out var oldValue)) break;
+                if (_peers.TryUpdate(tag.PeerId, oldValue with { Name = tag.Name }, oldValue)) break;
+            }
+            
+            if (!_peers.ContainsKey(tag.PeerId)) SendConnectIntent(tag.PeerId);
+        }
+    }
+
+    // private void OnPeerName(NetPeer peer, PeerName name)
+    // {
+    //     _peerNames.AddOrUpdate(peer, name.Name, (key, value) => name.Name);
+    // }
+
+    // private void OnPing(NetPeer peer, Ping ping)
+    // {
+    //     var data = _codecs.Encode(new Pong(ping.TicksUtc));
+    //     if (data.Length == 0) return;
+    //     peer.Send(data, DeliveryMethod.Unreliable);
+    // }
+    //
+    // private void OnPong(NetPeer peer, Pong pong)
+    // {
+    //     if (peer.Tag is not PeerTag tag) return;
+    //     var nowTicks = Stopwatch.GetTimestamp();
+    //     var rtt = (nowTicks - pong.TicksUtc) * 1000.0 / Stopwatch.Frequency;
+    //     if (rtt <= 0) return;
+    //     // var rttMs = TimeSpan.FromTicks(rttTicks).TotalMilliseconds;
+    //
+    //     // Store one-way estimate (RTT/2) in Peer.Ping
+    //     var oneWayMs = (int)Math.Round(rtt / 2.0);
+    //     UpdatePeer(tag.PeerId, p => p with { Ping = oneWayMs });
+    // }
+
+    // private record PeerName(string Name)
+    // {
+    //     public sealed class Codec : IPacketCodec<PeerName>
+    //     {
+    //         public void Encode(PeerName packet, BinaryWriter bw) => bw.Write(packet.Name);
+    //
+    //         public PeerName Decode(BinaryReader br) => new(br.ReadString());
+    //     }
+    // }
+
+    private record PeerTags(PeerTags.Tag[] Peers)
+    {
+        public sealed class Codec : IPacketCodec<PeerTags>
+        {
+            public void Encode(PeerTags packet, BinaryWriter bw)
+            {
+                bw.Write(packet.Peers.Length);
+                foreach (var peer in packet.Peers)
+                {
+                    bw.Write(peer.PeerId);
+                    bw.Write(peer.Name);
+                }
+            }
+    
+            public PeerTags Decode(BinaryReader br)
+            {
+                var count = br.ReadInt32();
+                var peers = new Tag[count];
+                for (var i = 0; i < count; i++)
+                {
+                    var peerId = br.ReadString();
+                    var name = br.ReadString();
+                    peers[i] = new(peerId, name);
+                }
+                return new(peers);
+            }
+        }
+
+        public record Tag(string PeerId, string Name);
+    }
+
+    // private record Ping(long TicksUtc)
+    // {
+    //     public sealed class Codec : IPacketCodec<Ping>
+    //     {
+    //         public void Encode(Ping p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+    //         public Ping Decode(BinaryReader br) => new(br.ReadInt64());
+    //     }
+    // }
+    //
+    // private record Pong(long TicksUtc)
+    // {
+    //     public sealed class Codec : IPacketCodec<Pong>
+    //     {
+    //         public void Encode(Pong p, BinaryWriter bw) => bw.Write(p.TicksUtc);
+    //         public Pong Decode(BinaryReader br) => new(br.ReadInt64());
+    //     }
+    // }
 }
