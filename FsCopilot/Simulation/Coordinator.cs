@@ -124,12 +124,12 @@ public class Coordinator : IDisposable
             {
                 if (def.Skip != null) Skip.Next(def.Skip);
                 _net.SendAll(new Update(getVar, value));
-                Log.Debug("[PACKET] SENT {Name} {Value}", getVar, value);
+                Log.Verbose("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
 
         _cSubs.Add(_net.Stream<Update>()
             .Where(update => update.Name == getVar)
-            .Do(update => Log.Debug("[PACKET] RECV {Name} {Value}", getVar, update.Value))
+            .Do(update => Log.Verbose("[PACKET] RECV {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
             .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>

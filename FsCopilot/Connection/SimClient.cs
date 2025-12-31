@@ -42,7 +42,7 @@ public class SimClient : IDisposable
                 h => _socket.MessageReceived -= h)
             .ObserveOn(TaskPoolScheduler.Default)
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
-            .Do(json => Log.Debug("[SimConnect] RECV: {json}", json))
+            .Do(json => Log.Verbose("[SimConnect] RECV: {json}", json))
             .Select(json => JsonDocument.Parse(json).RootElement)
             .Replay(0).RefCount();
 
