@@ -54,33 +54,38 @@ sealed class Program
 
     public static AppBuilder BuildAvaloniaApp(string[] args)
     {
+        var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
         var isExperimental = args.Any(a => string.Equals(a, "--experimental", StringComparison.OrdinalIgnoreCase));
+        var peerId = Random.String(8);
+        var name = Environment.UserName;
         
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .UseReactiveUIWithMicrosoftDependencyResolver(
                 services =>
                 {
-                    var peerId = Random.String(8);
-                    var name = Environment.UserName;
-
-                    INetwork net = !isExperimental
-                        ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
-                        : new HybridNetwork("p2p.fscopilot.com", peerId, name);
-
-                    services.AddSingleton(net);
-                    services.AddSingleton(new SimClient("FS Copilot"));
-                    services.AddSingleton<MasterSwitch>();
-                    services.AddSingleton<Coordinator>();
-                    services.AddSingleton(sp => new MainViewModel(
-                        peerId,
-                        name,
-                        sp.GetRequiredService<INetwork>(),
-                        sp.GetRequiredService<SimClient>(),
-                        sp.GetRequiredService<MasterSwitch>(),
-                        sp.GetRequiredService<Coordinator>()
-                    ));
-                    services.AddSingleton<DevelopViewModel>();
+                    if (!isDev)
+                    {
+                        services.AddSingleton<INetwork>(!isExperimental
+                            ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
+                            : new HybridNetwork("p2p.fscopilot.com", peerId, name));
+                        services.AddSingleton<MasterSwitch>();
+                        services.AddSingleton<Coordinator>();
+                        services.AddSingleton(new SimClient("FS Copilot"));
+                        services.AddSingleton(sp => new MainViewModel(
+                            peerId,
+                            name,
+                            sp.GetRequiredService<INetwork>(),
+                            sp.GetRequiredService<SimClient>(),
+                            sp.GetRequiredService<MasterSwitch>(),
+                            sp.GetRequiredService<Coordinator>()
+                        ));    
+                    }
+                    else
+                    {
+                        services.AddSingleton(new SimClient("FS Copilot DEV"));
+                        services.AddSingleton<DevelopViewModel>();
+                    }
                 },
                 null)
             .RegisterReactiveUIViewsFromEntryAssembly()

@@ -78,6 +78,7 @@ public sealed class RelayNetwork : INetwork, IDisposable
             throw new InvalidOperationException($"Failed to start relay client on port {_net.LocalPort}");
 
         Peers = _publish
+            .StartWith(Unit.Default)
             .ObserveOn(TaskPoolScheduler.Default)
             .Select(_ => _peers.Values.Where(p => p.PeerId != _peerId).ToList())
             .Publish()

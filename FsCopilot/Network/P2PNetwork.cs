@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using Open.Nat;
 
 public sealed class P2PNetwork : INetwork, IDisposable
 {
@@ -47,7 +48,6 @@ public sealed class P2PNetwork : INetwork, IDisposable
             DisconnectTimeout = 15000
         };
         _net.NatPunchModule.Init(_natListener);
-        _net.Start();
 
         _natListener.NatIntroductionSuccess += OnNatIntroduction;
         _netListener.ConnectionRequestEvent += OnConnectionRequest;
@@ -76,6 +76,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
         
         Stream<PeerTags>().Subscribe(OnPeerTags, _cts.Token);
 
+        Task.Run(() => Start(_cts.Token), _cts.Token);
         Task.Run(() => Loop(_cts.Token), _cts.Token);
         Task.Run(() => IntroduceLoop(_cts.Token), _cts.Token);
     }
@@ -90,6 +91,58 @@ public sealed class P2PNetwork : INetwork, IDisposable
         {
             var mi = subj.GetType().GetMethod("OnCompleted");
             mi?.Invoke(subj, null);
+        }
+    }
+
+    private async Task Start(CancellationToken ct)
+    {
+        var portMapper = PortMapper.Upnp;
+        var device = await GetNat(portMapper, ct);
+        if (device == null)
+        {
+            portMapper = PortMapper.Pmp;
+            await GetNat(PortMapper.Upnp, ct);
+        }
+        
+        if (device != null)
+        {
+            try
+            {
+                _net.Start(device.LocalAddress, IPAddress.IPv6Any, 0);
+                Log.Information("[Peer2Peer] BIND {Address}", device.LocalAddress);
+            }
+            catch (Exception)
+            {
+                _net.Start();
+            }
+        }
+        else
+        {
+            _net.Start();
+            return;
+        }
+
+        try
+        {
+            await device.CreatePortMapAsync(new(Protocol.Udp, _net.LocalPort, _net.LocalPort, "FS Copilot"));
+            Log.Information("[Peer2Peer] {Mapper} {Host} -> {Address}", portMapper == PortMapper.Upnp ? "UPnP" : "NAT-PMP", 
+                device.HostEndPoint.Address, new IPEndPoint(device.LocalAddress, _net.LocalPort));
+        }
+        catch { /* ignore */ }
+    }
+
+    private static async Task<NatDevice?> GetNat(PortMapper mapper, CancellationToken ct)
+    {
+        try
+        {
+            var discoverer = new NatDiscoverer();
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(3));
+            return await discoverer.DiscoverDeviceAsync(mapper, timeoutCts);
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 
