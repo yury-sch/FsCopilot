@@ -1,17 +1,19 @@
-namespace P2PDiscovery;
-
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
+namespace P2PDiscovery;
+
+public class StunBeta(ILogger<StunBeta> logger) : BackgroundService
 {
-    private static readonly byte[] HostProtocolVersion = Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
-    
+    private static readonly byte[] HostProtocolVersion =
+        Guid.Parse("8f0fecf9-07a7-4f1e-90d2-b7ccde5099a8").ToByteArray();
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         const int udpPort = 3478;
+
         var peers = new ConcurrentDictionary<string, Peer>();
         using var udp = new UdpClient(new IPEndPoint(IPAddress.Any, udpPort));
         Console.WriteLine($"UDP echo/relay listening on port {udpPort}");
@@ -38,7 +40,7 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
                 var peerId = br.ReadString();
                 var version = br.ReadBytes(16);
                 if (!version.SequenceEqual(HostProtocolVersion)) continue;
-                
+
                 if (requestType == SystemPacketTypes.DISCOVER) // HELLO
                 {
                     var localCount = br.ReadInt32();
@@ -48,6 +50,7 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
                         var localAddrStr = br.ReadString();
                         if (IPEndPoint.TryParse(localAddrStr, out var localAdd)) localAddresses.Add(localAdd);
                     }
+
                     var schema = br.ReadString();
 
                     // var a = IPEndPoint.TryParse(localAddr, out var local) ? local : new IPEndPoint();
@@ -67,32 +70,47 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
                 {
                     var sourceId = br.ReadString();
                     var targetId = br.ReadString();
-                    logger.LogInformation("UDP connection requested from {SourceId} to {TargetId}.", sourceId, targetId);
+                    logger.LogInformation("UDP connection requested from {SourceId} to {TargetId}.", sourceId,
+                        targetId);
 
                     var window = DateTime.UtcNow - TimeSpan.FromSeconds(30);
                     if (sourceId == targetId)
                     {
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Сan not connect to himself.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Сan not connect to himself.",
+                            sourceId, targetId);
                         continue;
                     }
+
                     if (!peers.TryGetValue(sourceId, out var sourceInfo))
                     {
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Source peer not discovered.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Source peer not discovered.",
+                            sourceId, targetId);
                         continue;
                     }
+
                     if (!peers.TryGetValue(targetId, out var targetInfo))
                     {
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Target peer not discovered.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Target peer not discovered.",
+                            sourceId, targetId);
                         continue;
                     }
+
                     if (sourceInfo.Timestamp < window)
                     {
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Source peer outdated.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Source peer outdated.",
+                            sourceId, targetId);
                         continue;
                     }
+
                     if (targetInfo.Timestamp < window)
                     {
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Target peer outdated.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Target peer outdated.",
+                            sourceId, targetId);
                         continue;
                     }
 
@@ -104,7 +122,9 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
                         bw.Write(peerId);
                         var reply = msw.ToArray();
                         await udp.SendAsync(reply, reply.Length, remote);
-                        logger.LogInformation("UDP connection rejected from {SourceId} to {TargetId}. Schema not equals.", sourceId, targetId);
+                        logger.LogInformation(
+                            "UDP connection rejected from {SourceId} to {TargetId}. Schema not equals.", sourceId,
+                            targetId);
                         continue;
                     }
 
@@ -113,7 +133,8 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
 
                     var notify = PreparePeerConnection(sourceInfo);
                     await udp.SendAsync(notify, notify.Length, targetInfo.UdpSeen);
-                    logger.LogInformation("UDP connection approved from {SourceId} to {TargetId}.", sourceId, targetId);
+                    logger.LogInformation("UDP connection approved from {SourceId} to {TargetId}.", sourceId,
+                        targetId);
                 }
                 // else if (requestType == byte.MaxValue) // RELAYTO
                 // {
@@ -127,6 +148,10 @@ public class LegacyHost(ILogger<LegacyHost> logger) : BackgroundService
                 //         await udp.SendAsync(msgData, msgData.Length, targetInfo.UdpSeen);
                 //     }
                 // }
+            }
+            catch (OperationCanceledException)
+            {
+                // normal
             }
             catch (Exception e)
             {

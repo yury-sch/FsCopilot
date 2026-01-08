@@ -195,11 +195,6 @@
                                                           Height="22"
                                                           IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=5}"
                                                           Data="{StaticResource cellular_data_5_regular}" />
-                                                <PathIcon Foreground="#F44336"
-                                                          Height="22"
-                                                          ToolTip.Tip="{Binding StatusText}"
-                                                          IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=0}"
-                                                          Data="{StaticResource cellular_off_regular}" />
                                                 
                                                 <StackPanel>
                                                     <StackPanel DockPanel.Dock="Top" 
@@ -218,10 +213,17 @@
                                                                 VerticalAlignment="Center">
                                                         <TextBlock Foreground="#94a3b8"
                                                                    FontSize="11"
-                                                                   Text="{Binding Rtt, StringFormat='RTT: ~{0} ms'}" />
-                                                        <TextBlock Foreground="#94a3b8"
-                                                                   FontSize="11"
-                                                                   Text="{Binding Loss, StringFormat='Loss: {0}%'}" />
+                                                                   Text="{Binding Ping, StringFormat='PING: ~{0} ms'}" />
+                                                        <Border Classes="Direct"
+                                                                IsVisible="{Binding IsDirect}">
+                                                            <TextBlock Classes="Direct" 
+                                                                       Text="direct" />
+                                                        </Border>
+                                                        <Border Classes="Relay"
+                                                                IsVisible="{Binding IsDirect, Converter={StaticResource Inverse}}">
+                                                            <TextBlock Classes="Relay" 
+                                                                       Text="relay" />
+                                                        </Border>
                                                     </StackPanel>
                                                 </StackPanel>
                                         </StackPanel>

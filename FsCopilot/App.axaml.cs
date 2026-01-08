@@ -1,6 +1,5 @@
 namespace FsCopilot;
 
-using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -40,6 +39,7 @@ public partial class App : Application
         {
             var args = desktop.Args ?? [];
             var dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
+            var experimental = args.Contains("--experimental", StringComparer.OrdinalIgnoreCase);
             
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
@@ -49,17 +49,21 @@ public partial class App : Application
             {
                 var peerId = Random.String(8);
                 var name = Environment.UserName;
-                var peer2Peer = new LiteNetPeer2Peer("p2p.fscopilot.com", peerId, name);
+                INetwork net = !experimental
+                    ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
+                    : new HybridNetwork("p2p.fscopilot.com", peerId, name);
+                // var p2p = new P2PNetwork("p2p.fscopilot.com", peerId, name);
+                // var hybrid = new HybridNetwork("p2p.fscopilot.com", peerId, name);
                 var simConnect = new SimClient("FS Copilot");
-                var control = new MasterSwitch(simConnect, peer2Peer);
-                var coordinator = new Coordinator(simConnect, peer2Peer, control);
+                var control = new MasterSwitch(simConnect, net);
+                var coordinator = new Coordinator(simConnect, net, control);
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(peerId, name, peer2Peer, simConnect, control, coordinator)
+                    DataContext = new MainWindowViewModel(peerId, name, net, simConnect, control, coordinator)
                 };
                 desktop.Exit += (_, _) =>
-                {
-                    peer2Peer.Disconnect();
+                { 
+                    net.Disconnect();
                     control.TakeControl();
                 };
             }

@@ -1,14 +1,10 @@
 namespace FsCopilot.Network;
 
-using System.Net;
-
-public record struct Peer(string PeerId, string Name, IPAddress? Address, int Rtt, double Loss, Peer.State Status)
+public record struct Peer(
+    string PeerId, 
+    string Name, 
+    int Ping,
+    Peer.TransportKind Transport)
 {
-    public enum State : byte
-    {
-        Pending,
-        Success,
-        Failed,
-        Rejected
-    }
+    public enum TransportKind { Direct, Relay }
 }

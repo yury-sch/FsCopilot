@@ -179,4 +179,27 @@
         <Setter Property="Foreground" Value="#94a3b8"></Setter>
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
     </Style>
+    
+    <Style Selector="Border.Direct">
+        <Setter Property="Background" Value="Green"></Setter>
+        <Setter Property="CornerRadius" Value="7"></Setter>
+        <Setter Property="Padding" Value="4, 2, 4, 2"></Setter>
+    </Style>
+    
+    <Style Selector="TextBlock.Direct">
+        <Setter Property="Foreground" Value="White"></Setter>
+        <Setter Property="FontSize" Value="8"></Setter>
+    </Style>
+
+    
+    <Style Selector="Border.Relay">
+        <Setter Property="Background" Value="Orange"></Setter>
+        <Setter Property="CornerRadius" Value="7"></Setter>
+        <Setter Property="Padding" Value="4, 2, 4, 2"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.Relay">
+        <Setter Property="Foreground" Value="Black"></Setter>
+        <Setter Property="FontSize" Value="8"></Setter>
+    </Style>
 </Styles>

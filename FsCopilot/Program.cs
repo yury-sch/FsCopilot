@@ -1,6 +1,5 @@
 ﻿namespace FsCopilot;
 
-using Serilog;
 using Serilog.Events;
 
 sealed class Program
@@ -22,7 +21,7 @@ sealed class Program
                 retainedFileCountLimit: null,
                 fileSizeLimitBytes: null,
                 outputTemplate: "[{Timestamp:HH:mm:ss.fff}] {Message:lj}{NewLine}{Exception}",
-                restrictedToMinimumLevel: isDev || isDebug ? LogEventLevel.Debug : LogEventLevel.Information
+                restrictedToMinimumLevel: isDev || isDebug ? LogEventLevel.Verbose : LogEventLevel.Debug
             )
             .CreateLogger();
 

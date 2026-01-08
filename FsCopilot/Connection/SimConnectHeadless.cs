@@ -1,12 +1,8 @@
 namespace FsCopilot.Connection;
 
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
-using System.Reactive.Subjects;
 using System.Threading.Channels;
 using Microsoft.FlightSimulator.SimConnect;
-using Serilog;
 
 public sealed class SimConnectHeadless : IDisposable
 {

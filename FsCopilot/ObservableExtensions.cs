@@ -1,9 +1,4 @@
-using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
-
 namespace FsCopilot;
-
-using System.Reactive.Linq;
 
 public static class ObservableExtensions
 {

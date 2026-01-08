@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Collections;
 using System.Text.RegularExpressions;
 using Jint;
-using Serilog;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 

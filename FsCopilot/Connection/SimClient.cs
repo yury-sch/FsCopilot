@@ -1,15 +1,9 @@
 namespace FsCopilot.Connection;
 
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using Microsoft.FlightSimulator.SimConnect;
 using WatsonWebsocket;
-using Serilog;
 
 public class SimClient : IDisposable
 {
@@ -48,7 +42,7 @@ public class SimClient : IDisposable
                 h => _socket.MessageReceived -= h)
             .ObserveOn(TaskPoolScheduler.Default)
             .Select(ep => Encoding.UTF8.GetString(ep.EventArgs.Data))
-            .Do(json => Log.Debug("[SimConnect] RECV: {json}", json))
+            .Do(json => Log.Verbose("[SimConnect] RECV: {json}", json))
             .Select(json => JsonDocument.Parse(json).RootElement)
             .Replay(0).RefCount();
 

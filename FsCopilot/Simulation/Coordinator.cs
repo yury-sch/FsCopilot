@@ -1,15 +1,11 @@
 namespace FsCopilot.Simulation;
 
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Connection;
 using Network;
-using Serilog;
 
 public class Coordinator : IDisposable
 {
-    private readonly IPeer2Peer _peer2Peer;
+    private readonly INetwork _net;
     private readonly MasterSwitch _masterSwitch;
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
@@ -17,13 +13,13 @@ public class Coordinator : IDisposable
     private readonly BehaviorSubject<bool?> _configured = new(null);
     public IObservable<bool?> Configured => _configured;
 
-    public Coordinator(SimClient sim, IPeer2Peer peer2Peer, MasterSwitch masterSwitch)
+    public Coordinator(SimClient sim, INetwork net, MasterSwitch masterSwitch)
     {
-        _peer2Peer = peer2Peer;
+        _net = net;
         _masterSwitch = masterSwitch;
         _sim = sim;
-        peer2Peer.RegisterPacket<Update, Update.Codec>();
-        peer2Peer.RegisterPacket<Interact, InteractCodec>();
+        net.RegisterPacket<Update, Update.Codec>();
+        net.RegisterPacket<Interact, InteractCodec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
 
@@ -36,8 +32,8 @@ public class Coordinator : IDisposable
         AddLink<Control.Flaps, Control.Flaps.Codec>(master: false, unreliable: false);
 
         _d.Add(_sim.Interactions
-            .Subscribe(interact => _peer2Peer.SendAll(interact)));
-        _d.Add(_peer2Peer.Stream<Interact>()
+            .Subscribe(interact => _net.SendAll(interact)));
+        _d.Add(_net.Stream<Interact>()
             .Subscribe(update => _sim.Set(update)));
     }
 
@@ -93,17 +89,17 @@ public class Coordinator : IDisposable
     private void AddLink<TPacket, TCodec>(bool master, bool unreliable)
         where TPacket : struct where TCodec : IPacketCodec<TPacket>, new()
     {
-        _peer2Peer.RegisterPacket<TPacket, TCodec>();
+        _net.RegisterPacket<TPacket, TCodec>();
 
         _d.Add(_sim.Stream<TPacket>()
             .Where(_ => !master || _masterSwitch.IsMaster)
             .Subscribe(update =>
             {
-                try { _peer2Peer.SendAll(update, unreliable); }
+                try { _net.SendAll(update, unreliable); }
                 catch (Exception e) { Log.Error(e, "[Coordinator] Error while sending packet {Packet}", typeof(TPacket).Name); }
             }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from sim"); }));
 
-        _d.Add(_peer2Peer.Stream<TPacket>()
+        _d.Add(_net.Stream<TPacket>()
             .Where(_ => !master || !_masterSwitch.IsMaster)
             .Subscribe(update =>
             {
@@ -127,13 +123,13 @@ public class Coordinator : IDisposable
             .Subscribe(value =>
             {
                 if (def.Skip != null) Skip.Next(def.Skip);
-                _peer2Peer.SendAll(new Update(getVar, value));
-                Log.Debug("[PACKET] SENT {Name} {Value}", getVar, value);
+                _net.SendAll(new Update(getVar, value));
+                Log.Verbose("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
 
-        _cSubs.Add(_peer2Peer.Stream<Update>()
+        _cSubs.Add(_net.Stream<Update>()
             .Where(update => update.Name == getVar)
-            .Do(update => Log.Debug("[PACKET] RECV {Name} {Value}", getVar, update.Value))
+            .Do(update => Log.Verbose("[PACKET] RECV {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
             .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
