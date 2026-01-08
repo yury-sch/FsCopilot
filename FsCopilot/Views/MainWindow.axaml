@@ -3,13 +3,16 @@
         xmlns:vm="using:FsCopilot.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:fsCopilot="clr-namespace:FsCopilot"
+        mc:Ignorable="d" 
+        d:DesignWidth="500" 
+        d:DesignHeight="700"
         Width="500"
         Height="700"
         CanResize="False"
         RequestedThemeVariant="Dark"
         x:Class="FsCopilot.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
+        x:DataType="vm:MainViewModel"
         Icon="/Assets/fscopilot.ico"
         Title="FS Copilot"
         TransparencyLevelHint="AcrylicBlur"
@@ -17,11 +20,11 @@
         ExtendClientAreaToDecorationsHint="True">
 
     <Window.Resources>
-        <vm:StringNotEmptyToBoolConverter x:Key="NotEmpty"/>
-        <vm:StringEmptyToBoolConverter x:Key="Empty"/>
-        <vm:InverseBoolConverter x:Key="Inverse"/>
-        <vm:BoolToWaitConverter x:Key="Wait"/>
-        <vm:QualityToBrushConverter x:Key="QualityToBrush"/>
+        <fsCopilot:StringNotEmptyToBool x:Key="NotEmpty"/>
+        <fsCopilot:StringEmptyToBool x:Key="Empty"/>
+        <fsCopilot:InverseBool x:Key="Inverse"/>
+        <fsCopilot:BoolToWait x:Key="Wait"/>
+        <fsCopilot:QualityToBrush x:Key="QualityToBrush"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -33,7 +36,7 @@
     </Window.Cursor>
 
     <!-- <Design.DataContext> -->
-    <!--     <vm:MainWindowViewModel /> -->
+    <!--     <vm:DesignMainViewModel /> -->
     <!-- </Design.DataContext> -->
 
     <Panel>
