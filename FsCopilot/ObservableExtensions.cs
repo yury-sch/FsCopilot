@@ -1,11 +1,12 @@
 namespace FsCopilot;
 
+using System.Diagnostics;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+
 public static class ObservableExtensions
 {
-    /// <summary>
-    /// Emits (prev, curr) pairs; the first item is (first, first).
-    /// Works for any T (no reliance on null/default).
-    /// </summary>
     public static IObservable<(T Prev, T Curr)> WithPreviousFirstPair<T>(this IObservable<T> source) =>
         Observable.Create<(T Prev, T Curr)>(observer =>
         {
@@ -31,29 +32,23 @@ public static class ObservableExtensions
                 observer.OnCompleted
             );
         });
-
-    public static IDisposable Record<T>(this IObservable<T> source, 
-        IList<Recorded<T>> buffer, 
-        IScheduler? scheduler = null) 
-        where T: notnull
+    
+    public static IDisposable Record<T>(this IObservable<T> source, IList<Recorded<T>> buffer)
+        where T : notnull
     {
-        scheduler ??= Scheduler.Default;
-        
-        var start = scheduler.Now;
+        var start = Stopwatch.GetTimestamp();
+        var freq = (double)Stopwatch.Frequency;
 
         return source.Subscribe(x =>
         {
-            var now = scheduler.Now;
-            var offset = now - start;
-            buffer.Add(new Recorded<T>(offset, x));
+            var now = Stopwatch.GetTimestamp();
+            var seconds = (now - start) / freq;
+            buffer.Add(new(TimeSpan.FromSeconds(seconds), x));
         });
     }
-    public static IObservable<T> Playback<T>(
-        this IReadOnlyList<Recorded<T>> buffer,
-        IScheduler? scheduler = null)
+    
+    public static IObservable<T> Playback<T>(this IReadOnlyList<Recorded<T>> buffer)
     {
-        scheduler ??= Scheduler.Default;
-
         return Observable.Create<T>(observer =>
         {
             if (buffer.Count == 0)
@@ -62,36 +57,72 @@ public static class ObservableExtensions
                 return Disposable.Empty;
             }
 
-            var serialDisp = new SerialDisposable();
+            var cts = new CancellationTokenSource();
 
-            ScheduleNext(0);
-
-            return serialDisp;
-
-            void ScheduleNext(int index)
+            var thread = new Thread(() =>
             {
-                if (index >= buffer.Count)
+                try
                 {
-                    observer.OnCompleted();
-                    return;
+                    var start = Stopwatch.GetTimestamp();
+                    var freq = (double)Stopwatch.Frequency;
+
+                    var i = 0;
+
+                    while (!cts.IsCancellationRequested)
+                    {
+                        var now = Stopwatch.GetTimestamp();
+                        var elapsed = TimeSpan.FromSeconds((now - start) / freq);
+
+                        // Emit everything that is due.
+                        while (i < buffer.Count && buffer[i].Offset <= elapsed)
+                        {
+                            observer.OnNext(buffer[i].Value);
+                            i++;
+                        }
+
+                        if (i >= buffer.Count)
+                        {
+                            observer.OnCompleted();
+                            return;
+                        }
+
+                        // Time until next sample
+                        var nextDue = buffer[i].Offset;
+                        var remain = (nextDue - elapsed).Milliseconds;
+
+                        switch (remain)
+                        {
+                            // Adaptive waiting: sleep when far, spin when near.
+                            case > 12:
+                                Thread.Sleep(1); // coarse wait
+                                break;
+                            case > 4:
+                                Thread.Sleep(0); // yield
+                                break;
+                            default:
+                                Thread.SpinWait(200); // fine-grained
+                                break;
+                        }
+                    }
                 }
-
-                var item = buffer[index];
-
-                var delay = index == 0
-                    ? item.Offset
-                    : item.Offset - buffer[index - 1].Offset;
-
-                if (delay < TimeSpan.Zero)
-                    delay = TimeSpan.Zero;
-
-                serialDisp.Disposable = scheduler.Schedule(index, delay, (sch, i) =>
+                catch (Exception e)
                 {
-                    observer.OnNext(buffer[i].Value);
-                    ScheduleNext(i + 1);
-                    return Disposable.Empty;
-                });
-            }
+                    observer.OnError(e);
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "PlaybackThreadLoop"
+            };
+
+            thread.Start();
+
+            return Disposable.Create(() =>
+            {
+                cts.Cancel();
+                try { thread.Join(200); } catch { /* ignore */ }
+                cts.Dispose();
+            });
         });
     }
 }

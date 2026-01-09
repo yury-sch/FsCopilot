@@ -9,32 +9,29 @@ public class SimClient : IDisposable
 {
     private static readonly object DefaultHValue = 1;
     
-    private readonly SimConnectHeadless _headless;
+    private readonly SimConnectConsumer _consumer;
+    private readonly SimConnectProducer _producer;
     private readonly ConcurrentDictionary<string, DEF> _defs = new();
-    // private readonly ConcurrentDictionary<string, EVT> _events = new();
     private readonly ConcurrentDictionary<string, object> _streams = new();
-    // private readonly ConcurrentDictionary<string, ushort> _lVars = new();
     private uint _defId = 100;
     private uint _requestId = 100;
     private readonly WatsonWsServer _socket;
     private readonly IObservable<WatchedVar> _varMessages;
     private readonly IObservable<string> _hEvents;
-    // private readonly IObservable<(JsonElement Json, string Raw)> _socketMessages;
 
-    public IObservable<bool> Connected => _headless.Connected.ObserveOn(TaskPoolScheduler.Default);
-    public IObservable<string> Aircraft => _headless.Aircraft.ObserveOn(TaskPoolScheduler.Default);
+    public IObservable<bool> Connected => _consumer.Connected.ObserveOn(TaskPoolScheduler.Default);
+    public IObservable<string> Aircraft => _consumer.Aircraft.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<Interact> Interactions { get; }
     public IObservable<SimConfig> Config { get; }
 
     public SimClient(string appName)
     {
-        _headless = new(appName);
+        _consumer = new(appName);
+        _producer = new(appName);
         
         _socket = new(port: 8870);
         try { _socket.Start(); }
         catch (Exception e) { Log.Error(e, "Failed to start socket"); }
-        
-        // Set("L:FsCopilotStarted", true);
 
        var socketMessages = Observable
             .FromEventPattern<EventHandler<MessageReceivedEventArgs>, MessageReceivedEventArgs>(
@@ -65,37 +62,20 @@ public class SimClient : IDisposable
            .Where(json => json.String("type").Equals("config"))
            .Select(json => new SimConfig(json.BoolOrNull("control") == null, json.BoolOrNull("control") ?? false))
            .Replay(0).RefCount();
-
-        // _headless.Configure(sim =>
-        // {
-        //     var nextId = (EVT)Interlocked.Increment(ref _defId);
-        //     sim.MapClientEventToSimEvent(nextId, "AXIS_AILERONS_SET");
-        //     sim.AddClientEventToNotificationGroup(GRP.INPUTS, nextId, false);
-        // }, _ => {});
     }
 
     public void Dispose()
     {
         _socket.Dispose();
-        _headless.Dispose();
+        _consumer.Dispose();
+        _producer.Dispose();
     }
-
-    // public void Freeze(bool on)
-    // {
-    //     _headless.Post(sim =>
-    //     {
-    //         sim.SetInputGroupState(GRP.INPUTS, (uint)(on ? SIMCONNECT_STATE.OFF : SIMCONNECT_STATE.ON));
-    //     });
-    //     Set("FREEZE_LATITUDE_LONGITUDE_SET", on);
-    //     Set("FREEZE_ALTITUDE_SET", on);
-    //     Set("FREEZE_ATTITUDE_SET", on);
-    // }
 
     public void Set<T>(T def) where T : struct
     {
         if (!_defs.TryGetValue(typeof(T).FullName!, out var defId)) return;
         
-        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
+        _producer.Post(sim => sim.SetDataOnSimObject(defId, 
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, def));
     }
 
@@ -137,7 +117,7 @@ public class SimClient : IDisposable
     {
         if (!_defs.TryGetValue(datumName, out var defId)) return;
         
-        _headless.Post(sim => sim.SetDataOnSimObject(defId, 
+        _producer.Post(sim => sim.SetDataOnSimObject(defId, 
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
@@ -146,7 +126,7 @@ public class SimClient : IDisposable
         var eventId = _defs.GetOrAdd($"K:{eventName}", _ =>
         {
             var nextId = (DEF)Interlocked.Increment(ref _defId);
-            _headless.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, eventName), _ => { });
+            _producer.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, eventName), _ => { });
             return nextId;
         });
 
@@ -156,7 +136,7 @@ public class SimClient : IDisposable
         var dwData3 = NormalizeValue(value3);
         var dwData4 = NormalizeValue(value4);
 
-        _headless.Post(sim => sim.TransmitClientEvent_EX1(
+        _producer.Post(sim => sim.TransmitClientEvent_EX1(
             SimConnect.SIMCONNECT_OBJECT_ID_USER, (EVT)eventId, GRP.DUMMY,
             SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY,
             dwData0 ?? 0, dwData1 ?? 0, dwData2 ?? 0, dwData3 ?? 0, dwData4 ?? 0));
@@ -202,7 +182,7 @@ public class SimClient : IDisposable
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
             var scheduler = new EventLoopScheduler();
 
-            var sub = _headless.SimObjectData.ObserveOn(scheduler).Subscribe(e =>
+            var sub = _consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is { Length: > 0 }) observer.OnNext((T)e.dwData[0]);
@@ -210,19 +190,19 @@ public class SimClient : IDisposable
                 observer.OnError,
                 observer.OnCompleted);
 
-            Debug.WriteLine($"Subscribe {key}");
-            var config = _headless.Configure(Initialize, Deinitialize);
+            var consumerConfig = _consumer.Configure(InitializeConsumer, DeinitializeConsumer);
+            var producerConfig = _producer.Configure(InitializeProducer, DeinitializeProducer);
 
             return () =>
             {
                 sub.Dispose();
-                config.Dispose();
+                consumerConfig.Dispose();
+                producerConfig.Dispose();
                 scheduler.Dispose();
             };
 
-            void Initialize(SimConnect sim)
+            void InitializeConsumer(SimConnect sim)
             {
-                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 sim.AddToDataDefinitionFromStruct<T>(defId);
                 sim.RegisterDataDefineStruct<T>(defId);
                 sim.RequestDataOnSimObject(reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
@@ -230,14 +210,27 @@ public class SimClient : IDisposable
                 _defs.TryAdd(key, defId);
             }
 
-            void Deinitialize(SimConnect sim)
+            void DeinitializeConsumer(SimConnect sim)
             {
-                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
                 sim.ClearDataDefinition(defId);
                 _defs.TryRemove(key, out _);
+            }
+
+            void InitializeProducer(SimConnect sim)
+            {
+                sim.AddToDataDefinitionFromStruct<T>(defId);
+                sim.RegisterDataDefineStruct<T>(defId);
+            }
+
+            void DeinitializeProducer(SimConnect sim)
+            {
+                sim.RequestDataOnSimObject(
+                    reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
+                    SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
+                sim.ClearDataDefinition(defId);
             }
         }).Replay(1).RefCount());
 
@@ -257,26 +250,26 @@ public class SimClient : IDisposable
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
 
-            var sub = _headless.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
+            var sub = _consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is { Length: > 0 }) observer.OnNext(e.dwData[0]);
                 },
                 observer.OnError,
                 observer.OnCompleted);
-            
-            Debug.WriteLine($"Subscribe {key}");
-            var config = _headless.Configure(Initialize, Deinitialize);
+
+            var consumerConfig = _consumer.Configure(InitializeConsumer, DeinitializeConsumer);
+            var producerConfig = _producer.Configure(InitializeProducer, DeinitializeProducer);
 
             return () =>
             {
                 sub.Dispose();
-                config.Dispose();
+                consumerConfig.Dispose();
+                producerConfig.Dispose();
             };
 
-            void Initialize(SimConnect sim)
+            void InitializeConsumer(SimConnect sim)
             {
-                Debug.WriteLine($"Initialize {key}. DefId: {defId}");
                 SIMCONNECT_DATATYPE datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
 
@@ -294,14 +287,31 @@ public class SimClient : IDisposable
                 _defs.TryAdd(key, defId);
             }
 
-            void Deinitialize(SimConnect sim)
+            void DeinitializeConsumer(SimConnect sim)
             {
-                Debug.WriteLine($"Deinitialize {key}. DefId: {defId}");
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
                 sim.ClearDataDefinition(defId);
                 _defs.TryRemove(key, out _);
+            }
+
+            void InitializeProducer(SimConnect sim)
+            {
+                SIMCONNECT_DATATYPE datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
+                var clrType = SimConnectExtensions.ToClrType(datumType);
+
+                sim.AddToDataDefinition(defId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+
+                typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
+                        BindingFlags.Public | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(sim, [defId]);
+            }
+
+            void DeinitializeProducer(SimConnect sim)
+            {
+                sim.ClearDataDefinition(defId);
             }
         }).Replay(1).RefCount());
     
