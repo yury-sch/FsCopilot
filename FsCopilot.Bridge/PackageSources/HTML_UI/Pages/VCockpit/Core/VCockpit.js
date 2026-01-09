@@ -1,3 +1,14 @@
+/*
+ * This file is derived from the YourControls project.
+ *
+ * Original author: Sequal32
+ * Source: https://github.com/Sequal32/YourControls
+ * License: GNU General Public License v3.0
+ *
+ * Modifications:
+ * - Minor changes applied (refactoring / adjustments).
+ */
+
 var globalPanelData = null;
 var globalInstrumentListener = RegisterViewListener('JS_LISTENER_INSTRUMENTS');
 var handler = null;
