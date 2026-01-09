@@ -233,6 +233,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
 
     private void OnPeerDisconnected(NetPeer peer, DisconnectInfo info)
     {
+        if (info.Reason == DisconnectReason.PeerToPeerConnection) return;
         var peerId = peer.Tag as string ?? string.Empty;
         Log.Debug("[Peer2Peer] DIS {PeerId} -> {Address} ({Reason})",
             peerId, new IPEndPoint(peer.Address, peer.Port), info.Reason);
