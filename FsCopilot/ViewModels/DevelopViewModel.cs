@@ -149,9 +149,8 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 
     private IDisposable PopulateTreeAndAttach(SimClient sim, string path)
     {
-        var tree = Definitions.LoadTree($"{path}.yaml");
         Nodes.Clear();
-        if (tree == DefinitionNode.Empty)
+        if (!Definitions.TryLoadTree($"{path}.yaml", out var tree))
         {
             Loaded = $"Failed to load {path} configuration";
             return Disposable.Empty;

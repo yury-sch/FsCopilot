@@ -36,19 +36,26 @@ public class Definitions : IReadOnlyCollection<Definition>
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config.Link))]
     private static Config ParseConfig(string yaml) => Deserializer.Deserialize<Config>(yaml);
 
-    public static DefinitionNode LoadTree(string path)
+    public static bool TryLoadTree(string path, out DefinitionNode node)
     {
         Config cfg;
         try
         {
             var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')])).Trim();
+            if (string.IsNullOrWhiteSpace(cfgFile))
+            {
+                node = DefinitionNode.Empty;
+                return true;
+            }
             cfg = ParseConfig(cfgFile);
         }
         catch (Exception e)
         {
             Log.Error(e, "[Definitions] Failed to load {Module} configuration", path);
-            return DefinitionNode.Empty;
+            node = DefinitionNode.Empty;
+            return false;
         }
+        
         var master = cfg.Master
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(false, m.Get, m.Set, m.Skp)).ToArray();
@@ -57,15 +64,21 @@ public class Definitions : IReadOnlyCollection<Definition>
             .Select(m => new Definition(true, m.Get, m.Set, m.Skp)).ToArray();
 
         var ignore = cfg.Ignore.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
-        return new(path, cfg.Include
-            .Select(LoadTree)
-            .Where(def => def != DefinitionNode.Empty)
+        node = new(path, cfg.Include
+            .Select(i =>
+            {
+                var loaded = TryLoadTree(i, out var child);
+                return (loaded, child);
+            })
+            .Where(def => def.loaded)
+            .Select(def => def.child)
             .ToArray(), master, shared, ignore);
+        return true;
     }
 
     public static Definitions Load(string name)
     {
-        var node = LoadTree($"{name}.yaml");
+        if (!TryLoadTree($"{name}.yaml", out var node)) return new([], []);
         var master = new List<Definition>();
         var shared = new List<Definition>();
         var ignore = new List<string>();
