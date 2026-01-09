@@ -14,6 +14,14 @@ Fly as a real crew. 👨‍✈️👩‍✈️
 
 ![FS Copilot](https://raw.githubusercontent.com/yury-sch/FsCopilot/refs/heads/main/preview.png)
 
+## 🤝 Acknowledgements
+
+This project was inspired by the ideas explored in [YourControls](https://github.com/Sequal32/yourcontrols).
+
+Several good concepts and approaches originated there and helped shape the early direction of this work.
+
+*The core of this project has been written entirely from scratch*, features a distinct architecture, and is implemented in a different programming language.
+
 ## ✈️ What FS Copilot Does
 
 - Connects several players to the same aircraft.
