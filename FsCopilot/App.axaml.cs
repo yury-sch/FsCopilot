@@ -50,10 +50,9 @@ public class App : Application
             }
             else
             {
-                var simConnect = new SimClient("FS Copilot Develop");
                 desktop.MainWindow = new DevelopWindow
                 {
-                    DataContext = new DevelopViewModel(simConnect)
+                    DataContext = Locator.Current.GetService<DevelopViewModel>()
                 };
             }
         }
