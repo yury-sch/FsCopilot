@@ -56,15 +56,14 @@ public class Definitions : IReadOnlyCollection<Definition>
             return false;
         }
         
-        var master = cfg.Master
+        var master = (cfg.Master ?? [])
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(false, m.Get, m.Set, m.Skp)).ToArray();
-        var shared = cfg.Shared
+        var shared = (cfg.Shared ?? [])
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(true, m.Get, m.Set, m.Skp)).ToArray();
-
-        var ignore = cfg.Ignore.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
-        node = new(path, cfg.Include
+        var ignore = (cfg.Ignore ?? []).Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
+        node = new(path, (cfg.Include ?? [])
             .Select(i =>
             {
                 var loaded = TryLoadTree(i, out var child);
@@ -100,13 +99,13 @@ public class Definitions : IReadOnlyCollection<Definition>
     private class Config
     {
         [YamlMember(Alias = "include")]
-        public string[] Include { get; set; } = [];
+        public string[]? Include { get; set; } = [];
         [YamlMember(Alias = "shared")]
-        public Link[] Shared { get; set; } = [];
+        public Link[]? Shared { get; set; } = [];
         [YamlMember(Alias = "master")]
-        public Link[] Master { get; set; } = [];
+        public Link[]? Master { get; set; } = [];
         [YamlMember(Alias = "ignore")]
-        public string[] Ignore { get; set; } = [];
+        public string[]? Ignore { get; set; } = [];
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         public class Link
