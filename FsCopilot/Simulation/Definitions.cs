@@ -49,6 +49,12 @@ public class Definitions : IReadOnlyCollection<Definition>
             }
             cfg = ParseConfig(cfgFile);
         }
+        catch (FileNotFoundException)
+        {
+            Log.Information("[Definitions] Failed to load {Module} configuration", path);
+            node = DefinitionNode.Empty;
+            return false;
+        }
         catch (Exception e)
         {
             Log.Error(e, "[Definitions] Failed to load {Module} configuration", path);
