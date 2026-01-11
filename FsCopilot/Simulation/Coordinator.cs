@@ -22,14 +22,17 @@ public class Coordinator : IDisposable
         net.RegisterPacket<Interact, InteractCodec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
-
-        AddLink<Physics, Physics.Codec>(master: true, unreliable: true);
-        AddLink<Control, Control.Codec>(master: true, unreliable: true);
-        AddLink<Throttle, Throttle.Codec>(master: true, unreliable: true);
-        AddLink<Fuel, Fuel.Codec>(master: true, unreliable: true);
-        // AddLink<Buses, Buses.Codec>(master: true);
-        AddLink<Payload, Payload.Codec>(master: false, unreliable: true);
-        AddLink<Control.Flaps, Control.Flaps.Codec>(master: false, unreliable: false);
+        
+        _d.Add(sim.Aircraft.Take(1).Subscribe(_ =>
+        {
+            AddLink<Physics, Physics.Codec>(master: true, unreliable: true);
+            AddLink<Control, Control.Codec>(master: true, unreliable: true);
+            AddLink<Throttle, Throttle.Codec>(master: true, unreliable: true);
+            AddLink<Fuel, Fuel.Codec>(master: true, unreliable: true);
+            // AddLink<Buses, Buses.Codec>(master: true);
+            AddLink<Payload, Payload.Codec>(master: false, unreliable: true);
+            AddLink<Control.Flaps, Control.Flaps.Codec>(master: false, unreliable: false);
+        }));
 
         _d.Add(_sim.Interactions
             .Subscribe(interact => _net.SendAll(interact)));
