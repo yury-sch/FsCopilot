@@ -362,7 +362,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
     {
         var data = _codecs.Encode(packet);
         if (data.Length == 0) return;
-        var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
+        var method = unreliable ? DeliveryMethod.Sequenced : DeliveryMethod.ReliableOrdered;
         _net.SendToAll(data, method);
     }
 

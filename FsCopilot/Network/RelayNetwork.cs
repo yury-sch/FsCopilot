@@ -201,13 +201,14 @@ public sealed class RelayNetwork : INetwork, IDisposable
     {
         try
         {
+            if (_peers.Count == 0) return;
             var peer = _relayPeer;
             if (peer is null || peer.ConnectionState != ConnectionState.Connected) return;
 
             var data = _codecs.Encode(packet);
             if (data.Length == 0) return;
 
-            var method = unreliable ? DeliveryMethod.Unreliable : DeliveryMethod.ReliableOrdered;
+            var method = unreliable ? DeliveryMethod.Sequenced : DeliveryMethod.ReliableOrdered;
             peer.Send(data, DataChannel, method);
         }
         catch (Exception e)
@@ -414,7 +415,7 @@ public sealed class RelayNetwork : INetwork, IDisposable
 
     private void OnError(string otherPeerId, string code, string message)
     {
-        Log.Debug("[Relay] REJ {Reason}", code);
+        Log.Debug("[Relay] REJ {PeerId} {Reason} ({Message})", otherPeerId, code, message);
 
         // Minimal protocol: no target id in error => fail all pending connects
         var result = code == "SCHEMA_MISMATCH" ? ConnectionResult.Rejected : ConnectionResult.Failed;
