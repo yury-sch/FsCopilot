@@ -111,12 +111,19 @@ public sealed class SimConnectConsumer : IDisposable
             sim.SubscribeToSystemEvent(EVT.AircraftLoaded, "AircraftLoaded");
             sim.RequestSystemState(REQ.AircraftLoaded, "AircraftLoaded");
             _connected.OnNext(true);
-            Log.Information("[SIMCONNECT] Consumer connected");
-        
-            lock (_cfgLock) foreach (var action in _configure)
+            Log.Information("[SimConnect] Consumer connected");
+
+            lock (_cfgLock)
             {
-                try { action(sim); }
-                catch (Exception e) { Log.Error(e, "[SIMCONNECT] Consumer initialization error"); }
+                foreach (var action in _configure)
+                {
+                    try { action(sim); }
+                    catch (Exception e) { Log.Error(e, "[SimConnect] Consumer initialization error"); }
+                }
+
+                while (_cfgQueue.Reader.TryRead(out _))
+                {
+                }
             }
         
             while (!ct.IsCancellationRequested)
@@ -125,21 +132,21 @@ public sealed class SimConnectConsumer : IDisposable
                 {
                     try { job(sim); }
                     catch (System.Runtime.InteropServices.COMException) { return; }
-                    catch (Exception e) { Log.Fatal(e, "[SIMCONNECT] Consumer execution error"); }
+                    catch (Exception e) { Log.Fatal(e, "[SimConnect] Consumer execution error"); }
                 }
 
                 if (!evt.WaitOne(10)) continue;
             
                 try { sim.ReceiveMessage(); }
                 catch (System.Runtime.InteropServices.COMException) { return; }
-                catch (Exception e) { Log.Fatal(e, "[SIMCONNECT] Consumer processing error"); }
+                catch (Exception e) { Log.Fatal(e, "[SimConnect] Consumer processing error"); }
             }
         }
         finally
         {
             if (_connected.Value)
             {
-                Log.Information("[SIMCONNECT] Consumer disconnected");
+                Log.Information("[SimConnect] Consumer disconnected");
                 _connected.OnNext(false);
             }
         }
@@ -156,7 +163,7 @@ public sealed class SimConnectConsumer : IDisposable
 
         if (!name.Equals(_aircraft.Value))
         {
-            Log.Information("[SIMCONNECT] Loaded aircraft: {Aircraft}", name);
+            Log.Information("[SimConnect] Loaded aircraft: {Aircraft}", name);
             _aircraft.OnNext(name);
         }
     }
@@ -171,7 +178,7 @@ public sealed class SimConnectConsumer : IDisposable
                 while (reader.TryRead(out var msg)) sink.OnNext(msg);
             }
             catch (OperationCanceledException) { /* ignore */ }
-            catch (Exception e) { Log.Error(e, "[SIMCONNECT] Consumer sinking error"); }
+            catch (Exception e) { Log.Error(e, "[SimConnect] Consumer sinking error"); }
         }
     }
     

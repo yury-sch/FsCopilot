@@ -53,12 +53,12 @@ public sealed class SimConnectProducer : IDisposable
         using var evt = new AutoResetEvent(false);
         using var sim = new SimConnect(_appName, IntPtr.Zero, 0, evt, 0);
         evt.WaitOne();
-        Log.Information("[SIMCONNECT] Producer connected");
+        Log.Information("[SimConnect] Producer connected");
         
         lock (_cfgLock) foreach (var action in _configure)
         {
             try { action(sim); }
-            catch (Exception e) { Log.Fatal(e, "[SIMCONNECT] Producer initialization error"); }
+            catch (Exception e) { Log.Fatal(e, "[SimConnect] Producer initialization error"); }
         }
         
         while (!ct.IsCancellationRequested)
@@ -68,8 +68,8 @@ public sealed class SimConnectProducer : IDisposable
             while (_queue.Reader.TryRead(out var job))
             {
                 try { job(sim); }
-                catch (System.Runtime.InteropServices.COMException) { Log.Information("[SIMCONNECT] Producer disconnected"); return; }
-                catch (Exception e) { Log.Fatal(e, "[SIMCONNECT] Producer execution error"); }
+                catch (System.Runtime.InteropServices.COMException) { Log.Information("[SimConnect] Producer disconnected"); return; }
+                catch (Exception e) { Log.Fatal(e, "[SimConnect] Producer execution error"); }
             }
         }
     }

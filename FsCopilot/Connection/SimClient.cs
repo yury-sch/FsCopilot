@@ -181,11 +181,20 @@ public class SimClient : IDisposable
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
             var scheduler = new EventLoopScheduler();
+            var started = false;
 
             var sub = _consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
-                    if (e.dwData is { Length: > 0 }) observer.OnNext((T)e.dwData[0]);
+                    if (e.dwData is { Length: > 0 })
+                    {
+                        if (!started)
+                        {
+                            started = true;
+                            Log.Debug("[SimConnect] Stream {Stream} started", typeof(T).Name);
+                        }
+                        observer.OnNext((T)e.dwData[0]);
+                    }
                 },
                 observer.OnError,
                 observer.OnCompleted);
