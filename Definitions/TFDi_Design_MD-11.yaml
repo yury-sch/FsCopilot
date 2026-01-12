@@ -1,0 +1,1071 @@
+master:
+  - get: L:MD11_THR_LONG_TRIM_SW
+  - get: L:MD11_EXT_STAB_TRIM
+  - get: L:MD11_THR_L_ATS_BT
+    set: "`${value ? 77844 : 77845} (>L:CEVENT)`"
+  - get: L:MD11_THR_L_RNG
+  - get: L:MD11_THR_C_RNG
+  - get: L:MD11_THR_R_RNG
+
+shared:
+  # CARGO FIRE
+  - get: L:MD11_AOVHD_CRGSMK_FWD_VENT_SW
+    set: 73750 (>L:CEVENT)
+  - get: L:MD11_AOVHD_CRGSMK_FWD_AGNT1_BT
+    set: "`${value ? 73751 : 73752} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_CRGSMK_FWD_AGNT1_GRD
+  #  set: 73753 (>L:CEVENT)
+  - get: L:MD11_AOVHD_CRGSMK_FWD_AGNT2_BT
+    set: "`${value ? 73754 : 73755} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_CRGSMK_FWD_AGNT2_GRD
+  #  set: 73756 (>L:CEVENT)
+  - get: L:MD11_AOVHD_CRGSMK_TEST_BT
+    set: "`${value ? 73757 : 73758} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_CRGSMK_AFT_VENT_SW
+    set: 73759 (>L:CEVENT)
+  - get: L:MD11_AOVHD_CRGSMK_AFT_AGNT1_BT
+    set: "`${value ? 73760 : 73761} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_CRGSMK_AFT_AGNT1_GRD
+  #  set: 73762 (>L:CEVENT)
+  - get: L:MD11_AOVHD_CRGSMK_AFT_AGNT2_BT
+    set: "`${value ? 73763 : 73764} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_CRGSMK_AFT_AGNT2_GRD
+  #  set: 73765 (>L:CEVENT)
+
+  # IRS
+  - get: L:MD11_OVHD_IRS_1_KB
+    set: 90112 (>L:CEVENT)
+  - get: L:MD11_OVHD_IRS_2_KB
+    set: 90114 (>L:CEVENT)
+  - get: L:MD11_OVHD_IRS_3_KB
+    set: 90116 (>L:CEVENT)
+  - get: L:MD11_OVHD_CVR_TEST_BT
+    set: "`${value ? 90358 : 90359} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_CVR_ERASE_BT
+    set: "`${value ? 90360 : 90361} (>L:CEVENT)`"
+
+  # GEN BUS FAULT RESET
+  - get: L:MD11_OVHD_GEN_BUS_1_RESET_BT
+    set: "`${value ? 90362 : 90363} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_GEN_BUS_1_RESET_GRD
+  #  set: 90364 (>L:CEVENT)
+  - get: L:MD11_OVHD_GEN_BUS_2_RESET_BT
+    set: "`${value ? 90366 : 90366} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_GEN_BUS_2_RESET_GRD
+  #  set: 90367 (>L:CEVENT)
+  - get: L:MD11_OVHD_GEN_BUS_3_RESET_BT
+    set: "`${value ? 90368 : 90369} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_GEN_BUS_3_RESET_GRD
+  #  set: 90370 (>L:CEVENT)
+  - get: L:MD11_OVHD_GALLEY_BUS_1_BT
+    set: "`${value ? 90163 : 90164} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_GALLEY_BUS_2_BT
+    set: "`${value ? 90165 : 90166} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_GALLEY_BUS_3_BT
+    set: "`${value ? 90167 : 90168} (>L:CEVENT)`"
+
+  # CARGO TEMP
+  - get: L:MD11_OVHD_PNEU_FWD_CARGO_TEMP
+  #  set: "`${value > current ? 90276 : 90275} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_AFT_CARGO_TEMP
+  #  set: "`${value > current ? 90278 : 90277} (>L:CEVENT)`"
+
+  # FADEC MODE
+  - get: L:MD11_OVHD_ENG_FADEC_1_BT
+    set: "`${value ? 90341 : 90342} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENG_FADEC_1_GRD
+  #  set: 90343 (>L:CEVENT)
+  - get: L:MD11_OVHD_ENG_FADEC_2_BT
+    set: "`${value ? 90344 : 90345} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENG_FADEC_2_GRD
+  #  set: 90346 (>L:CEVENT)
+  - get: L:MD11_OVHD_ENG_FADEC_3_BT
+    set: "`${value ? 90347 : 90348} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENG_FADEC_3_GRD
+  #  set: 90349 (>L:CEVENT)
+
+  # ENG IGN
+  - get: L:MD11_OVHD_ENG_A_BT
+    set: "`${value ? 90350 : 90351} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENG_B_BT
+    set: "`${value ? 90352 : 90353} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENG_IGN_OVRD_BT
+    set: "`${value ? 90354 : 90355} (>L:CEVENT)`"
+
+  # L WIPER
+  - get: L:MD11_OVHD_L_WIPER_KB # WINDSHLD WIPE
+  #  set: "`${value > current ? 90376 : 90375} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_DUMP_STOP_GRD # FUEL DUMP EMER STOP
+  #  set: 90379 (>L:CEVENT)
+  - get: L:MD11_OVHD_FUEL_DUMP_STOP_BT
+    set: "`${value ? 90377 : 90378} (>L:CEVENT)`"
+  
+  # FIRE
+  - get: L:MD11_AOVHD_APUFIRE_SW
+    set: 73744 (>L:CEVENT)
+  - get: L:MD11_AOVHD_APUFIRE_KB
+  #  set: "`${value > current ? 73746 : 73747} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_FIRETEST_BT
+    set: "`${value ? 73748 : 73749} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_APU_START_BT
+    set: "`${value ? 73728 : 73729} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_APU_GEN_BT
+    set: "`${value ? 73730 : 73731} (>L:CEVENT)`"
+
+  # GPWS
+  - get: L:MD11_AOVHD_GPWS_TERROVRD_BT
+    set: "`${value ? 73767 : 73768} (>L:CEVENT)`"
+  - get: L:MD11_AOVHD_GPWS_GRD
+  #  set: 73771 (>L:CEVENT)
+  - get: L:MD11_AOVHD_GPWS_SW
+  #  set: "`${value > current ? 73770 : 73769} (>L:CEVENT)`"
+
+  # FLTCTL
+  - get: L:MD11_OVHD_FLTCTL_FLAPLIM_KB
+  #    set: "`${value > current ? 90385 : 90384} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_UYDA_BT
+    set: "`${value ? 90390 : 90391} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_UYDB_BT
+    set: "`${value ? 90392 : 90393} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_LYDA_BT
+    set: "`${value ? 90394 : 90395} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_LYDB_BT
+    set: "`${value ? 90396 : 90397} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_ELEVFEEL_BT
+    set: 90480 (>L:CEVENT)
+  - get: L:MD11_OVHD_FLTCTL_ELEVFEEL_KB
+  - get: L:MD11_OVHD_FLTCTL_LLO_BT
+    set: "`${value ? 90398 : 90399} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_LLI_BT
+    set: "`${value ? 90400 : 90401} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_RLI_BT
+    set: "`${value ? 90402 : 90403} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FLTCTL_RLO_BT
+    set: "`${value ? 90404 : 90405} (>L:CEVENT)`"
+  
+  # PNEU  
+  - get: L:MD11_OVHD_PNEU_CLBDES_KB
+  - get: L:MD11_OVHD_PNEU_CABIN_SYSTEM_SEL_BT
+    set: "`${value ? 90328 : 90329} (>L:CEVENT)`"
+#  - get: L:MD11_OVHD_PNEU_MLDG_ALT_KB
+  - get: L:MD11_OVHD_PNEU_DITCHING_GRD
+  #  set: 90334 (>L:CEVENT)
+  - get: L:MD11_OVHD_PNEU_DITCHING_BT
+    set: "`${value ? 90332 : 90333} (>L:CEVENT)`"
+    
+  # AICE
+  - get: L:MD11_OVHD_AICE_ENG1_BT
+    set: "`${value ? 90414 : 90415} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_AICE_ENG2_BT
+    set: "`${value ? 90416 : 90417} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_AICE_ENG3_BT
+    set: "`${value ? 90418 : 90419} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_AICE_WING_BT
+    set: "`${value ? 90420 : 90421} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_AICE_TAIL_BT
+    set: "`${value ? 90422 : 90423} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_WNDSHLD_AICE_L_BT
+    set: "`${value ? 90424 : 90425} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_WNDSHLD_AICE_BT
+    set: "`${value ? 90426 : 90427} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_WNDSHLD_AICE_R_BT
+    set: "`${value ? 90428 : 90429} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_WNDSHLD_AICE_DEFOG_BT
+    set: "`${value ? 90430 : 90431} (>L:CEVENT)`"
+  
+  # ANNUN LT
+  - get: L:MD11_OVHD_ANNUNLT_BRTDIM_BT
+    set: 90406 (>L:CEVENT)
+  - get: L:MD11_OVHD_ANNUNLT_TEST_BT
+    set: "`${value ? 90408 : 90409} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_CRG_DOOR_TEST_BT
+    set: "`${value ? 90356 : 90357} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUELUSEDRESET_BT
+    set: "`${value ? 90410 : 90411} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ENGMAXPTRRESET_BT
+    set: "`${value ? 90412 : 90413} (>L:CEVENT)`"
+    
+  # LTS
+  - get: L:MD11_OVHD_LTS_MAINT_INTP_BT
+    set: "`${value ? 90474 : 90475} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_MECH_BT
+    set: "`${value ? 90476 : 90477} (>L:CEVENT)`"
+  
+  # R WIPER
+  - get: L:MD11_OVHD_R_WIPER_KB
+    
+  # ENG FIRE
+  - get: L:MD11_AOVHD_ENG1FIRE_GRD
+  - get: L:MD11_AOVHD_ENG1FIRE_KB
+  - get: L:MD11_AOVHD_ENG1FIRE_SW
+  - get: L:MD11_AOVHD_ENG2FIRE_GRD
+  - get: L:MD11_AOVHD_ENG2FIRE_GRD
+  - get: L:MD11_AOVHD_ENG2FIRE_KB
+  - get: L:MD11_AOVHD_ENG2FIRE_SW
+  - get: L:MD11_AOVHD_ENG3FIRE_GRD
+  - get: L:MD11_AOVHD_ENG3FIRE_GRD
+  - get: L:MD11_AOVHD_ENG3FIRE_KB
+  - get: L:MD11_AOVHD_ENG3FIRE_SW
+    
+  # HYD
+  - get: L:MD11_OVHD_HYD_1_3_RMP_BT
+    set: "`${value ? 90169 : 90170} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_2_3_RMP_BT
+    set: "`${value ? 90171 : 90172} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_AUX_PUMP_1_BT
+    set: "`${value ? 90173 : 90174} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_AUX_PUMP_2_BT
+    set: "`${value ? 90175 : 90176} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_SYSTEM_SEL_BT
+    set: "`${value ? 90177 : 90178} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_1_L_BT
+    set: "`${value ? 90179 : 90180} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_1_R_BT
+    set: "`${value ? 90181 : 90182} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_2_L_BT
+    set: "`${value ? 90183 : 90184} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_2_R_BT
+    set: "`${value ? 90185 : 90186} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_3_L_BT
+    set: "`${value ? 90187 : 90188} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_EDP_3_R_BT
+    set: "`${value ? 90189 : 90190} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_HYD_TEST_BT
+    set: "`${value ? 90191 : 90192} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_HYD_HYD_TEST_GRD
+  
+  # ELEC
+  - get: L:MD11_OVHD_ELEC_EMER_PWR_KB
+  - get: L:MD11_OVHD_ELEC_GEN1_BT
+    set: "`${value ? 90118 : 90119} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN1_DRIVE_BT
+    set: "`${value ? 90120 : 90121} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN1_DRIVE_GRD
+  #  set: 90122 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_GEN2_BT
+    set: "`${value ? 90123 : 90124} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN2_BT
+    set: "`${value ? 90125 : 90126} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN2_DRIVE_BT
+  #  set: 90127 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_GEN3_BT
+    set: "`${value ? 90128 : 90129} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN3_DRIVE_BT
+    set: "`${value ? 90130 : 90131} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GEN3_DRIVE_GRD
+  #  set: 90132 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_CAB_BUS_BT
+    set: 90133 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_SMOKE_ELEC_AIR_KB
+  - get: L:MD11_OVHD_ELEC_CAB_BUS_GRD
+  #  set: 90135 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_AC_TIE1_BT
+    set: "`${value ? 90136 : 90137} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_GLY_EXT_PWR_BT
+    set: "`${value ? 90138 : 90139} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_AC_TIE2_BT
+    set: "`${value ? 90140 : 90141} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_EXT_PWR_BT
+    set: "`${value ? 90142 : 90143} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_APU_PWR_BT
+    set: "`${value ? 90144 : 90145} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_AC_TIE3_BT
+    set: "`${value ? 90146 : 90147} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_ADG_ELEC_BT
+    set: 90148 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_BATT_BT
+    set: "`${value ? 90150 : 90151} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_BATT_GRD
+  #  set: 90152 (>L:CEVENT)
+  - get: L:MD11_OVHD_ELEC_DC_TIE1_BT
+    set: "`${value ? 90153 : 90154} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_ELEC_DC_TIE3_BT
+    set: "`${value ? 90155 : 90156} (>L:CEVENT)`"
+    
+  # PNEU
+  - get: L:MD11_OVHD_PNEU_COCKPIT_TEMP
+  - get: L:MD11_OVHD_PNEU_FWD_CAB_TEMP
+  - get: L:MD11_OVHD_PNEU_MID_CAB_TEMP
+  - get: L:MD11_OVHD_PNEU_PACK_1_BT
+    set: "`${value ? 90289 : 90290} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_PACK_2_BT
+    set: "`${value ? 90291 : 90292} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_PACK_3_BT
+    set: "`${value ? 90293 : 90294} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_1_2_ISOL_BT
+    set: "`${value ? 90299 : 90300} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_1_3_ISOL_BT
+    set: "`${value ? 90301 : 90302} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_TRIM_AIR_BT
+    set: "`${value ? 90303 : 90304} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_1_OFF_BT
+    set: "`${value ? 90305 : 90306} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_1_MANF_TEMP_HI_BT
+    set: "`${value ? 90307 : 90308} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_2_OFF_BT
+    set: "`${value ? 90309 : 90310} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_2_MANF_TEMP_HI_BT
+    set: "`${value ? 90311 : 90312} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_APU_BLEED_BT
+    set: "`${value ? 90313 : 90314} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_3_OFF_BT
+    set: "`${value ? 90315 : 90316} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_BLEED_3_MANF_TEMP_HI_BT
+    set: "`${value ? 90317 : 90318} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_AVIONICS_FAN_BT
+    set: "`${value ? 90319 : 90320} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_MASKS_BT
+    set: "`${value ? 90321 : 90322} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_MASKS_GRD
+    set: 90323 (>L:CEVENT)
+  - get: L:MD11_OVHD_PNEU_SYSTEM_SEL_BT
+    set: "`${value ? 90295 : 90296} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_PNEU_ECON_BT
+    set: "`${value ? 90297 : 90298} (>L:CEVENT)`"
+
+  # FUEL
+  - get: L:MD11_OVHD_FUEL_FILL_TANK_1_BT
+    set: "`${value ? 90194 : 90195} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_PUMP_TANK_1_BT
+    set: "`${value ? 90196 : 90197} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_XFEED_TANK_1_BT
+    set: "`${value ? 90198 : 90199} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_FILL_TANK_2_BT
+    set: "`${value ? 90200 : 90201} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_PUMP_TANK_2_BT
+    set: "`${value ? 90202 : 90203} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_XFEED_TANK_2_BT
+    set: "`${value ? 90204 : 90205} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_FILL_TANK_3_BT
+    set: "`${value ? 90206 : 90207} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_PUMP_TANK_3_BT
+    set: "`${value ? 90208 : 90209} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_XFEED_TANK_3_BT
+    set: "`${value ? 90210 : 90211} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_SYSTEM_SEL_BT
+    set: "`${value ? 90212 : 90213} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_TRANS_TANK_1_BT
+    set: "`${value ? 90214 : 90215} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_TRANS_TANK_2_BT
+    set: "`${value ? 90216 : 90217} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_TRANS_TANK_3_BT
+    set: "`${value ? 90218 : 90219} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_DUMP_BT
+    set: "`${value ? 90220 : 90221} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_DUMP_GRD
+  #  set: 90222 (>L:CEVENT)
+  - get: L:MD11_OVHD_FUEL_LEFT_TRANS_BT
+    set: "`${value ? 90223 : 90224} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_RIGHT_TRANS_BT
+    set: "`${value ? 90225 : 90226} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_TAIL_TRANS_BT
+    set: "`${value ? 90227 : 90228} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_ALT_PUMP_BT
+    set: "`${value ? 90229 : 90230} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_MANF_DRAIN_BT
+    set: "`${value ? 90231 : 90232} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_FUEL_MANF_DRAIN_GRD
+  #  set: 90233 (>L:CEVENT)
+  - get: L:MD11_OVHD_FUEL_QTY_TEST_BT
+    set: "`${value ? 90234 : 90235} (>L:CEVENT)`"
+
+  # LTS
+  - get: L:MD11_OVHD_LTS_DOME_BT
+    set: "`${value ? 90236 : 90237} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_OUTER_OVHD_PNL_FLOOD_KB
+  - get: L:MD11_OVHD_LTS_INNER_OVHD_PNL_FLOOD_KB
+  - get: L:MD11_OVHD_LTS_EMER_SW
+  - get: L:MD11_OVHD_LTS_EMER_TEST_BT
+    set: "`${value ? 90244 : 90245} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_NO_SMOKE_SW
+  - get: L:MD11_OVHD_LTS_SEAT_BELTS_SW
+  - get: L:MD11_OVHD_LTS_THNDRSTRM_SW
+#    set: 90250 (>L:CEVENT)
+  - get: L:MD11_OVHD_LTS_OUTER_INSTR_PED_PNL_FLOOD_KB
+  - get: L:MD11_OVHD_LTS_INNER_INSTR_PED_PNL_FLOOD_KB
+  - get: L:MD11_OVHD_LTS_STBY_COMP_BT
+    set: "`${value ? 90255 : 90256} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_LDG_L_SW
+  - get: L:MD11_OVHD_LTS_LDG_R_SW
+  - get: L:MD11_OVHD_LTS_NOSE_SW
+  - get: L:MD11_OVHD_LTS_RWY_TURNOFF_L_BT
+    set: "`${value ? 90263 : 90264} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_RWY_TURNOFF_R_BT
+    set: "`${value ? 90265 : 90266} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_NAV_BT
+    set: "`${value ? 90267 : 90268} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_LOGO_BT
+    set: "`${value ? 90269 : 90270} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_BCN_BT
+    set: "`${value ? 90271 : 90272} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_HI_INT_BT
+    set: "`${value ? 90273 : 90274} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_CALL_RESET_BT
+    set: "`${value ? 90371 : 90372} (>L:CEVENT)`"
+  - get: L:MD11_OVHD_LTS_CREW_REST_BT
+    set: "`${value ? 90478 : 90479} (>L:CEVENT)`"
+  
+  # STBY 
+  - get: L:MD11_OVHD_STBY_CMPS_SW
+  #  set: 90434 (>L:CEVENT)
+  
+  # BRK OVHD
+  - get: L:MD11_BKR_OVHD_A2
+    set: 106575 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_A3
+    set: 106576 (>L:CEVENT)
+    
+  - get: L:MD11_BKR_OVHD_B1
+    set: 106578 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_B2
+    set: 106579 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_B3
+    set: 106580 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_B7
+    set: 106610 (>L:CEVENT)
+    
+  - get: L:MD11_BKR_OVHD_C1
+    set: 106581 (>L:CEVENT)
+    
+  - get: L:MD11_BKR_OVHD_D1
+    set: 106582 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_D8
+    set: 106583 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_D21
+    set: 106584 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_D22
+    set: 106585 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_D30
+    set: 106586 (>L:CEVENT)
+    
+  - get: L:MD11_BKR_OVHD_E1
+    set: 106587 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_E31
+    set: 106588 (>L:CEVENT)
+  
+  - get: L:MD11_BKR_OVHD_F1
+    set: 106589 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F2
+    set: 106590 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F3
+    set: 106591 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F4
+    set: 106592 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F20
+    set: 106593 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F27
+    set: 106594 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F28
+    set: 106595 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F29
+    set: 106596 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F30
+    set: 106597 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_F31
+    set: 106598 (>L:CEVENT)
+  
+  - get: L:MD11_BKR_OVHD_G1
+    set: 106599 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G2
+    set: 106600 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G10
+    set: 106601 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G17
+    set: 106602 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G18
+    set: 106611 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G19
+    set: 106603 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G20
+    set: 106604 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G22
+    set: 106605 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G24
+    set: 106606 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G30
+    set: 106607 (>L:CEVENT)
+  - get: L:MD11_BKR_OVHD_G31
+    set: 106608 (>L:CEVENT)
+
+  # BRK LAP
+  - get: L:MD11_BKR_LAP_A22
+    set: 106609 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_A23
+    set: 106577 (>L:CEVENT)
+
+  - get: L:MD11_BKR_LAP_B4
+    set: 106556 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B5
+    set: 106557 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B6
+    set: 106558 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B19
+    set: 106559 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B21
+    set: 106560 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B24
+    set: 106561 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B25
+    set: 106562 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B31
+    set: 106563 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B32
+    set: 106564 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B33
+    set: 106565 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_B34
+    set: 106566 (>L:CEVENT)
+  
+  - get: L:MD11_BKR_LAP_C3
+    set: 106567 (>L:CEVENT)
+
+  - get: L:MD11_BKR_LAP_D1
+    set: 106568 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_D2
+    set: 106569 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_D3
+    set: 106570 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_D19
+    set: 106571 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_D25
+    set: 106572 (>L:CEVENT)
+
+  - get: L:MD11_BKR_LAP_E3
+    set: 106573 (>L:CEVENT)
+  - get: L:MD11_BKR_LAP_E33
+    set: 106574 (>L:CEVENT)
+
+  - get: L:MD11_OBS_CKTBKR_LT_KB
+
+  # BRK LAP
+  - get: L:MD11_BKR_BWU_A24
+    set: 106522 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_A25
+    set: 106523 (>L:CEVENT)
+  
+  - get: L:MD11_BKR_BWU_B21
+    set: 106524 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_B23
+    set: 106525 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_B24
+    set: 106526 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_B25
+    set: 106527 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_B26
+    set: 106528 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWU_C21
+    set: 106529 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_C22
+    set: 106530 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_C23
+    set: 106531 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_C24
+    set: 106532 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_C25
+    set: 106533 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_C26
+    set: 106534 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWU_D23
+    set: 106535 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_D24
+    set: 106536 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_D25
+    set: 106537 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_D26
+    set: 106538 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWU_E20
+    set: 106539 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_E22
+    set: 106540 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_E23
+    set: 106541 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_E24
+    set: 106542 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_E25
+    set: 106543 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_E26
+    set: 106544 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWU_F20
+    set: 106545 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F21
+    set: 106546 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F22
+    set: 106547 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F23
+    set: 106548 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F24
+    set: 106549 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F25
+    set: 106550 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_F26
+    set: 106551 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWU_G23
+    set: 106552 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_G24
+    set: 106553 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_G25
+    set: 106554 (>L:CEVENT)
+  - get: L:MD11_BKR_BWU_G26
+    set: 106555 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_A9
+    set: 106496 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_A10
+    set: 106497 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_A11
+    set: 106498 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_A12
+    set: 106499 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_A13
+    set: 106500 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_B9
+    set: 106501 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_B10
+    set: 106502 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_B11
+    set: 106503 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_B12
+    set: 106504 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_C9
+    set: 106505 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_C10
+    set: 106506 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_C11
+    set: 106507 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_C12
+    set: 106508 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_C13
+    set: 106509 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_D12
+    set: 106510 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_D13
+    set: 106511 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_E12
+    set: 106512 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_F11
+    set: 106513 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_G9
+    set: 106514 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_G10
+    set: 106515 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_G11
+    set: 106516 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_H9
+    set: 106517 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_H10
+    set: 106518 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_H11
+    set: 106519 (>L:CEVENT)
+  - get: L:MD11_BKR_BWL_H14
+    set: 106520 (>L:CEVENT)
+
+  - get: L:MD11_BKR_BWL_J9
+    set: 106521 (>L:CEVENT)
+  
+  # OBS AUDIO PANEL
+  - get: L:MD11_OBS_AUDIO_PNL_VHF1_MIC_BT
+    set: "`${value ? 96256 : 96257} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_VHF2_MIC_BT
+    set: "`${value ? 96258 : 96259} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_VHF3_MIC_BT
+    set: "`${value ? 96260 : 96261} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_HF1_MIC_BT
+    set: "`${value ? 96262 : 96263} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_HF2_MIC_BT
+    set: "`${value ? 96264 : 96265} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_SAT_MIC_BT
+    set: "`${value ? 96266 : 96267} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_INT_MIC_BT
+    set: "`${value ? 96268 : 96269} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_VHF1_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_VHF1_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_VHF2_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_VHF2_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_VHF3_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_VHF3_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_HF1_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_HF1_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_HF2_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_HF2_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_SAT_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_SAT_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_INT_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_INT_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_CAB_MIC_BT
+    set: "`${value ? 96270 : 96271} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_CAB_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_CAB_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_IDENT_BT
+    set: "`${value ? 96320 : 96321} (>L:CEVENT)`"
+  - get: L:MD11_OBS_AUDIO_PNL_PA_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_PA_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_INT_RADIO_SW
+  - get: L:MD11_OBS_AUDIO_PNL_VOR1_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_VOR1_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_VOR2_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_VOR2_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_ILS1_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_ILS1_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_ILS2_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_ILS2_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_ADF1_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_ADF1_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_ADF2_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_ADF2_VOL_BT
+  - get: L:MD11_OBS_AUDIO_PNL_MKR_VOL_KB
+  - get: L:MD11_OBS_AUDIO_PNL_MKR_VOL_BT
+    
+  # L MCDU
+  - get: L:MD11_LMCDU_LSK_1L_BT
+    set: "`${value ? 81925 : 81926} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_2L_BT
+    set: "`${value ? 81927 : 81928} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_3L_BT
+    set: "`${value ? 81929 : 81930} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_4L_BT
+    set: "`${value ? 81931 : 81932} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_5L_BT
+    set: "`${value ? 81933 : 81934} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_6L_BT
+    set: "`${value ? 81935 : 81936} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_1R_BT
+    set: "`${value ? 81937 : 81938} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_2R_BT
+    set: "`${value ? 81939 : 81940} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_3R_BT
+    set: "`${value ? 81941 : 81942} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_4R_BT
+    set: "`${value ? 81943 : 81944} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_5R_BT
+    set: "`${value ? 81945 : 81946} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_LSK_6R_BT
+    set: "`${value ? 81947 : 81948} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_BRT_KB
+  - get: L:MD11_LMCDU_DIR_INTC_BT
+    set: "`${value ? 81951 : 81952} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_NAV_RAD_BT
+    set: "`${value ? 81953 : 81954} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_PERF_BT
+    set: "`${value ? 81955 : 81956} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_INIT_BT
+    set: "`${value ? 81957 : 81958} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_TOAPPR_BT
+    set: "`${value ? 81959 : 81960} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_FPLN_BT
+    set: "`${value ? 81961 : 81962} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_PROG_BT
+    set: "`${value ? 81963 : 81964} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_FIX_BT
+    set: "`${value ? 81965 : 81966} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_SEC_FPLN_BT
+    set: "`${value ? 81967 : 81968} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_REF_BT
+    set: "`${value ? 81969 : 81970} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_ENG_OUT_BT
+    set: "`${value ? 81971 : 81972} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_MENU_BT
+    set: "`${value ? 81973 : 81974} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_UP_BT
+    set: "`${value ? 81975 : 81976} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_NEXTPAGE_BT
+    set: "`${value ? 81977 : 81978} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_DOWN_BT
+    set: "`${value ? 81979 : 81980} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_1_BT
+    set: "`${value ? 81981 : 81982} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_2_BT
+    set: "`${value ? 81983 : 81984} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_3_BT
+    set: "`${value ? 81985 : 81986} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_4_BT
+    set: "`${value ? 81987 : 81988} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_5_BT
+    set: "`${value ? 81989 : 81990} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_6_BT
+    set: "`${value ? 81991 : 81992} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_7_BT
+    set: "`${value ? 81993 : 81994} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_8_BT
+    set: "`${value ? 81995 : 81996} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_9_BT
+    set: "`${value ? 81997 : 81998} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_SLASH_BT
+    set: "`${value ? 81999 : 82000} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_0_BT
+    set: "`${value ? 82001 : 82002} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_DOT_BT
+    set: "`${value ? 82003 : 82004} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_A_BT
+    set: "`${value ? 82005 : 82006} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_B_BT
+    set: "`${value ? 82007 : 82008} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_C_BT
+    set: "`${value ? 82009 : 82010} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_D_BT
+    set: "`${value ? 82011 : 82012} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_E_BT
+    set: "`${value ? 82013 : 82014} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_F_BT
+    set: "`${value ? 82015 : 82016} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_G_BT
+    set: "`${value ? 82017 : 82018} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_H_BT
+    set: "`${value ? 82019 : 82020} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_I_BT
+    set: "`${value ? 82021 : 82022} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_J_BT
+    set: "`${value ? 82023 : 82024} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_K_BT
+    set: "`${value ? 82025 : 82026} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_L_BT
+    set: "`${value ? 82027 : 82028} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_M_BT
+    set: "`${value ? 82029 : 82030} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_N_BT
+    set: "`${value ? 82031 : 82032} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_O_BT
+    set: "`${value ? 82033 : 82034} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_P_BT
+    set: "`${value ? 82035 : 82036} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_Q_BT
+    set: "`${value ? 82037 : 82038} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_R_BT
+    set: "`${value ? 82039 : 82040} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_S_BT
+    set: "`${value ? 82041 : 82042} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_T_BT
+    set: "`${value ? 82043 : 82044} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_U_BT
+    set: "`${value ? 82045 : 82046} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_V_BT
+    set: "`${value ? 82047 : 82048} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_W_BT
+    set: "`${value ? 82049 : 82050} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_X_BT
+    set: "`${value ? 82051 : 82052} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_Y_BT
+    set: "`${value ? 82053 : 82054} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_Z_BT
+    set: "`${value ? 82055 : 82056} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_MINUS_BT
+    set: "`${value ? 82057 : 82058} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_PLUS_BT
+    set: "`${value ? 82059 : 82060} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_SP_BT
+    set: "`${value ? 82061 : 82062} (>L:CEVENT)`"
+  - get: L:MD11_LMCDU_CLR_BT
+    set: "`${value ? 82063 : 82064} (>L:CEVENT)`"
+  
+  # R MCDU
+  - get: L:MD11_RMCDU_LSK_1L_BT
+    set: "`${value ? 82067 : 82068} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_2L_BT
+    set: "`${value ? 82069 : 82070} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_3L_BT
+    set: "`${value ? 82071 : 82072} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_4L_BT
+    set: "`${value ? 82073 : 82074} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_5L_BT
+    set: "`${value ? 82075 : 82076} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_6L_BT
+    set: "`${value ? 82077 : 82078} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_1R_BT
+    set: "`${value ? 82079 : 82080} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_2R_BT
+    set: "`${value ? 82081 : 82082} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_3R_BT
+    set: "`${value ? 82083 : 82084} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_4R_BT
+    set: "`${value ? 82085 : 82086} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_5R_BT
+    set: "`${value ? 82087 : 82088} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_LSK_6R_BT
+    set: "`${value ? 82089 : 82090} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_BRT_KB
+  - get: L:MD11_RMCDU_DIR_INTC_BT
+    set: "`${value ? 82093 : 82094} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_NAV_RAD_BT
+    set: "`${value ? 82095 : 82096} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_PERF_BT
+    set: "`${value ? 82097 : 82098} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_INIT_BT
+    set: "`${value ? 82099 : 82100} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_TOAPPR_BT
+    set: "`${value ? 82101 : 82102} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_FPLN_BT
+    set: "`${value ? 82103 : 82104} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_PROG_BT
+    set: "`${value ? 82105 : 82106} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_FIX_BT
+    set: "`${value ? 82107 : 82108} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_SEC_FPLN_BT
+    set: "`${value ? 82109 : 82110} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_REF_BT
+    set: "`${value ? 82111 : 82112} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_ENG_OUT_BT
+    set: "`${value ? 82113 : 82114} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_MENU_BT
+    set: "`${value ? 82115 : 82116} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_UP_BT
+    set: "`${value ? 82117 : 82118} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_NEXTPAGE_BT
+    set: "`${value ? 82119 : 82120} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_DOWN_BT
+    set: "`${value ? 82121 : 82122} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_1_BT
+    set: "`${value ? 82123 : 82124} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_2_BT
+    set: "`${value ? 82125 : 82126} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_3_BT
+    set: "`${value ? 82127 : 82128} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_4_BT
+    set: "`${value ? 82129 : 82130} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_5_BT
+    set: "`${value ? 82131 : 82132} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_6_BT
+    set: "`${value ? 82133 : 82134} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_7_BT
+    set: "`${value ? 82135 : 82136} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_8_BT
+    set: "`${value ? 82137 : 82138} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_9_BT
+    set: "`${value ? 82139 : 82140} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_SLASH_BT
+    set: "`${value ? 82141 : 82142} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_0_BT
+    set: "`${value ? 82143 : 82144} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_DOT_BT
+    set: "`${value ? 82145 : 82146} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_A_BT
+    set: "`${value ? 82147 : 82148} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_B_BT
+    set: "`${value ? 82149 : 82150} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_C_BT
+    set: "`${value ? 82151 : 82152} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_D_BT
+    set: "`${value ? 82153 : 82154} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_E_BT
+    set: "`${value ? 82155 : 82156} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_F_BT
+    set: "`${value ? 82157 : 82158} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_G_BT
+    set: "`${value ? 82159 : 82160} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_H_BT
+    set: "`${value ? 82161 : 82162} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_I_BT
+    set: "`${value ? 82163 : 82164} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_J_BT
+    set: "`${value ? 82165 : 82166} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_K_BT
+    set: "`${value ? 82167 : 82168} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_L_BT
+    set: "`${value ? 82169 : 82170} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_M_BT
+    set: "`${value ? 82171 : 82172} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_N_BT
+    set: "`${value ? 82173 : 82174} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_O_BT
+    set: "`${value ? 82175 : 82176} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_P_BTf
+    set: "`${value ? 82177 : 82178} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_Q_BT
+    set: "`${value ? 82179 : 82180} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_R_BT
+    set: "`${value ? 82181 : 82182} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_S_BT
+    set: "`${value ? 82183 : 82184} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_T_BT
+    set: "`${value ? 82185 : 82186} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_U_BT
+    set: "`${value ? 82187 : 82188} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_V_BT
+    set: "`${value ? 82189 : 82190} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_W_BT
+    set: "`${value ? 82191 : 82192} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_X_BT
+    set: "`${value ? 82193 : 82194} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_Y_BT
+    set: "`${value ? 82195 : 82196} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_Z_BT
+    set: "`${value ? 82197 : 82198} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_MINUS_BT
+    set: "`${value ? 82199 : 82200} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_PLUS_BT
+    set: "`${value ? 82201 : 82202} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_SP_BT
+    set: "`${value ? 82203 : 82204} (>L:CEVENT)`"
+  - get: L:MD11_RMCDU_CLR_BT
+    set: "`${value ? 82205 : 82206} (>L:CEVENT)`"
+
+  # CTR
+  - get: L:MD11_CTR_SLAT_STOW_GRD
+  #  set: 81922 (>L:CEVENT)
+  - get: L:MD11_CTR_SLAT_STOW_BT
+    set: "`${value ? 81920 : 81921} (>L:CEVENT)`"
+    
+  # MIP STBY
+  - get: L:MD11_MIP_STBY_AI_CAGE_BT
+    set: "`${value ? 94986 : 95005} (>L:CEVENT)`"
+    
+  # CTR
+  - get: L:MD11_CTR_AUX_HYD_PUMP_BT
+    set: "`${value ? 82207 : 82208} (>L:CEVENT)`"
+  - get: L:MD11_CTR_ANTISKID_BT
+    set: "`${value ? 82209 : 82210} (>L:CEVENT)`"
+  - get: L:MD11_CTR_AUTOBRAKE_SW
+      
+  # THR
+  - get: L:MD11_THR_PARK_LVR
+    set: 77848 (>L:CEVENT)
+  
+  # SPDBRK
+  - get: L:MD11_SPDBRK_RNG
+  - get: L:MD11_SPDBRK_HANDLE
+  - get: L:MD11_SPDBRK_LATCH
+    
+  # THR
+  - get: L:MD11_THR_GA_BT
+    set: "`${value ? 77851 : 77852} (>L:CEVENT)`"
+  - get: L:MD11_THR_L_START_SW
+#    set: "value ? '77837 (>L:CEVENT)' : ''"
+  - get: L:MD11_THR_C_START_SW
+#    set: "value ? '77838 (>L:CEVENT)' : ''"
+  - get: L:MD11_THR_R_START_SW
+#    set: "value ? '77839 (>L:CEVENT)' : ''"
+  - get: L:MD11_THR_L_FUEL_SW
+    set: 77834 (>L:CEVENT)
+  - get: L:MD11_THR_GEAR_HORN_BT
+    set: "`${value ? 77849 : 77850} (>L:CEVENT)`"
+
+  # FLAPS
+#  - get: L:MD11_FLAP_LATCH
+#  - get: L:MD11_FLAP_RNG
+#    set: 16383 (>K:FLAPS_SET)
+
+  # CPT RADIO
+  - get: L:MD11_PED_CPT_RADIO_PNL_XFER_BT
+    set: "`${value ? 69644 : 69645} (>L:CEVENT)`"
+  - get: A:COM ACTIVE FREQUENCY:1, Hz
+    set: (>K:COM_RADIO_SET_HZ)
+  - get: A:COM ACTIVE FREQUENCY:2, Hz
+    set: (>K:COM2_RADIO_SET_HZ)
+  - get: A:COM ACTIVE FREQUENCY:3, Hz
+    set: (>K:COM3_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:1, Hz
+    set: (>K:COM_STBY_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:2, Hz
+    set: (>K:COM2_STBY_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:3, Hz
+    set: (>K:COM3_STBY_RADIO_SET_HZ)
