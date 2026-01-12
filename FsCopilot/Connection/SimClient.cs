@@ -105,15 +105,39 @@ public class SimClient : IDisposable
     
     public void Set(string name, object value, object? value1, object? value2, object? value3, object? value4)
     {
-        if (name.StartsWith("L:")) SetDataOnSimObject(name, value);
-        if (name.StartsWith("A:")) SetDataOnSimObject(name[2..], value);
+        if (name.StartsWith("L:")) SetLVar(name, Convert.ToSingle(value));
+        if (name.StartsWith("A:")) SetSimVar(name[2..], value);
         if (name.StartsWith("Z:")) SetClientVar(name, value);
         if (name.StartsWith("H:")) SetClientVar(name, value);
         if (name.StartsWith("K:")) TransmitKEvent(name[2..], value, value1, value2, value3, value4);
         if (name.StartsWith("B:")) SetClientVar(name, value);
     }
 
-    private void SetDataOnSimObject(string datumName, object value)
+    private void SetLVar(string datumName, object value)
+    {
+        var defId = _defs.GetOrAdd(datumName, _ =>
+        {
+            var nextId = (DEF)Interlocked.Increment(ref _defId);
+            _producer.Configure(sim =>
+            {
+                const SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE.FLOAT32;
+                var clrType = SimConnectExtensions.ToClrType(datumType);
+
+                sim.AddToDataDefinition(nextId, datumName, "number", datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+
+                typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
+                        BindingFlags.Public | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(sim, [nextId]);
+            }, _ => { });
+            return nextId;
+        });
+        
+        _producer.Post(sim => sim.SetDataOnSimObject(defId, 
+            SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
+    }
+
+    private void SetSimVar(string datumName, object value)
     {
         if (!_defs.TryGetValue(datumName, out var defId)) return;
         
