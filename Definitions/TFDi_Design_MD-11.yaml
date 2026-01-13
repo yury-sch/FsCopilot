@@ -6,6 +6,8 @@ master:
   - get: L:MD11_THR_L_RNG
   - get: L:MD11_THR_C_RNG
   - get: L:MD11_THR_R_RNG
+  - get: L:MD11_PED_AIL_TRIM_KB
+  - get: L:MD11_PED_RUD_TRIM_SW
 
 shared:
   # CARGO FIRE
@@ -1008,6 +1010,147 @@ shared:
     set: "`${value ? 82203 : 82204} (>L:CEVENT)`"
   - get: L:MD11_RMCDU_CLR_BT
     set: "`${value ? 82205 : 82206} (>L:CEVENT)`"
+  
+  # R MCDU
+  - get: L:MD11_CMCDU_LSK_1L_BT
+    set: "`${value ? 70019 : 70020} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_2L_BT
+    set: "`${value ? 70021 : 70022} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_3L_BT
+    set: "`${value ? 70023 : 70024} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_4L_BT
+    set: "`${value ? 70025 : 70026} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_5L_BT
+    set: "`${value ? 70027 : 70028} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_6L_BT
+    set: "`${value ? 70029 : 700230} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_1R_BT
+    set: "`${value ? 70031 : 70032} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_2R_BT
+    set: "`${value ? 70033 : 70034} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_3R_BT
+    set: "`${value ? 70035 : 70036} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_4R_BT
+    set: "`${value ? 70037 : 70038} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_5R_BT
+    set: "`${value ? 70039 : 70040} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_LSK_6R_BT
+    set: "`${value ? 70041 : 70042} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_BRT_KB
+  - get: L:MD11_CMCDU_DIR_INTC_BT
+    set: "`${value ? 69989 : 69990} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_NAV_RAD_BT
+    set: "`${value ? 69991 : 69992} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_PERF_BT
+    set: "`${value ? 69993 : 69994} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_INIT_BT
+    set: "`${value ? 69995 : 69996} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_TOAPPR_BT
+    set: "`${value ? 69997 : 69998} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_FPLN_BT
+    set: "`${value ? 69999 : 70000} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_PROG_BT
+    set: "`${value ? 70001 : 70002} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_FIX_BT
+    set: "`${value ? 70003 : 70004} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_SEC_FPLN_BT
+    set: "`${value ? 70005 : 70006} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_REF_BT
+    set: "`${value ? 70007 : 70008} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_ENG_OUT_BT
+    set: "`${value ? 70009 : 70010} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_MENU_BT
+    set: "`${value ? 70011 : 70012} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_UP_BT
+    set: "`${value ? 70013 : 70014} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_NEXTPAGE_BT
+    set: "`${value ? 70015 : 70016} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_DOWN_BT
+    set: "`${value ? 70017 : 70018} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_1_BT
+    set: "`${value ? 69965 : 69966} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_2_BT
+    set: "`${value ? 69967 : 69968} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_3_BT
+    set: "`${value ? 69969 : 69970} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_4_BT
+    set: "`${value ? 69971 : 69972} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_5_BT
+    set: "`${value ? 69973 : 69974} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_6_BT
+    set: "`${value ? 69975 : 69976} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_7_BT
+    set: "`${value ? 69977 : 69978} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_8_BT
+    set: "`${value ? 69979 : 69980} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_9_BT
+    set: "`${value ? 69981 : 69982} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_SLASH_BT
+    set: "`${value ? 69987 : 69988} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_0_BT
+    set: "`${value ? 69985 : 69986} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_DOT_BT
+    set: "`${value ? 69983 : 69984} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_A_BT
+    set: "`${value ? 69905 : 69906} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_B_BT
+    set: "`${value ? 69907 : 69908} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_C_BT
+    set: "`${value ? 69909 : 69910} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_D_BT
+    set: "`${value ? 69911 : 69912} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_E_BT
+    set: "`${value ? 69913 : 69914} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_F_BT
+    set: "`${value ? 69915 : 69916} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_G_BT
+    set: "`${value ? 69917 : 69918} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_H_BT
+    set: "`${value ? 69919 : 69920} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_I_BT
+    set: "`${value ? 69921 : 69922} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_J_BT
+    set: "`${value ? 69923 : 69924} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_K_BT
+    set: "`${value ? 69925 : 69926} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_L_BT
+    set: "`${value ? 69927 : 69928} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_M_BT
+    set: "`${value ? 69929 : 69930} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_N_BT
+    set: "`${value ? 69931 : 69932} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_O_BT
+    set: "`${value ? 69933 : 69934} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_P_BTf
+    set: "`${value ? 69935 : 69936} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_Q_BT
+    set: "`${value ? 69937 : 69938} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_R_BT
+    set: "`${value ? 69939 : 69940} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_S_BT
+    set: "`${value ? 69941 : 69942} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_T_BT
+    set: "`${value ? 69943 : 69944} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_U_BT
+    set: "`${value ? 69945 : 69946} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_V_BT
+    set: "`${value ? 69947 : 69948} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_W_BT
+    set: "`${value ? 69949 : 69950} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_X_BT
+    set: "`${value ? 69951 : 69952} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_Y_BT
+    set: "`${value ? 69953 : 69954} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_Z_BT
+    set: "`${value ? 69955 : 69956} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_MINUS_BT
+    set: "`${value ? 69957 : 69958} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_PLUS_BT
+    set: "`${value ? 69959 : 69960} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_SP_BT
+    set: "`${value ? 69961 : 69962} (>L:CEVENT)`"
+  - get: L:MD11_CMCDU_CLR_BT
+    set: "`${value ? 69963 : 69964} (>L:CEVENT)`"
 
   # CTR
   - get: L:MD11_CTR_SLAT_STOW_GRD
@@ -1055,8 +1198,6 @@ shared:
 #    set: 16383 (>K:FLAPS_SET)
 
   # CPT RADIO
-  - get: L:MD11_PED_CPT_RADIO_PNL_XFER_BT
-    set: "`${value ? 69644 : 69645} (>L:CEVENT)`"
   - get: A:COM ACTIVE FREQUENCY:1, Hz
     set: (>K:COM_RADIO_SET_HZ)
   - get: A:COM ACTIVE FREQUENCY:2, Hz
@@ -1069,3 +1210,164 @@ shared:
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   - get: A:COM STANDBY FREQUENCY:3, Hz
     set: (>K:COM3_STBY_RADIO_SET_HZ)
+  - get: L:MD11_PED_CPT_RADIO_PNL_VHF1_BT
+    set: "`${value ? 69650 : 69651} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_RADIO_PNL_VHF2_BT
+    set: "`${value ? 69652 : 69653} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_RADIO_PNL_VHF3_BT
+    set: "`${value ? 69654 : 69655} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_RADIO_PNL_HF1_BT
+    set: "`${value ? 69656 : 69657} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_RADIO_PNL_HF2_BT
+    set: "`${value ? 69658 : 69659} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF1_MIC_BT
+    set: "`${value ? 69680 : 69681} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF2_MIC_BT
+    set: "`${value ? 69682 : 69683} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF3_MIC_BT
+    set: "`${value ? 69684 : 69685} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF1_MIC_BT
+    set: "`${value ? 69686 : 69687} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF2_MIC_BT
+    set: "`${value ? 69688 : 69689} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_SAT_MIC_BT
+    set: "`${value ? 69690 : 69691} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_INT_MIC_BT
+    set: "`${value ? 69692 : 69693} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF1_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF1_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF2_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF2_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF3_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VHF3_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF1_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF1_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF2_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_HF2_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_SAT_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_SAT_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_INT_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_INT_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_CAB_MIC_BT
+    set: "`${value ? 69694 : 69695} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_CAB_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_CAB_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_IDENT_BT
+    set: "`${value ? 69808 : 69809} (>L:CEVENT)`"
+  - get: L:MD11_PED_CPT_AUDIO_PNL_PA_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_PA_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_INT_RADIO_SW
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VOR1_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VOR1_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VOR2_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_VOR2_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ILS1_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ILS1_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ILS2_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ILS2_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ADF1_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ADF1_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ADF2_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_ADF2_VOL_BT
+  - get: L:MD11_PED_CPT_AUDIO_PNL_MKR_VOL_KB
+  - get: L:MD11_PED_CPT_AUDIO_PNL_MKR_VOL_BT
+  
+  # FO RADIO
+  - get: L:MD11_PED_FO_RADIO_PNL_VHF1_BT
+    set: "`${value ? 69660 : 69661} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_RADIO_PNL_VHF2_BT
+    set: "`${value ? 69662 : 69663} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_RADIO_PNL_VHF3_BT
+    set: "`${value ? 69664 : 69665} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_RADIO_PNL_HF1_BT
+    set: "`${value ? 69666 : 69667} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_RADIO_PNL_HF2_BT
+    set: "`${value ? 69668 : 69669} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF1_MIC_BT
+    set: "`${value ? 69696 : 69697} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF2_MIC_BT
+    set: "`${value ? 69698 : 69699} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF3_MIC_BT
+    set: "`${value ? 69700 : 69701} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF1_MIC_BT
+    set: "`${value ? 69702 : 69703} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF2_MIC_BT
+    set: "`${value ? 69704 : 69705} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_SAT_MIC_BT
+    set: "`${value ? 69706 : 69707} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_INT_MIC_BT
+    set: "`${value ? 69708 : 69709} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF3_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF2_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF1_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF2_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF1_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_VHF3_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF1_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF1_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF2_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_HF2_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_SAT_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_SAT_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_INT_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_INT_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_CAB_MIC_BT
+    set: "`${value ? 69710 : 69711} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_CAB_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_CAB_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_IDENT_BT
+    set: "`${value ? 69810 : 69811} (>L:CEVENT)`"
+  - get: L:MD11_PED_FO_AUDIO_PNL_PA_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_PA_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_INT_RADIO_SW
+  - get: L:MD11_PED_FO_AUDIO_PNL_VOR1_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_VOR1_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_VOR2_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_VOR2_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_ILS1_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_ILS1_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_ILS2_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_ILS2_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_ADF1_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_ADF1_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_ADF2_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_ADF2_VOL_BT
+  - get: L:MD11_PED_FO_AUDIO_PNL_MKR_VOL_KB
+  - get: L:MD11_PED_FO_AUDIO_PNL_MKR_VOL_BT
+    
+  # DU
+  - get: L:MD11_PED_DU1_BRT_KB
+  - get: L:MD11_PED_DU2_BRT_KB
+  - get: L:MD11_PED_DU3_BRT_KB
+  - get: L:MD11_PED_DU4_BRT_KB
+  - get: L:MD11_PED_DU5_BRT_KB
+  - get: L:MD11_PED_DU6_BRT_KB
+  
+  # SD
+  - get: L:MD11_PED_SD_ENG_BT
+    set: "`${value ? 69828 : 69829} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_ND_BT
+    set: "`${value ? 69830 : 69831} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_CONSEQ_BT
+    set: "`${value ? 69832 : 69833} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_STATUS_BT
+    set: "`${value ? 69834 : 69835} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_HYD_BT
+    set: "`${value ? 69836 : 69837} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_ELEC_BT
+    set: "`${value ? 69838 : 69839} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_AIR_BT
+    set: "`${value ? 69840 : 69841} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_FUEL_BT
+    set: "`${value ? 69842 : 69843} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_CONFIG_BT
+    set: "`${value ? 69844 : 69845} (>L:CEVENT)`"
+  - get: L:MD11_PED_SD_MISC_BT
+    set: "`${value ? 69846 : 69847} (>L:CEVENT)`"
+
+  # CKPTDOOR
+  - get: L:MD11_PED_CKPTDOOR_LOCK_KB
+    
+  # ADG
+  - get: L:MD11_PED_ADG_LVR
+    
