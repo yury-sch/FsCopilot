@@ -1364,10 +1364,312 @@ shared:
     set: "`${value ? 69844 : 69845} (>L:CEVENT)`"
   - get: L:MD11_PED_SD_MISC_BT
     set: "`${value ? 69846 : 69847} (>L:CEVENT)`"
+    
+  # WXR
+  - get: L:MD11_PED_WXR_OFF_BT
+    set: "`${value ? 69883 : 69884} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_TEST_BT
+    set: "`${value ? 69885 : 69886} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_WX_BT
+    set: "`${value ? 69889 : 69890} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_WXT_BT
+    set: "`${value ? 69887 : 69888} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_MAP_BT
+    set: "`${value ? 69891 : 69892} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_GAIN_KB
+  - get: L:MD11_PED_WXR_SYS_BT
+    set: "`${value ? 69893 : 69894} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_TILT_KB
+  - get: L:MD11_PED_WXR_IDNT_BT
+    set: "`${value ? 69895 : 69896} (>L:CEVENT)`"
+  - get: L:MD11_PED_WXR_STAB_BT
+    set: "`${value ? 69897 : 69898} (>L:CEVENT)`"
 
+  # XPNDR
+  - get: L:MD11_PED_XPNDR_ALT_RPTG_KB
+    set: 69854 (>L:CEVENT)
+  - get: L:MD11_PED_XPNDR_SEL_KB
+    set: 69855 (>L:CEVENT)
+  - get: L:MD11_PED_XPNDR_ABV_BLW_SW
+  - get: L:MD11_PED_XPNDR_MODE_KB
+  - get: L:MD11_PED_XPNDR_TEST_BT
+    set: "`${value ? 69878 : 69879} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_IDENT_BT
+    set: "`${value ? 69880 : 69881} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_1_BT
+    set: "`${value ? 69856 : 69857} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_2_BT
+    set: "`${value ? 69858 : 69859} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_3_BT
+    set: "`${value ? 69860 : 69861} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_4_BT
+    set: "`${value ? 69862 : 69863} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_5_BT
+    set: "`${value ? 69864 : 69865} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_6_BT
+    set: "`${value ? 69866 : 69867} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_7_BT
+    set: "`${value ? 69868 : 69869} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_0_BT
+    set: "`${value ? 69870 : 69871} (>L:CEVENT)`"
+  - get: L:MD11_PED_XPNDR_CLR_BT
+    set: "`${value ? 69872 : 69873} (>L:CEVENT)`"
+  - get: A:TRANSPONDER CODE:1, BCO16
+    set: (>K:XPNDR_SET
+    
+  # OBS RADIO
+  - get: L:MD11_PED_OBS_RADIO_PNL_VHF1_BT
+    set: "`${value ? 69670 : 69671} (>L:CEVENT)`"
+  - get: L:MD11_PED_OBS_RADIO_PNL_VHF2_BT
+    set: "`${value ? 69672 : 69673} (>L:CEVENT)`"
+  - get: L:MD11_PED_OBS_RADIO_PNL_VHF3_BT
+    set: "`${value ? 69674 : 69675} (>L:CEVENT)`"
+  - get: L:MD11_PED_OBS_RADIO_PNL_HF1_BT
+    set: "`${value ? 69676 : 69677} (>L:CEVENT)`"
+  - get: L:MD11_PED_OBS_RADIO_PNL_HF2_BT
+    set: "`${value ? 69678 : 69679} (>L:CEVENT)`"
+  
   # CKPTDOOR
   - get: L:MD11_PED_CKPTDOOR_LOCK_KB
     
   # ADG
   - get: L:MD11_PED_ADG_LVR
+  
+  # GSL
+  - get: L:MD11_GSL_MST_WRN_BT
+    set: "`${value ? 86108 : 86109} (>L:CEVENT)`"
+  - get: L:MD11_GSL_GS_BT
+    set: "`${value ? 86116 : 86117} (>L:CEVENT)`"
+  - get: L:MD11_GSL_MST_CAUT_BT
+    set: "`${value ? 86110 : 86111} (>L:CEVENT)`"
+  - get: L:MD11_CGS_PNL_LT_KB
+  - get: L:MD11_CGS_FLOOD_LT_KB
+  - get: L:MD11_LECP_INHP_BT
+    set: "`${value ? 86050 : 86051} (>L:CEVENT)`"
+  - get: L:MD11_LECP_BAROSET_KB
+  - get: L:MD11_LECP_BAROSET_BT
+    set: "`${value ? 86057 : 86058} (>L:CEVENT)`"
+#  - get: A:KOHLSMAN SETTING MB:0, Millibars
+#    set: "`${value * 16} 0 (>K:KOHLSMAN_SET)`"
+  - get: L:MD11_LECP_INHP_BT
+    set: "`${value ? 86057 : 86058} (>L:CEVENT)`"
+  - get: L:MD11_LECP_MINIMUMS_KB
+  - get: L:MD11_LECP_MINIMUMS_BT
+    set: "`${value ? 86062 : 86063} (>L:CEVENT)`"
+  - get: L:MD11_LECP_TRFC_BT
+    set: "`${value ? 86040 : 86041} (>L:CEVENT)`"
+  - get: L:MD11_LECP_DATA_BT
+    set: "`${value ? 86042 : 86043} (>L:CEVENT)`"
+  - get: L:MD11_LECP_WPT_BT
+    set: "`${value ? 86044 : 86045} (>L:CEVENT)`"
+  - get: L:MD11_LECP_VORNDB_BT
+    set: "`${value ? 86046 : 86047} (>L:CEVENT)`"
+  - get: L:MD11_LECP_ARPT_BT
+    set: "`${value ? 86048 : 86049} (>L:CEVENT)`"
+  - get: L:MD11_LECP_MAGTRU_BT
+    set: "`${value ? 86016 : 86017} (>L:CEVENT)`"
+  - get: L:MD11_LECP_MAP_BT
+    set: "`${value ? 86018 : 86019} (>L:CEVENT)`"
+  - get: L:MD11_LECP_VOR_BT
+    set: "`${value ? 86020 : 86021} (>L:CEVENT)`"
+  - get: L:MD11_LECP_PLAN_BT
+    set: "`${value ? 86022 : 86023} (>L:CEVENT)`"
+  - get: L:MD11_LECP_APPR_BT
+    set: "`${value ? 86024 : 86025} (>L:CEVENT)`"
+  - get: L:MD11_LECP_TCAS_BT
+    set: "`${value ? 86026 : 86027} (>L:CEVENT)`"
+  - get: L:MD11_LECP_VOR1_BT
+    set: "`${value ? 86028 : 86029} (>L:CEVENT)`"
+  - get: L:MD11_LECP_INCR_BT
+    set: "`${value ? 86030 : 86031} (>L:CEVENT)`"
+  - get: L:MD11_LECP_VOR2_BT
+    set: "`${value ? 86032 : 86033} (>L:CEVENT)`"
+  - get: L:MD11_LECP_ADF1_BT
+    set: "`${value ? 86034 : 86035} (>L:CEVENT)`"
+  - get: L:MD11_LECP_DECR_BT
+    set: "`${value ? 86036 : 86037} (>L:CEVENT)`"
+  - get: L:MD11_LECP_ADF2_BT
+    set: "`${value ? 86038 : 86039} (>L:CEVENT)`"
+  - get: L:MD11_LECP_WXBRT_KB
+  - get: L:MD11_LECP_WXBRT_BT
+  - get: L:MD11_CGS_IASMACH_BT
+    set: "`${value ? 86098 : 86099} (>L:CEVENT)`"
+  - get: L:MD11_CGS_SPD_SW
+    set: |
+      switch (value) {
+          case 0: return '86070 (>L:CEVENT)'
+          case 2: return '86068 (>L:CEVENT)'
+          default: return ''
+      }
+  - get: L:MD11_CGS_FMSSPD_BT
+    set: "`${value ? 86088 : 86089} (>L:CEVENT)`"
+  - get: L:MD11_CGS_HDGTRK_BT
+    set: "`${value ? 86100 : 86101} (>L:CEVENT)`"
+  - get: L:MD11_CGS_HDG_BASE_KB
+  - get: L:MD11_CGS_HDG_SW
+    set: |
+      switch (value) {
+          case 0: return '86078 (>L:CEVENT)'
+          case 2: return '86076 (>L:CEVENT)'
+          default: return ''
+      }
+  - get: L:MD11_CGS_NAV_BT
+    set: "`${value ? 86090 : 86091} (>L:CEVENT)`"
+  - get: L:MD11_CGS_APPRLAND_BT
+    set: "`${value ? 86092 : 86093} (>L:CEVENT)`"
+  - get: L:MD11_CGS_AUTOFLIGHT_BT
+    set: "`${value ? 86094 : 86095} (>L:CEVENT)`"
+  - get: L:MD11_CGS_AFSOVRD1_SW
+    set: 86106 (>L:CEVENT)
+  - get: L:MD11_CGS_AFSOVRD2_SW
+    set: 86107 (>L:CEVENT)
+  - get: L:MD11_CGS_FTM_BT
+    set: "`${value ? 86102 : 86103} (>L:CEVENT)`"
+  - get: L:MD11_CGS_ALT_SW
+    set: |
+      switch (value) {
+          case 0: return '86084 (>L:CEVENT)'
+          case 2: return '86082 (>L:CEVENT)'
+          default: return ''
+      }
+  - get: L:MD11_CGS_VSFPA_BT
+    set: "`${value ? 86104 : 86105} (>L:CEVENT)`"
+  - get: L:MD11_CGS_PROF_BT
+    set: "`${value ? 86096 : 86097} (>L:CEVENT)`"
+  - get: L:MD11_RECP_TRFC_BT
+    set: "`${value ? 86140 : 86141} (>L:CEVENT)`"
+  - get: L:MD11_RECP_DATA_BT
+    set: "`${value ? 86142 : 86143} (>L:CEVENT)`"
+  - get: L:MD11_RECP_WPT_BT
+    set: "`${value ? 86144 : 86145} (>L:CEVENT)`"
+  - get: L:MD11_RECP_VORNDB_BT
+    set: "`${value ? 86146 : 86147} (>L:CEVENT)`"
+  - get: L:MD11_RECP_ARPT_BT
+    set: "`${value ? 86148 : 86149} (>L:CEVENT)`"
+  - get: L:MD11_RECP_MAP_BT
+    set: "`${value ? 86152 : 86153} (>L:CEVENT)`"
+  - get: L:MD11_RECP_VOR_BT
+    set: "`${value ? 86154 : 86155} (>L:CEVENT)`"
+  - get: L:MD11_RECP_PLAN_BT
+    set: "`${value ? 86156 : 86157} (>L:CEVENT)`"
+  - get: L:MD11_RECP_APPR_BT
+    set: "`${value ? 86158 : 86159} (>L:CEVENT)`"
+  - get: L:MD11_RECP_TCAS_BT
+    set: "`${value ? 86160 : 86161} (>L:CEVENT)`"
+  - get: L:MD11_RECP_VOR1_BT
+    set: "`${value ? 86162 : 86163} (>L:CEVENT)`"
+  - get: L:MD11_RECP_INCR_BT
+    set: "`${value ? 86164 : 86165} (>L:CEVENT)`"
+  - get: L:MD11_RECP_VOR2_BT
+    set: "`${value ? 86166 : 86167} (>L:CEVENT)`"
+  - get: L:MD11_RECP_ADF1_BT
+    set: "`${value ? 86168 : 86169} (>L:CEVENT)`"
+  - get: L:MD11_RECP_DECR_BT
+    set: "`${value ? 86170 : 86171} (>L:CEVENT)`"
+  - get: L:MD11_RECP_ADF2_BT
+    set: "`${value ? 86172 : 86173} (>L:CEVENT)`"
+  - get: L:MD11_RECP_WXBRT_KB
+  - get: L:MD11_RECP_WXBRT_BT
+    set: "`${value ? 86136 : 86137} (>L:CEVENT)`"
+  - get: L:MD11_RECP_INHP_BT
+    set: "`${value ? 86124 : 86125} (>L:CEVENT)`"
+  - get: L:MD11_RECP_BAROSET_KB
+    set: 86126 (>L:CEVENT)
+  - get: L:MD11_RECP_BAROSET_BT
+    set: "`${value ? 86127 : 86128} (>L:CEVENT)`"
+#  - get: L:MD11_RECP_BAROSET_CAP
+  - get: L:MD11_RECP_MINIMUMS_KB
+    set: 86131 (>L:CEVENT)
+  - get: L:MD11_RECP_MINIMUMS_BT
+    set: "`${value ? 86132 : 86133} (>L:CEVENT)`"
+  #  - get: L:MD11_RECP_MINIMUMS_CAP
+  - get: L:MD11_GSR_MST_CAUT_BT
+    set: "`${value ? 86114 : 86115} (>L:CEVENT)`"
+  - get: L:MD11_GSR_MST_WRN_BT
+    set: "`${value ? 86112 : 86113} (>L:CEVENT)`"
+  - get: L:MD11_GSR_GS_BT
+    set: "`${value ? 86118 : 86119} (>L:CEVENT)`"
+  
+  # LSIDE
+  - get: L:MD11_LSIDE_PTT_BT
+    set: "`${value ? 94216 : 94217} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_BRIEFCASE_KB
+  - get: L:MD11_LSIDE_FLOOR_SW
+  - get: L:MD11_LSIDE_TIMER_SW
+    set: 94210 (>L:CEVENT)
+  - get: L:MD11_LSIDE_TIMER_BT
+    set: "`${value ? 94208 : 94209} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_EIS_KB
+  - get: L:MD11_LSIDE_INP_FLTDIROFF_BT
+    set: "`${value ? 94218 : 94219} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_FLTDIR_BT
+    set: "`${value ? 94220 : 94221} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_CADC_BT
+    set: "`${value ? 94222 : 94223} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_IRS_BT
+    set: "`${value ? 94224 : 94225} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_FMS_BT
+    set: "`${value ? 94226 : 94227} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_VOR_BT
+    set: "`${value ? 94228 : 94229} (>L:CEVENT)`"
+  - get: L:MD11_LSIDE_INP_APPR_BT
+    set: "`${value ? 94230 : 94231} (>L:CEVENT)`"
+  - get: L:MD11_MIP_CAPT_EVTMKR_SW
+    set: 94464 (>L:CEVENT)
+    
+  # GEAR
+  - get: L:MD11_MIP_CTR_GEAR_GRD
+    set: 94979 (>L:CEVENT)
+  - get: L:MD11_MIP_HANDLEREL_BT
+    set: "`${value ? 94980 : 94981} (>L:CEVENT)`"
+  - get: L:MD11_MIP_GEAR_SW
+    set: 94976 (>L:CEVENT)
+
+  # RSIDE
+  - get: L:MD11_RSIDE_PTT_BT
+    set: "`${value ? 95496 : 95497} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_BRIEFCASE_KB
+  - get: L:MD11_RSIDE_FLOOR_SW
+  - get: L:MD11_RSIDE_TIMER_SW
+    set: 95490 (>L:CEVENT)
+  - get: L:MD11_RSIDE_TIMER_BT
+    set: "`${value ? 95488 : 95489} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_EIS_KB
+  - get: L:MD11_RSIDE_INP_FLTDIROFF_BT
+    set: "`${value ? 95498 : 95499} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_FLTDIR_BT
+    set: "`${value ? 95500 : 95501} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_CADC_BT
+    set: "`${value ? 95502 : 95503} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_IRS_BT
+    set: "`${value ? 95504 : 95505} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_FMS_BT
+    set: "`${value ? 95506 : 95507} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_VOR_BT
+    set: "`${value ? 95508 : 95509} (>L:CEVENT)`"
+  - get: L:MD11_RSIDE_INP_APPR_BT
+    set: "`${value ? 95510 : 95511} (>L:CEVENT)`"
+  - get: L:MD11_MIP_FO_EVTMKR_SW
+    set: 95744 (>L:CEVENT)
+    
+  # CABIN
+  - get: L:MD11_LSIDE_WINDOW
+    set: 94237 (>L:CEVENT)
+  - get: L:MD11_LSIDE_WINDOW_SHADE
+    set: 94238 (>L:CEVENT)
+  - get: L:MD11_LSIDE_SHADE_Y
+  - get: L:MD11_OVHD_STBY_CMPS_SW
+    set: 90434 (>L:CEVENT)
+  - get: L:MD11_RSIDE_WINDOW
+    set: 95517 (>L:CEVENT)
+  - get: L:MD11_RSIDE_WINDOW_SHADE
+    set: 95518 (>L:CEVENT)
+  - get: L:MD11_RSIDE_SHADE_Y
+  - get: L:MD11_FLIGHTDECK_DOOR
+    set: 70047 (>L:CEVENT)
+    
+  # DOORS
+  - get: L:MD11_EXT_DOOR_PAX_1R_ARMED_LVR
+    set: 102400 (>L:CEVENT)
+  - get: L:MD11_EXT_DOOR_PAXC_1R_OPEN_SW
     
