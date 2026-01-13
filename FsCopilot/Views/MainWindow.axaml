@@ -99,9 +99,9 @@
                                 IsEnabled="{Binding ShowTakeControl}"
                                 Command="{Binding TakeControlCommand}"/>
                         <Button DockPanel.Dock="Right"
-                                Classes="Left"
-                                Content="Left"
-                                Command="{Binding LeftCommand}"
+                                Classes="Leave"
+                                Content="Leave"
+                                Command="{Binding LeaveCommand}"
                                 IsEnabled="{Binding Connected}" />
                         <Button DockPanel.Dock="Right"
                                 Classes="Connect"

@@ -77,7 +77,7 @@ public class MainViewModel : ReactiveObject, IDisposable
 
     public ObservableCollection<Connection> Connections { get; set; } = [];
     public ReactiveCommand<Unit, Unit> JoinCommand { get; }
-    public ReactiveCommand<Unit, Unit> LeftCommand { get; }
+    public ReactiveCommand<Unit, Unit> LeaveCommand { get; }
     public ReactiveCommand<Unit, Unit> TakeControlCommand { get; }
 
     public MainViewModel(string peerId,
@@ -173,7 +173,7 @@ public class MainViewModel : ReactiveObject, IDisposable
             }
         });
 
-        LeftCommand = ReactiveCommand.Create(() =>
+        LeaveCommand = ReactiveCommand.Create(() =>
         {
             net.Disconnect();
             masterSwitch.TakeControl();

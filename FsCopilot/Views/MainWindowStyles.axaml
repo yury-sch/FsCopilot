@@ -101,7 +101,7 @@
         <Setter Property="Foreground" Value="Black"></Setter>
     </Style>
 
-    <Style Selector="Button.Left">
+    <Style Selector="Button.Leave">
         <Setter Property="CornerRadius" Value="8"></Setter>
         <Setter Property="Padding" Value="10"></Setter>
         <Setter Property="Margin" Value="10,0,00,0"></Setter>
