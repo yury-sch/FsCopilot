@@ -59,6 +59,10 @@ public sealed class SimConnectProducer : IDisposable
         {
             try { action(sim); }
             catch (Exception e) { Log.Fatal(e, "[SimConnect] Producer initialization error"); }
+
+            while (_queue.Reader.TryRead(out _))
+            {
+            }
         }
         
         while (!ct.IsCancellationRequested)
