@@ -18,9 +18,11 @@ public class SimClient : IDisposable
     private readonly WatsonWsServer _socket;
     private readonly IObservable<WatchedVar> _varMessages;
     private readonly IObservable<string> _hEvents;
+    private readonly IObservable<bool> _conflict;
 
     public IObservable<bool> Connected => _consumer.Connected.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<string> Aircraft => _consumer.Aircraft.ObserveOn(TaskPoolScheduler.Default);
+    public IObservable<bool> Conflict => _conflict.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<Interact> Interactions { get; }
     public IObservable<SimConfig> Config { get; }
 
@@ -61,6 +63,11 @@ public class SimClient : IDisposable
        Config = socketMessages
            .Where(json => json.String("type").Equals("config"))
            .Select(json => new SimConfig(json.BoolOrNull("control") == null, json.BoolOrNull("control") ?? false))
+           .Replay(0).RefCount();
+
+       _conflict = Stream("L:YourControlsPanelId", "number")
+           .Select(value => Convert.ToInt32(value) > 0)
+           .DistinctUntilChanged()
            .Replay(0).RefCount();
     }
 

@@ -73,6 +73,7 @@ public class MainViewModel : ReactiveObject, IDisposable
         _errors.HasFlag(ViewErrors.NotRunning) ? "Microsoft Flight Simulator is not running!" :
         _errors.HasFlag(ViewErrors.NotSupported) ? $"{_aircraft} is not supported." :
         _errors.HasFlag(ViewErrors.Rejected) ? "Peer version mismatch." :
+        _errors.HasFlag(ViewErrors.Conflict) ? "Conflict detected with YourControls module." :
         string.Empty;
 
     public ObservableCollection<Connection> Connections { get; set; } = [];
@@ -110,6 +111,14 @@ public class MainViewModel : ReactiveObject, IDisposable
             .Subscribe(notRunning => Errors = notRunning
                 ? _errors | ViewErrors.NotRunning
                 : _errors & ~ViewErrors.NotRunning)
+            .DisposeWith(_d);
+        
+        sim.Conflict
+            .Sample(TimeSpan.FromMilliseconds(250))
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(conflict => Errors = conflict
+                ? _errors | ViewErrors.Conflict
+                : _errors & ~ViewErrors.Conflict)
             .DisposeWith(_d);
         
         net.Peers
@@ -191,7 +200,8 @@ public class MainViewModel : ReactiveObject, IDisposable
         Failed       = 0b_0000_0001,
         NotRunning   = 0b_0000_0010,
         NotSupported = 0b_0000_0100,
-        Rejected     = 0b_0000_1000
+        Rejected     = 0b_0000_1000,
+        Conflict     = 0b_0001_0000
     }
 
     public record Connection(string PeerId, string Name, int Ping, bool IsDirect, bool HasSeparatorAfter)
