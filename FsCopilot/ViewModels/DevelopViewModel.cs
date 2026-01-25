@@ -1,4 +1,6 @@
-﻿namespace FsCopilot.ViewModels;
+﻿using System.Security.Cryptography;
+
+namespace FsCopilot.ViewModels;
 
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -52,6 +54,11 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     public DevelopViewModel(SimClient sim)
     {
         var latestTree = new SerialDisposable().DisposeWith(_d);
+        var sw = Stopwatch.StartNew();
+        
+        Span<byte> sessionBytes = stackalloc byte[8];
+        RandomNumberGenerator.Fill(sessionBytes);
+        var sessionId = BitConverter.ToUInt64(sessionBytes);
 
         sim.Aircraft
             .Merge(_reload.WithLatestFrom(sim.Aircraft, (_, a) => a))
@@ -60,13 +67,10 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             .DisposeWith(_d);
 
         ReloadCommand = ReactiveCommand.Create(() => _reload.OnNext(Unit.Default));
-        
-        var physics = Connect<Physics>();
-        var controls = Connect<Control>();
-        var throttle = Connect<Throttle>();
-        var fuel = Connect<Fuel>();
-        var payload = Connect<Payload>();
-        var flaps = Connect<Control.Flaps>();
+
+        sim.Register<Physics>();
+        sim.Register<Control>();
+        sim.Register<Throttle>();
         Trace? trace = null;
         
         RecordCommand = ReactiveCommand.Create(() =>
@@ -77,12 +81,9 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 trace = new();
             
                 _recording.Disposable = new CompositeDisposable(
-                    physics.Record(trace.Physics),
-                    controls.Record(trace.Controls),
-                    throttle.Record(trace.Throttle),
-                    fuel.Record(trace.Fuel),
-                    payload.Record(trace.Payload),
-                    flaps.Record(trace.Flaps)
+                    sim.Stream<Physics>().Record(trace.Physics),
+                    sim.Stream<Control>().Record(trace.Controls),
+                    sim.Stream<Throttle>().Record(trace.Throttle)
                     // _vars.Record(_trace.Vars)
                 );
             }
@@ -100,12 +101,21 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 Freeze(true);
                 trace ??= new();
                 _playing.Disposable = Observable.Merge(
-                    Replay(trace.Physics), 
-                    Replay(trace.Controls), 
-                    Replay(trace.Throttle), 
-                    Replay(trace.Fuel), 
-                    Replay(trace.Payload), 
-                    Replay(trace.Flaps)
+                    Replay(trace.Physics, physics =>
+                    {
+                        physics.SessionId  = sessionId;
+                        physics.TimeMs = (uint)sw.ElapsedMilliseconds;
+                    }), 
+                    Replay(trace.Controls, control =>
+                    {
+                        control.SessionId  = sessionId;
+                        control.TimeMs = (uint)sw.ElapsedMilliseconds;
+                    }), 
+                    Replay(trace.Throttle, throttle =>
+                    {
+                        throttle.SessionId  = sessionId;
+                        throttle.TimeMs = (uint)sw.ElapsedMilliseconds;
+                    })
                 ).Subscribe(_ => {}, () =>
                 {
                     IsPlaying = false;
@@ -127,17 +137,15 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 sim.Set("K:FREEZE_ATTITUDE_SET", isFreeze);
             }
 
-            IObservable<Unit> Replay<T>(IReadOnlyList<Recorded<T>> records) where T : struct =>
-                records.Playback().Do(sim.Set).Select(_ => Unit.Default);
+            IObservable<Unit> Replay<T>(IReadOnlyList<Recorded<T>> records, Action<T> modify) where T : unmanaged =>
+                records.Playback()
+                    .Do(value =>
+                    {
+                        modify(value);
+                        sim.Set(value);
+                    })
+                    .Select(_ => Unit.Default);
         });
-        return;
-
-        IObservable<T> Connect<T>() where T : struct
-        {
-            var connectable = sim.Stream<T>().Publish();
-            connectable.Connect().DisposeWith(_d);
-            return connectable;
-        }
     }
 
     public void Dispose()
@@ -274,9 +282,6 @@ public class Trace
     public List<Recorded<Physics>> Physics { get; } = [];
     public List<Recorded<Control>> Controls { get; } = [];
     public List<Recorded<Throttle>> Throttle { get; } = [];
-    public List<Recorded<Fuel>> Fuel { get; } = [];
-    public List<Recorded<Payload>> Payload { get; } = [];
-    public List<Recorded<Control.Flaps>> Flaps { get; } = [];
     // public List<Recorded<Var>> Vars { get; set; } = [];
 
     // public record Var(string Name, object Value);

@@ -33,13 +33,7 @@ public class MasterSwitch : IDisposable
         _d.Add(_master.DistinctUntilChanged()
             .Where(isMaster => isMaster)
             .Subscribe(_ => net.SendAll(new SetMaster(PeerId))));
-
-        // _d.Add(simConnect.Connected
-        //     .Where(connected => connected)
-        //     .Subscribe(_ => UpdateFreeze()));
-
-        // _d.Add(Observable.Interval(TimeSpan.FromMilliseconds(500))
-        //     .Subscribe(_ => UpdateFreeze()));
+        
         _d.Add(_sim.Stream<Physics>()
             .Window(TimeSpan.FromSeconds(1))
             .Where(_ => !IsMaster)
@@ -71,16 +65,9 @@ public class MasterSwitch : IDisposable
     {
         public class Codec : IPacketCodec<SetMaster>
         {
-            public void Encode(SetMaster packet, BinaryWriter bw)
-            {
-                bw.Write(packet.Peer);
-            }
+            public void Encode(SetMaster packet, BinaryWriter bw) => bw.Write(packet.Peer);
 
-            public SetMaster Decode(BinaryReader br)
-            {
-                var peer = br.ReadString();
-                return new(peer);
-            }
+            public SetMaster Decode(BinaryReader br) => new(br.ReadString());
         }
     }
 }
