@@ -924,19 +924,34 @@ shared:
   #DOORS
   - get: A:INTERACTIVE POINT GOAL:0, Bool
     set: "1 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:INTERACTIVE POINT GOAL:1, Bool
+    set: "2 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:INTERACTIVE POINT GOAL:2, Bool
+    set: "3 (>K:TOGGLE_AIRCRAFT_EXIT)"
   - get: A:INTERACTIVE POINT GOAL:3, Bool
-    set: "4 (>K:TOGGLE_AIRCRAFT_EXIT)" 
+    set: "4 (>K:TOGGLE_AIRCRAFT_EXIT)"
   - get: A:INTERACTIVE POINT GOAL:4, Bool
     set: "5 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:INTERACTIVE POINT GOAL:5, Bool
+    set: "6 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:INTERACTIVE POINT GOAL:6, Bool
+    set: "7 (>K:TOGGLE_AIRCRAFT_EXIT)"
   - get: A:INTERACTIVE POINT GOAL:7, Bool
     set: "8 (>K:TOGGLE_AIRCRAFT_EXIT)"
   - get: A:INTERACTIVE POINT GOAL:10, Bool
     set: "11 (>K:TOGGLE_AIRCRAFT_EXIT)"
-  - get: A:INTERACTIVE POINT OPEN:0, Percent
-  - get: A:INTERACTIVE POINT OPEN:9, Percent 
-    set: "10 (>K:TOGGLE_AIRCRAFT_EXIT)"
-    
-#EXTERNAL
+  - get: A:INTERACTIVE POINT GOAL:11, Bool
+    set: "12 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:INTERACTIVE POINT GOAL:12, Bool
+    set: "13 (>K:TOGGLE_AIRCRAFT_EXIT)"
+  - get: A:FSDT_GSX_OPERATEJETWAYS_STATE
+    set: |
+      switch (value) {
+          case   5: return '(>K:TOGGLE_JETWAY)'
+          default: return ''
+      }
+
+  #EXTERNAL
   - get: L:B_CONFIG_CHOCK_LEFT_LF
   - get: L:B_CONFIG_CHOCK_LEFT_LR
   - get: L:B_CONFIG_CHOCK_RIGHT_RF
@@ -945,7 +960,8 @@ shared:
   - get: L:B_CONFIG_CHOCK_NOSE_LR
   - get: L:S_EXT_REFUELING_DOOR #Ext Fuel Panel Door
   - get: L:A320_Ground_Power_Anim
-  - get: L:S_EXT_GPU_PLUG
+  - get: L:B_CONFIG_GPU
+    set: (>L:S_EXT_GPU_PLUG)
   - get: L:S_EXT_GPU_LIGHT_TEST
   - get: L:S_EXT_GPU_COCKPIT_CALL
   - get: L:S_EXT_GPU_RESET
@@ -958,9 +974,7 @@ shared:
   - get: L:S_EXT_CARGO_DOOR_FWD_HANDLE_FLAP
   - get: L:S_EXT_CARGO_DOOR_AFT_HANDLE_FLAP
   - get: L:A320_Sound:ENG_1_N1_IS_SLOWING
-  - get: L:A320_Sound:ENG_1_N1_MOMENTUM
   - get: L:A320_Sound:ENG_2_N1_IS_SLOWING
-  - get: L:A320_Sound:ENG_2_N1_MOMENTUM
   - get: L:S_EXT_HYD_ACCESS_DOOR_LEFT
   - get: L:S_EXT_HYD_ACCESS_DOOR_RIGHT
   - get: L:S_EXT_CARGO_DOOR_SELECTOR_FWD
