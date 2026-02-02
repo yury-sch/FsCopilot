@@ -257,8 +257,11 @@ public class SimClient : IDisposable
         {
             var scheduler = new EventLoopScheduler();
             var started = false;
+            ulong seq = 0;
 
-            var sub = _consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
+            var sub = _consumer.SimObjectData
+                .ObserveOn(TaskPoolScheduler.Default)
+                .Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is not { Length: > 0 }) return;
@@ -268,6 +271,7 @@ public class SimClient : IDisposable
                         Log.Debug("[SimConnect] Stream {Stream} started", typeof(T).Name);
                     }
 
+                    seq++;
                     observer.OnNext((T)e.dwData[0]);
                 },
                 observer.OnError,

@@ -48,6 +48,7 @@ shared:
     
   # Defrost and cabin heat is not functional 
   - get: L:INPUT_PARK # Parking brake
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k # Throttle
   - get: L:INPUT_PROPELLER # Propeller RPM
   - get: L:INPUT_MIXTURE # Mixture
   - get: L:FUEL_SELECTOR # Fuel valve

@@ -321,6 +321,10 @@
   #  - get: L:XMLVAR_Momentary_PUSH_OVHD_ELEC_BATAPU_Pressed # (Read only)
   
   # ENG START Panel
+  - get: L:A32NX_AUTOTHRUST_TLA:1 # Throttle 1
+  - get: L:A32NX_AUTOTHRUST_TLA:2 # Throttle 2
+  - get: L:A32NX_AUTOTHRUST_TLA:3 # Throttle 3
+  - get: L:A32NX_AUTOTHRUST_TLA:4 # Throttle 4
   - get: A:TURB ENG IGNITION SWITCH EX1:1, Enum # ENG MODE selector
     set: (>K:TURBINE_IGNITION_SWITCH_SET1)
   - get: A:TURB ENG IGNITION SWITCH EX1:2, Enum # ENG MODE selector

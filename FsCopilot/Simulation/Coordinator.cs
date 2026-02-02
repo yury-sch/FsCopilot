@@ -43,17 +43,19 @@ public class Coordinator : IDisposable
                 control.SessionId = sessionId;
                 control.TimeMs = (uint)sw.ElapsedMilliseconds;
             });
-            AddLink<Throttle, Throttle.Codec>(throttle =>
-            {
-                throttle.SessionId = sessionId;
-                throttle.TimeMs = (uint)sw.ElapsedMilliseconds;
-            });
  
-            AddLink("FUEL TANK LEFT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK RIGHT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK CENTER LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK CENTER2 LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK CENTER3 LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK EXTERNAL1 LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK EXTERNAL2 LEVEL", "Percent Over 100", master: true, unreliable: true);
             AddLink("FUEL TANK LEFT AUX LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK LEFT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK LEFT TIP LEVEL", "Percent Over 100", master: true, unreliable: true);
             AddLink("FUEL TANK RIGHT AUX LEVEL", "Percent Over 100", master: true, unreliable: true);
-            
+            AddLink("FUEL TANK RIGHT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
+            AddLink("FUEL TANK RIGHT TIP LEVEL", "Percent Over 100", master: true, unreliable: true);
+
             AddLink("PAYLOAD STATION WEIGHT:1", "Pounds");
             AddLink("PAYLOAD STATION WEIGHT:2", "Pounds");
             AddLink("PAYLOAD STATION WEIGHT:3", "Pounds");
@@ -122,7 +124,7 @@ public class Coordinator : IDisposable
             .Where(_ => _masterSwitch.IsMaster)
             .Subscribe(update =>
             {
-                modify(update);
+                // modify(update);
                 try { _net.SendAll(update, true); }
                 catch (Exception e) { Log.Error(e, "[Coordinator] Error while sending packet {Packet}", typeof(TPacket).Name); }
             }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from sim"); }));

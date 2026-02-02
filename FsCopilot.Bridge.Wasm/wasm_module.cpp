@@ -1,5 +1,4 @@
 ﻿#include "wasm_module.h"
-#include <cmath>
 #include <unordered_map>
 #include <MSFS/Legacy/gauges.h>
 #include <MSFS/MSFS.h>
@@ -13,9 +12,8 @@ volatile bool has_standalone_update = false;
 volatile bool is_frozen             = false;
 double        now                   = 0.0;
 
-stream_buffer<fsc::protocol::control>  ctrl_buf;
-stream_buffer<fsc::protocol::throttle> thr_buf;
 stream_buffer<fsc::protocol::physics>  phys_buf;
+stream_buffer<fsc::protocol::control>  ctrl_buf;
 
 std::unordered_map<uint64_t, time_shift> t_shifts;
 
@@ -24,8 +22,7 @@ enum : DWORD  // NOLINT(performance-enum-size)
     // DEF_CLOCK = 0xC001,
     def_freeze   = 0xF001,
     def_physics  = 0xBEEF,
-    def_control  = 0xBEEE,
-    def_throttle = 0xBEED
+    def_control  = 0xBEEE
 };
 
 struct freeze_state
@@ -66,26 +63,21 @@ void apply_physics(const fsc::protocol::physics& p)
 
 void apply_control(const fsc::protocol::control& c)
 {
+    // correct usage depends on aircraft. we use both
     char cmd[256];
+    (void)snprintf(cmd, sizeof(cmd),
+                   "%d (>A:AILERON POSITION, Position 16k) "
+                   "%d (>A:ELEVATOR POSITION, Position 16k) "
+                   "%d (>A:RUDDER POSITION, Position 16k)",
+                   c.ail_pos, c.elev_pos, c.rud_pos);
+
+    execute_calculator_code(cmd, nullptr, nullptr, nullptr);
+
     (void)snprintf(cmd, sizeof(cmd),
                    "%d (>K:AXIS_AILERONS_SET) "
                    "%d (>K:AXIS_ELEVATOR_SET) "
                    "%d (>K:AXIS_RUDDER_SET)",
-                   c.ail_pos, c.elev_pos, c.rud_pos);
-
-    execute_calculator_code(cmd, nullptr, nullptr, nullptr);
-}
-
-void apply_throttle(const fsc::protocol::throttle& t)
-{
-    char cmd[256];
-    (void)snprintf(cmd, sizeof(cmd),
-                   "%d (>K:THROTTLE1_SET) "
-                   "%d (>K:THROTTLE2_SET) "
-                   "%d (>K:THROTTLE3_SET) "
-                   "%d (>K:THROTTLE4_SET)",
-                   t.throttle1, t.throttle2, t.throttle3, t.throttle4);
-
+                   -c.ail_pos, -c.elev_pos, -c.rud_pos);
     execute_calculator_code(cmd, nullptr, nullptr, nullptr);
 }
 
@@ -109,13 +101,6 @@ void interpolate()
     {
         apply_control(c);
     }
-
-    // Throttle
-    fsc::protocol::throttle th{};
-    if (thr_buf.interpolate(render_t, th, fsc::interp::throttle))
-    {
-        apply_throttle(th);
-    }
 }
 
 void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_context*/)
@@ -136,6 +121,7 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             // MSFS2020 fallback tick: we use our clock packets as "per-frame" pulse
             if (!has_standalone_update)
             {
+                // now = chrono_system_clock_now();
                 now += 1.0 / 60.0;
                 interpolate();
             }
@@ -149,21 +135,14 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
         {
             const auto*  physics = reinterpret_cast<const fsc::protocol::physics*>(&cd->dwData);
             const double t_local = t_shifts[physics->session_id].to_local_sec(now, physics->time_ms);
-            phys_buf.push(now, *physics);
+            phys_buf.push(t_local, *physics);
         }
 
         if (cd->dwRequestID == def_control)
         {
             const auto*  ctrl    = reinterpret_cast<const fsc::protocol::control*>(&cd->dwData);
             const double t_local = t_shifts[ctrl->session_id].to_local_sec(now, ctrl->time_ms);
-            ctrl_buf.push(now, *ctrl);
-        }
-
-        if (cd->dwRequestID == def_throttle)
-        {
-            const auto*  thrtl   = reinterpret_cast<const fsc::protocol::throttle*>(&cd->dwData);
-            const double t_local = t_shifts[thrtl->session_id].to_local_sec(now, thrtl->time_ms);
-            thr_buf.push(now, *thrtl);
+            ctrl_buf.push(t_local, *ctrl);
         }
 
         // if (!g_has_standalone_update && cd->dwRequestID == DEF_CLOCK)
@@ -208,12 +187,6 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_CreateClientData(h_sim, def_control, sizeof(fsc::protocol::control), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_control, 0, sizeof(fsc::protocol::control), 0.0f, -1);
     (void)SimConnect_RequestClientData(h_sim, def_control, def_control, def_control, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
-
-    // throttle
-    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_Throttle", def_throttle);
-    (void)SimConnect_CreateClientData(h_sim, def_throttle, sizeof(fsc::protocol::throttle), 0);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_throttle, 0, sizeof(fsc::protocol::throttle), 0.0f, -1);
-    (void)SimConnect_RequestClientData(h_sim, def_throttle, def_throttle, def_throttle, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
 
     (void)SimConnect_CallDispatch(h_sim, dispatch, nullptr);
 

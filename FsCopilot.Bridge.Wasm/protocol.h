@@ -45,7 +45,7 @@ struct throttle
 
 #pragma pack(pop)
 
+static_assert(sizeof(physics) == 116);
 static_assert(sizeof(control) == 24);
 static_assert(sizeof(throttle) == 28);
-static_assert(sizeof(physics) == 116);
 } // namespace fsc::protocol

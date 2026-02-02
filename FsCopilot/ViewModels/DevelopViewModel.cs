@@ -70,7 +70,6 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 
         sim.Register<Physics>();
         sim.Register<Control>();
-        sim.Register<Throttle>();
         Trace? trace = null;
         
         RecordCommand = ReactiveCommand.Create(() =>
@@ -82,8 +81,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             
                 _recording.Disposable = new CompositeDisposable(
                     sim.Stream<Physics>().Record(trace.Physics),
-                    sim.Stream<Control>().Record(trace.Controls),
-                    sim.Stream<Throttle>().Record(trace.Throttle)
+                    sim.Stream<Control>().Record(trace.Controls)
                     // _vars.Record(_trace.Vars)
                 );
             }
@@ -98,24 +96,30 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             IsPlaying = !IsPlaying;
             if (IsPlaying)
             {
+                var rnd = new System.Random();
                 Freeze(true);
                 trace ??= new();
                 _playing.Disposable = Observable.Merge(
-                    Replay(trace.Physics, physics =>
-                    {
-                        physics.SessionId  = sessionId;
-                        physics.TimeMs = (uint)sw.ElapsedMilliseconds;
-                    }), 
-                    Replay(trace.Controls, control =>
-                    {
-                        control.SessionId  = sessionId;
-                        control.TimeMs = (uint)sw.ElapsedMilliseconds;
-                    }), 
-                    Replay(trace.Throttle, throttle =>
-                    {
-                        throttle.SessionId  = sessionId;
-                        throttle.TimeMs = (uint)sw.ElapsedMilliseconds;
-                    })
+                    trace.Physics.Playback()
+                        .Do(data =>
+                        {
+                            data.SessionId = sessionId;
+                            data.TimeMs = (uint)sw.ElapsedMilliseconds;
+                            sim.Set(data);
+                        })
+                        .SelectMany(x => Observable.Return(x)
+                            .Delay(TimeSpan.FromMilliseconds(rnd.Next(20, 101))))
+                        .Select(_ => Unit.Default),
+                    trace.Controls.Playback()
+                        .Do(data =>
+                        {
+                            data.SessionId = sessionId;
+                            data.TimeMs = (uint)sw.ElapsedMilliseconds;
+                            sim.Set(data);
+                        })
+                        .SelectMany(x => Observable.Return(x)
+                            .Delay(TimeSpan.FromMilliseconds(rnd.Next(20, 101))))
+                        .Select(_ => Unit.Default)
                 ).Subscribe(_ => {}, () =>
                 {
                     IsPlaying = false;
@@ -136,15 +140,6 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 sim.Set("K:FREEZE_ALTITUDE_SET", isFreeze);
                 sim.Set("K:FREEZE_ATTITUDE_SET", isFreeze);
             }
-
-            IObservable<Unit> Replay<T>(IReadOnlyList<Recorded<T>> records, Action<T> modify) where T : unmanaged =>
-                records.Playback()
-                    .Do(value =>
-                    {
-                        modify(value);
-                        sim.Set(value);
-                    })
-                    .Select(_ => Unit.Default);
         });
     }
 
@@ -187,6 +182,8 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             return nodes.ToArray();
         }
     }
+    
+    delegate void RefAction<T>(ref T value);
 }
 
 public class Node : ReactiveObject, IDisposable
@@ -281,7 +278,6 @@ public class Trace
 {
     public List<Recorded<Physics>> Physics { get; } = [];
     public List<Recorded<Control>> Controls { get; } = [];
-    public List<Recorded<Throttle>> Throttle { get; } = [];
     // public List<Recorded<Var>> Vars { get; set; } = [];
 
     // public record Var(string Name, object Value);

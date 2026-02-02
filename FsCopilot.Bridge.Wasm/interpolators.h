@@ -101,12 +101,4 @@ inline void control(const protocol::control& a, const protocol::control& b, cons
     out.elev_pos = static_cast<int32_t>(llround(lerp(a.elev_pos, b.elev_pos, t)));
     out.rud_pos  = static_cast<int32_t>(llround(lerp(a.rud_pos, b.rud_pos, t)));
 }
-
-inline void throttle(const protocol::throttle& a, const protocol::throttle& b, const double t, protocol::throttle& out)
-{
-    out.throttle1 = static_cast<int32_t>(llround(lerp(a.throttle1, b.throttle1, t)));
-    out.throttle2 = static_cast<int32_t>(llround(lerp(a.throttle2, b.throttle2, t)));
-    out.throttle3 = static_cast<int32_t>(llround(lerp(a.throttle3, b.throttle3, t)));
-    out.throttle4 = static_cast<int32_t>(llround(lerp(a.throttle4, b.throttle4, t)));
-}
 } // namespace fsc::interp

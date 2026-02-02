@@ -12,25 +12,37 @@ template <typename T> class stream_buffer
   public:
     void push(double t_local, const T& v)
     {
+        if (t_local - last_time_ < 0.2)
+        {
+            pending_ = {t_local, v};
+            has_pending_ = true;
+            return;
+        }
+        last_time_ = t_local;
         prune(t_local);
         buf_.push_back({t_local, v});
     }
 
-    template <typename LerpFn> bool interpolate(double t_render, T& out, LerpFn lerp_fn) const
+    template <typename LerpFn> bool interpolate(double t_render, T& out, LerpFn lerp_fn)
     {
         const auto n = buf_.size();
         // if (n < 2)
         //     return false;
 
-        if (n == 0)
-            return false;
+        if (n == 0) return false;
+
+        if (has_pending_ && t_render >= buf_[n - 1].t_local)
+        {
+            if (pending_.t_local >= buf_[n - 1].t_local)
+            {
+                buf_.push_back(pending_);
+                return false;
+            }
+            has_pending_ = false;
+        }
 
         // if only one sample, we can only hold it.
-        if (n == 1)
-        {
-            out = buf_[0].value;
-            return true;
-        }
+        if (n == 1) { out = buf_[0].value; return true; }
 
         // if asked time is after the last sample, hold last.
         if (t_render >= buf_[n - 1].t_local)
@@ -40,11 +52,7 @@ template <typename T> class stream_buffer
         }
 
         // if asked time is before the first sample, hold first.
-        if (t_render <= buf_[0].t_local)
-        {
-            out = buf_[0].value;
-            return true;
-        }
+        if (t_render <= buf_[0].t_local) { out = buf_[0].value; return true; }
 
         // find segment [i, i+1] containing t_render
         uint32_t i = 0;
@@ -72,6 +80,9 @@ template <typename T> class stream_buffer
     std::deque<timed_sample<T>> buf_;
 
     static constexpr double k_max_age_sec = 3.0;
+    double last_time_ = 0;
+    timed_sample<T> pending_{};
+    bool has_pending_ = false;
 
     void prune(const double now)
     {

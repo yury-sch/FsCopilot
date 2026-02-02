@@ -54,6 +54,7 @@ shared:
 
   - get: L:INPUT_PARK # Parking brake
   # Defrost and cabin heat is not functional
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k # Throttle
   - get: L:FUEL_SELECTOR # Fuel valve
   - get: L:FUEL_WIRE_IsDown # Fuel wire
 
