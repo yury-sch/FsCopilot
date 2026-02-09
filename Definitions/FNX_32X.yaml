@@ -1,6 +1,9 @@
-# Original author: https://github.com/Insaf11-10
+# Original author: https://discord.com/channels/1454265644416765974/1467595209759129610
 
-master:
+include:
+  - modules/FSDT_GSX.yaml
+
+shared:
   - get: L:N_FC_SIDESTICK_CAPT_PITCH
   - get: L:N_FC_SIDESTICK_CAPT_BANK
   - get: L:N_FC_SIDESTICK_FO_PITCH
@@ -8,23 +11,26 @@ master:
   - get: L:S_FC_CAPT_INST_DISCONNECT
   - get: L:S_FC_FO_INST_DISCONNECT
   - get: L:N_FC_RUDDER
-  - get: L:A320_FC_RUDDER
-  - get: L:A320_FC_R_SPLR_1
-  - get: L:A320_FC_R_SPLR_2
-  - get: L:A320_FC_R_SPLR_3
-  - get: L:A320_FC_R_SPLR_4
-  - get: L:A320_FC_R_SPLR_5
-  - get: L:A320_FC_L_SPLR_1
-  - get: L:A320_FC_L_SPLR_2
-  - get: L:A320_FC_L_SPLR_3
-  - get: L:A320_FC_L_SPLR_4
-  - get: L:A320_FC_L_SPLR_5
   - get: L:N_FC_BRAKE_LEFT_CAPT
   - get: L:N_FC_BRAKE_RIGHT_CAPT
   - get: L:N_FC_BRAKE_LEFT_FO
   - get: L:N_FC_BRAKE_RIGHT_FO
 
-shared:
+#WEIGHTS
+  - get: A:PAYLOAD STATION WEIGHT:1, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:2, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:3, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:4, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:5, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:6, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:7, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:8, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:9, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:10, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:12, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:13, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:14, Pounds
+  - get: A:PAYLOAD STATION WEIGHT:15, Pounds
 #EFIS
   - get: L:E_FCU_EFIS1_BARO
   - get: L:S_FCU_EFIS1_BARO_STD
@@ -410,8 +416,7 @@ shared:
   - get: L:S_ECAM_STATUS
   - get: L:S_ECAM_RCL
   - get: L:S_ECAM_CLR_RIGHT
-
-  # RMP MAIN
+  #COMS
   - get: A:COM ACTIVE FREQUENCY:1, Hz
     set: (>K:COM_RADIO_SET_HZ)
   - get: A:COM ACTIVE FREQUENCY:2, Hz
@@ -425,7 +430,6 @@ shared:
   - get: A:COM STANDBY FREQUENCY:3, Hz # doesn't work
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   # RMP 1
-  - get: L:S_PED_RMP1_XFER
   - get: L:E_PED_RMP1_INNER
   - get: L:E_PED_RMP1_OUTER
   - get: L:S_PED_RMP1_VHF1
@@ -443,7 +447,6 @@ shared:
   - get: L:S_PED_RMP1_BFO
   - get: L:S_PED_RMP1_POWER
   # RMP 2
-  - get: L:S_PED_RMP2_XFER
   - get: L:E_PED_RMP2_INNER
   - get: L:E_PED_RMP2_OUTER
   - get: L:S_PED_RMP2_VHF1
@@ -740,7 +743,6 @@ shared:
   - get: L:S_OH_NAV_ADR3
   - get: L:S_OH_NAV_ADR2
   #RMP 3
-  - get: L:S_PED_RMP3_XFER
   - get: L:E_PED_RMP3_INNER
   - get: L:E_PED_RMP3_OUTER
   - get: L:S_PED_RMP3_VHF1
