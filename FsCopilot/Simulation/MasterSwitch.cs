@@ -7,7 +7,6 @@ public class MasterSwitch : IDisposable
 {
     private static readonly string PeerId = Guid.NewGuid().ToString();
     
-    private readonly SimClient _sim;
     // private readonly Peer2Peer _peer2Peer;
     private readonly BehaviorSubject<bool> _master = new(true);
     private readonly CompositeDisposable _d = new();
@@ -17,8 +16,6 @@ public class MasterSwitch : IDisposable
 
     public MasterSwitch(SimClient sim, INetwork net)
     {
-        _sim = sim;
-
         net.RegisterPacket<SetMaster, SetMaster.Codec>();
 
         _d.Add(net.Stream<SetMaster>()
@@ -27,31 +24,22 @@ public class MasterSwitch : IDisposable
                 var newMaster = setMaster.Peer == PeerId;
                 if (newMaster != IsMaster) _master.OnNext(newMaster);
             }));
-
-        _d.Add(_master.Subscribe(_ => UpdateFreeze()));
+        
+        _d.Add(Observable
+            .Interval(TimeSpan.FromMilliseconds(500))
+            .WithLatestFrom(_master, (_, isMaster) => !isMaster)
+            .Subscribe(freeze => sim.Set("L:FSC_FREEZE", freeze)));
         
         _d.Add(_master.DistinctUntilChanged()
             .Where(isMaster => isMaster)
             .Subscribe(_ => net.SendAll(new SetMaster(PeerId))));
         
-        _d.Add(_sim.Stream<Physics>()
-            .Window(TimeSpan.FromSeconds(1))
-            .Where(_ => !IsMaster)
-            .Subscribe(_ => UpdateFreeze()));
-        
-        _d.Add(_sim.Config.Where(c => c.Undefined).Subscribe(_ => _sim.Set(new SimConfig(false, _master.Value))));
-        _d.Add(_master.Subscribe(val => _sim.Set(new SimConfig(false, val))));
-        _d.Add(_sim.Config.Where(c => !c.Undefined).Subscribe(c =>
+        _d.Add(sim.Config.Where(c => c.Undefined).Subscribe(_ => sim.Set(new SimConfig(false, _master.Value))));
+        _d.Add(_master.Subscribe(val => sim.Set(new SimConfig(false, val))));
+        _d.Add(sim.Config.Where(c => !c.Undefined).Subscribe(c =>
         {
             if (c.Control) TakeControl();
         }));
-    }
-
-    private void UpdateFreeze()
-    {
-        _sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", !IsMaster);
-        _sim.Set("K:FREEZE_ALTITUDE_SET", !IsMaster);
-        _sim.Set("K:FREEZE_ATTITUDE_SET", !IsMaster);
     }
 
     public void TakeControl() => _master.OnNext(true);

@@ -3,7 +3,7 @@ class FsCopilotHandler {
         // Only one panel should fire event
         this.panelId = Math.floor(Math.random() * 100000);
         console.log(`[FsCopilot] Created handler ${this.panelId} for instrument ${instrument.instrumentIdentifier}`);
-        SimVar.SetSimVarValue('L:FsCopilotHandlerId', 'Number', this.panelId);
+        SimVar.SetSimVarValue('L:FSC_HANDLER', 'Number', this.panelId);
 
         this.network = new FsCopilotNetwork();
         this.watcher = new VarWatcher();
@@ -43,7 +43,7 @@ class FsCopilotHandler {
     }
 
     _canProcess() {
-        return SimVar.GetSimVarValue('L:FsCopilotHandlerId', 'Number') == this.panelId;
+        return SimVar.GetSimVarValue('L:FSC_HANDLER', 'Number') == this.panelId;
     }
 
     interact(name) {

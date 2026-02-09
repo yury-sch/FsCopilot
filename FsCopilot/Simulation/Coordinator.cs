@@ -28,17 +28,19 @@ public class Coordinator : IDisposable
         
         net.RegisterPacket<Update, Update.Codec>();
         net.RegisterPacket<Interact, InteractCodec>();
+        _net.RegisterPacket<Physics, Physics.Codec>();
+        _net.RegisterPacket<Control, Control.Codec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
         
         _d.Add(sim.Aircraft.Take(1).Subscribe(_ =>
         {
-            AddLink<Physics, Physics.Codec>(physics =>
+            AddLink<Physics, Physics.Codec>((ref Physics physics) =>
             {
                 physics.SessionId = sessionId;
                 physics.TimeMs = (uint)sw.ElapsedMilliseconds;
             });
-            AddLink<Control, Control.Codec>(control =>
+            AddLink<Control, Control.Codec>((ref Control control) =>
             {
                 control.SessionId = sessionId;
                 control.TimeMs = (uint)sw.ElapsedMilliseconds;
@@ -113,18 +115,17 @@ public class Coordinator : IDisposable
         foreach (var def in definitions) AddLink(def);
     }
     
-    private void AddLink<TPacket, TCodec>(Action<TPacket> modify)
+    private void AddLink<TPacket, TCodec>(RefAction<TPacket> modify)
         where TPacket : unmanaged
         where TCodec : IPacketCodec<TPacket>, new()
     {
         _sim.Register<TPacket>();
-        _net.RegisterPacket<TPacket, TCodec>();
 
         _d.Add(_sim.Stream<TPacket>()
             .Where(_ => _masterSwitch.IsMaster)
             .Subscribe(update =>
             {
-                // modify(update);
+                modify(ref update);
                 try { _net.SendAll(update, true); }
                 catch (Exception e) { Log.Error(e, "[Coordinator] Error while sending packet {Packet}", typeof(TPacket).Name); }
             }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from sim"); }));
@@ -260,4 +261,6 @@ public class Coordinator : IDisposable
             return new(instrument, @event, id, value);
         }
     }
+    
+    delegate void RefAction<T>(ref T value);
 }

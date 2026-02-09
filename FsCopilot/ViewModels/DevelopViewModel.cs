@@ -134,12 +134,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 
             return;
 
-            void Freeze(bool isFreeze)
-            {
-                sim.Set("K:FREEZE_LATITUDE_LONGITUDE_SET", isFreeze);
-                sim.Set("K:FREEZE_ALTITUDE_SET", isFreeze);
-                sim.Set("K:FREEZE_ATTITUDE_SET", isFreeze);
-            }
+            void Freeze(bool isFreeze) => sim.Set("L:FSC_FREEZE", isFreeze);
         });
     }
 
@@ -182,8 +177,6 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             return nodes.ToArray();
         }
     }
-    
-    delegate void RefAction<T>(ref T value);
 }
 
 public class Node : ReactiveObject, IDisposable
