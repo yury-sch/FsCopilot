@@ -2,8 +2,8 @@ include:
   - modules/AS_G1000_NXi.yaml
 
 master:
-#  - get: L:AILERON_ANIM # resets by aircraft
-#  - get: L:ELEVATOR_ANIM
+  - get: L:INPUT_AILERON
+  - get: L:INPUT_ELEVATOR
   - get: L:INPUT_TRIM_AXIS # Trim
 
 shared:
