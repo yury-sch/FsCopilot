@@ -1,0 +1,150 @@
+# Original author: https://discord.com/channels/1454265644416765974/1470176838348312767
+
+include:
+  - modules/AS_G1000_NXi.yaml
+
+master:
+  - get: L:INPUT_AILERON
+  - get: L:INPUT_ELEVATOR
+  - get: L:INPUT_TRIM_AXIS
+
+shared:
+  #Fuel
+  - get: L:XFER_SWITCH:1
+  - get: L:XFER_SWITCH:2
+  - get: L:fuel_SELECTOR:1
+  - get: L:fuel_SELECTOR:2
+  - get: L:fuel_SELECTOR_GUARD:1
+  - get: L:fuel_SELECTOR_GUARD:2
+  - get: L:CB_FPB:1
+  - get: L:CB_FPA:1
+  - get: L:CB_FPB:2
+  - get: L:CB_FPA:2
+  - get: A:GENERAL ENG FUEL PUMP SWITCH EX1:1, Enum
+    set: (>K:ELECT_FUEL_PUMP1_SET)
+  - get: A:GENERAL ENG FUEL PUMP SWITCH EX1:2, Enum
+    set: (>K:ELECT_FUEL_PUMP2_SET)
+
+  #THROTTLE
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:2, Position 16k
+
+  #CENTRE LEVERS
+  - get: L:INPUT_PARK
+    # Defrost and CabinHead doesnt work
+  - get: L:HANDLING_RUDDERTRIM
+    set: (>K:RUDDER_TRIM_SET_EX1)
+
+  #MIP
+  - get: A:FLAPS HANDLE PERCENT, position 16k
+    set: (>K:FLAPS_SET)
+  - get: L:LANDING_GEAR_gear
+    set: (>K:GEAR_SET)
+  - get: L:GEAR_EMERGENCY
+  - get:  L:ENGINE_ALTERNATE_AIR
+  - get: L:GEAR_FIRE_TEST_IsDown
+  - get: A:CIRCUIT SWITCH ON:39, Bool
+  - get: A:ELECTRICAL MASTER BATTERY:1, Bool
+  - get: A:RECIP ENG ENGINE MASTER SWITCH:2, Bool
+    set: (>K:ENGINE_MASTER_2_TOGGLE)
+#  - get: L:DA42_STARTER_SWITCH
+  - get: A:GENERAL ENG STARTER:1, Bool
+    set: (>K:SET_STARTER1_HELD)
+  - get: A:GENERAL ENG STARTER:2, Bool
+    set: (>K:SET_STARTER2_HELD)
+  - get: A:RECIP ENG ENGINE MASTER SWITCH:1, Bool
+    set: (>K:ENGINE_MASTER_1_TOGGLE)
+  - get: L:DEICE_PITOT_1
+    set: (>K:PITOT_HEAT_SET)
+  - get: A:ALTERNATE STATIC SOURCE OPEN, Bool
+    set: (>K:TOGGLE_ALTERNATE_STATIC)
+
+  #ECU
+  - get: L:ALT_MASTER:1
+  - get: L:ALT_MASTER:2
+  - get: L:FADEC_ECUTEST_BUTTON:1_IsDown
+  - get: L:FADEC_ECUTEST_BUTTON_B_IsDown
+  - get: L:FADEC_ECUTEST_BUTTON:2_IsDown
+  - get: L:DA42_ECU_VOTER:1
+  - get: L:DA42_ECU_VOTER:2
+
+  #GlairShield
+  - get: L:LIGHTING_PANEL_1
+    set: (>B:LIGHTING_PANEL_1_Set) 
+  - get: L:LIGHTING_GLARESHIELD_1
+    set: (>B:LIGHTING_GLARESHIELD_1_Set)
+  - get: A:LIGHT LANDING, Bool
+  - get: A:LIGHT TAXI, Bool
+  - get: A:LIGHT NAV, Bool
+  - get: A:LIGHT STROBE, Bool
+  - get: L:EMERGENCY_BATT_COVER
+  - get: L:EMERGENCY_BATT
+  - get: L:ATT_CAGE_IsDown
+  - get: L:KOHLSMAN SETTING HG:2
+
+  #DEICE
+  - get: L:DEICE_MAX_IsDown
+  - get: L:DEICE_SWITCH
+  - get: L:DEICE_ALTERNATE_COVER
+  - get: L:DEICE_ALTERNATE_SWITCH
+  - get: L:DEICE_WIND_IsDown
+  - get: L:DEICE_LIGHT_SWITCH
+    set: |
+      switch (value) {
+        case 0: return '1 (>A:LIGHT WING)'
+        case 1: return '0 (>A:LIGHT WING)'
+        case 2: return '2 (>L:DEICE_LIGHT_SWITCH)'
+        default: return ''
+      }
+  - get: L:DEICE_PUMP_SWITCH
+
+  #Curcuit Board
+  - get: L:CB_CM1
+  - get: L:CB_GP1
+  - get: L:CB_XPR
+  - get: L:CB_ENG
+  - get: L:CB_PIT
+  - get: L:CB_DEI
+  - get: L:CB_TXM
+  - get: L:CB_FLD
+  - get: L:CB_PFD
+  - get: L:CB_ADC
+  - get: L:CB_AHR
+  - get: L:CB_GWN
+  - get: L:CB_GER
+  - get: L:CB_MFD
+  - get: L:CB_HOR
+  - get: L:CB_STL
+  - get: L:CB_FLP
+  - get: L:CB_LDL
+  - get: L:CB_POS
+  - get: L:CB_AVF
+  - get: L:CB_AVN
+  - get: L:CB_MTC
+  - get: L:CB_CM2
+  - get: L:CB_GP2
+  - get: L:CB_AUD
+  - get: L:CB_AFC
+  - get: L:CB_FIS
+  - get: L:CB_ADF
+  - get: L:CB_ECUBUS:1
+  - get: L:CB_ECB:1
+  - get: L:CB_ECA:1
+  - get: L:CB_ALT:1
+  - get: L:CB_ECUBAT:1
+  - get: L:CB_ECUBAT:2
+  - get: L:CB_ALT:2
+  - get: L:CB_ECUBUS:2
+  - get: L:CB_ECB:2
+  - get: L:CB_ECA:2
+
+  #Window
+  - get: A:INTERACTIVE POINT GOAL:2, Bool
+  - get: A:INTERACTIVE POINT GOAL:3, Bool
+  - get: A:INTERACTIVE POINT GOAL:6, Bool 
+  - get: A:INTERACTIVE POINT GOAL:7, Bool
+
+  #Overhead Lighting
+  - get: A:LIGHT CABIN:1, Bool
+  - get: A:LIGHT CABIN:2, Bool
+  - get: A:LIGHT CABIN:3, Bool

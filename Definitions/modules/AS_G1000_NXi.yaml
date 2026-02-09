@@ -131,7 +131,6 @@ shared:
     set: (>B:AS1000_PFD_1_FMS_Inner_Button_Push)
   #  - get: L:AS1000_PFD_STATE
 #  - get: L:AS1000_PFD_Brightness
-#  #    cancel_h_events: true
 #  - get: L:AS1000_PFD_Brightness_IsAuto
   - get: A:AUTOPILOT TAKEOFF POWER ACTIVE, Bool
     set: (>K:AUTO_THROTTLE_TO_GA)
@@ -162,6 +161,8 @@ shared:
   # MFD
   - get: A:AUTOPILOT MASTER, Bool # On/off flag
     set: "value ? '(>K:AUTOPILOT_ON)' : '(>K:AUTOPILOT_OFF)'"
+  - get: A:AUTOPILOT YAW DAMPER, Bool
+    set: (>K:YAW_DAMPER_SET)
   - get: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
     set: "0 (>K:TOGGLE_FLIGHT_DIRECTOR)"
   - get: A:AUTOPILOT HEADING LOCK, Bool # HDG
@@ -170,8 +171,8 @@ shared:
     set: (>K:AP_NAV1_HOLD)
   - get: A:AUTOPILOT APPROACH HOLD, Bool # APR
     set: (>K:AP_APR_HOLD)
-#  - get: A:AUTOPILOT GLIDESLOPE HOLD, Bool # APR
-#    set: (>K:AP_LOC_HOLD)
+  - get: A:AUTOPILOT GLIDESLOPE HOLD, Bool # APR
+    set: (>K:AP_LOC_HOLD)
   - get: A:AUTOPILOT ALTITUDE LOCK, Bool # ALT
     set: "value ? '(>K:AP_ALT_HOLD_ON)' : '(>K:AP_ALT_HOLD_OFF)'"
   - get: L:XMLVAR_VNAVButtonValue # VNV
