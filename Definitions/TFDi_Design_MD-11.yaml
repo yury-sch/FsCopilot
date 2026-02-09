@@ -10,6 +10,81 @@ master:
   - get: L:MD11_PED_RUD_TRIM_SW
 
 shared:
+  # AP
+  - get: L:MD11_CAP_ALTIMETER
+    set: (>L:MD11_EXTCTL_CAP_BARO) # BARO SET CAP
+  - get: L:MD11_FO_ALTIMETER
+    set: (>L:MD11_EXTCTL_FO_BARO) # BARO SET FO
+  - get: L:MD11_STBY_ALTIMETER
+    set: (>L:MD11_EXTCTL_STBY_BARO) # BARO SET STB
+  - get: L:MD11_CAP_MINIMUMS
+    set: (>L:MD11_EXTCTL_CAP_MIN)
+  - get: L:MD11_FO_MINIMUMS
+    set: (>L:MD11_EXTCTL_FO_MIN)
+  - get: L:MD11_AP_IAS_MACH # IAS/MACH
+    set: (>L:MD11_EXTCTL_FCP_SPD_U)
+  - get: L:MD11_AFS_SPD # IAS/MACH SPD
+    set: (>L:MD11_EXTCTL_FCP_SPD)
+  - get: L:MD11_AP_HDG_TRK # HDG/TRK
+    set: (>L:MD11_EXTCTL_FCP_HDG_U)
+  - get: L:MD11_AFS_HDG # HDG/TRK VALUE
+    set: (>L:MD11_EXTCTL_FCP_HDG)
+  - get: L:MD11_AP_VS_FPA # V/S FPA
+    set: (>L:MD11_EXTCTL_FCP_VR_U)
+  - get: L:MD11_AP_VS # V/S FPA VALUE
+    set: (>L:MD11_EXTCTL_FCP_VR)
+  #  - get:  # FEET / METER
+  #    set: (>L:MD11_EXTCTL_FCP_ALT_U)
+  - get: L:MD11_AFS_ALT # FEET / METER ALT
+    set: (>L:MD11_EXTCTL_FCP_ALT)
+  
+  # FUEL
+  - get: L:MD11_OVHD_TANK_1_VAL
+    set: (>L:MD11_EXTCTL_FUEL_TANK1)
+  - get: L:MD11_OVHD_TANK_2_VAL
+    set: (>L:MD11_EXTCTL_FUEL_TANK2)
+  - get: L:MD11_OVHD_TANK_3_VAL
+    set: (>L:MD11_EXTCTL_FUEL_TANK3)
+  #  - get: L:MD11_OVHD_TANK_AUX_VAL
+  #    set: (>L:MD11_EXTCTL_FUEL_AUXUPR)
+  - get: L:MD11_OVHD_TANK_TAIL_VAL
+    set: (>L:MD11_EXTCTL_FUEL_TAIL)
+
+  # FLAPS
+  - get: L:MD11_DIALAFLAP_WHEEL_RNG
+  - get: L:MD11_FLAP_RNG
+    set: (>L:MD11_EXTCTL_FLAP_HANDLE)
+  
+  # SPDBRK
+  - get: L:MD11_SPDBRK_RNG
+    set: (>L:MD11_EXTCTL_SPOILER_HANDLE)
+
+  # DOORS
+  - get: L:MD11_EXT_DOOR_PAX_1L
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_1L)
+  - get: L:MD11_EXT_DOOR_PAX_2L
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_2L)
+  - get: L:MD11_EXT_DOOR_PAX_3L
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_3L)
+  - get: L:MD11_EXT_DOOR_PAX_4L
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_4L)
+  - get: L:MD11_EXT_DOOR_PAX_1R
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_1R)
+  - get: L:MD11_EXT_DOOR_PAX_2R
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_2R)
+  - get: L:MD11_EXT_DOOR_PAX_3R
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_3R)
+  - get: L:MD11_EXT_DOOR_PAX_4R
+    set: (>L:MD11_EXT_DOOR_CMD_PAX_4R)
+  - get: L:MD11_EXT_DOOR_CARGO_1R
+    set: (>L:MD11_EXT_DOOR_CMD_CARGO_1R)
+  - get: L:MD11_EXT_DOOR_CARGO_2R
+    set: (>L:MD11_EXT_DOOR_CMD_CARGO_2R)
+  - get: L:MD11_EXT_DOOR_CARGO_BULK
+    set: (>L:MD11_EXT_DOOR_CMD_CARGO_BULK)
+  - get: L:MD11_EXT_DOOR_CARGO_MAIN
+    set: (>L:MD11_EXT_DOOR_CMD_CARGO_MAIN)
+  
   # CARGO FIRE
   - get: L:MD11_AOVHD_CRGSMK_FWD_VENT_SW
     set: 73750 (>L:CEVENT)
@@ -101,7 +176,7 @@ shared:
   #  set: 90379 (>L:CEVENT)
   - get: L:MD11_OVHD_FUEL_DUMP_STOP_BT
     set: "`${value ? 90377 : 90378} (>L:CEVENT)`"
-  
+
   # FIRE
   - get: L:MD11_AOVHD_APUFIRE_SW
     set: 73744 (>L:CEVENT)
@@ -144,7 +219,7 @@ shared:
     set: "`${value ? 90402 : 90403} (>L:CEVENT)`"
   - get: L:MD11_OVHD_FLTCTL_RLO_BT
     set: "`${value ? 90404 : 90405} (>L:CEVENT)`"
-  
+
   # PNEU  
   - get: L:MD11_OVHD_PNEU_CLBDES_KB
   - get: L:MD11_OVHD_PNEU_CABIN_SYSTEM_SEL_BT
@@ -154,7 +229,7 @@ shared:
   #  set: 90334 (>L:CEVENT)
   - get: L:MD11_OVHD_PNEU_DITCHING_BT
     set: "`${value ? 90332 : 90333} (>L:CEVENT)`"
-    
+
   # AICE
   - get: L:MD11_OVHD_AICE_ENG1_BT
     set: "`${value ? 90414 : 90415} (>L:CEVENT)`"
@@ -174,7 +249,7 @@ shared:
     set: "`${value ? 90428 : 90429} (>L:CEVENT)`"
   - get: L:MD11_OVHD_WNDSHLD_AICE_DEFOG_BT
     set: "`${value ? 90430 : 90431} (>L:CEVENT)`"
-  
+
   # ANNUN LT
   - get: L:MD11_OVHD_ANNUNLT_BRTDIM_BT
     set: 90406 (>L:CEVENT)
@@ -186,16 +261,16 @@ shared:
     set: "`${value ? 90410 : 90411} (>L:CEVENT)`"
   - get: L:MD11_OVHD_ENGMAXPTRRESET_BT
     set: "`${value ? 90412 : 90413} (>L:CEVENT)`"
-    
+
   # LTS
   - get: L:MD11_OVHD_LTS_MAINT_INTP_BT
     set: "`${value ? 90474 : 90475} (>L:CEVENT)`"
   - get: L:MD11_OVHD_LTS_MECH_BT
     set: "`${value ? 90476 : 90477} (>L:CEVENT)`"
-  
+
   # R WIPER
   - get: L:MD11_OVHD_R_WIPER_KB
-    
+
   # ENG FIRE
   - get: L:MD11_AOVHD_ENG1FIRE_GRD
   - get: L:MD11_AOVHD_ENG1FIRE_KB
@@ -208,7 +283,7 @@ shared:
   - get: L:MD11_AOVHD_ENG3FIRE_GRD
   - get: L:MD11_AOVHD_ENG3FIRE_KB
   - get: L:MD11_AOVHD_ENG3FIRE_SW
-    
+
   # HYD
   - get: L:MD11_OVHD_HYD_1_3_RMP_BT
     set: "`${value ? 90169 : 90170} (>L:CEVENT)`"
@@ -235,7 +310,7 @@ shared:
   - get: L:MD11_OVHD_HYD_HYD_TEST_BT
     set: "`${value ? 90191 : 90192} (>L:CEVENT)`"
   - get: L:MD11_OVHD_HYD_HYD_TEST_GRD
-  
+
   # ELEC
   - get: L:MD11_OVHD_ELEC_EMER_PWR_KB
   - get: L:MD11_OVHD_ELEC_GEN1_BT
@@ -283,7 +358,7 @@ shared:
     set: "`${value ? 90153 : 90154} (>L:CEVENT)`"
   - get: L:MD11_OVHD_ELEC_DC_TIE3_BT
     set: "`${value ? 90155 : 90156} (>L:CEVENT)`"
-    
+
   # PNEU
   - get: L:MD11_OVHD_PNEU_COCKPIT_TEMP
   - get: L:MD11_OVHD_PNEU_FWD_CAB_TEMP
@@ -406,17 +481,17 @@ shared:
     set: "`${value ? 90371 : 90372} (>L:CEVENT)`"
   - get: L:MD11_OVHD_LTS_CREW_REST_BT
     set: "`${value ? 90478 : 90479} (>L:CEVENT)`"
-  
+
   # STBY 
   - get: L:MD11_OVHD_STBY_CMPS_SW
   #  set: 90434 (>L:CEVENT)
-  
+
   # BRK OVHD
   - get: L:MD11_BKR_OVHD_A2
     set: 106575 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_A3
     set: 106576 (>L:CEVENT)
-    
+
   - get: L:MD11_BKR_OVHD_B1
     set: 106578 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_B2
@@ -425,10 +500,10 @@ shared:
     set: 106580 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_B7
     set: 106610 (>L:CEVENT)
-    
+
   - get: L:MD11_BKR_OVHD_C1
     set: 106581 (>L:CEVENT)
-    
+
   - get: L:MD11_BKR_OVHD_D1
     set: 106582 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_D8
@@ -439,12 +514,12 @@ shared:
     set: 106585 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_D30
     set: 106586 (>L:CEVENT)
-    
+
   - get: L:MD11_BKR_OVHD_E1
     set: 106587 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_E31
     set: 106588 (>L:CEVENT)
-  
+
   - get: L:MD11_BKR_OVHD_F1
     set: 106589 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_F2
@@ -465,7 +540,7 @@ shared:
     set: 106597 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_F31
     set: 106598 (>L:CEVENT)
-  
+
   - get: L:MD11_BKR_OVHD_G1
     set: 106599 (>L:CEVENT)
   - get: L:MD11_BKR_OVHD_G2
@@ -517,7 +592,7 @@ shared:
     set: 106565 (>L:CEVENT)
   - get: L:MD11_BKR_LAP_B34
     set: 106566 (>L:CEVENT)
-  
+
   - get: L:MD11_BKR_LAP_C3
     set: 106567 (>L:CEVENT)
 
@@ -544,7 +619,7 @@ shared:
     set: 106522 (>L:CEVENT)
   - get: L:MD11_BKR_BWU_A25
     set: 106523 (>L:CEVENT)
-  
+
   - get: L:MD11_BKR_BWU_B21
     set: 106524 (>L:CEVENT)
   - get: L:MD11_BKR_BWU_B23
@@ -675,7 +750,7 @@ shared:
 
   - get: L:MD11_BKR_BWL_J9
     set: 106521 (>L:CEVENT)
-  
+
   # OBS AUDIO PANEL
   - get: L:MD11_OBS_AUDIO_PNL_VHF1_MIC_BT
     set: "`${value ? 96256 : 96257} (>L:CEVENT)`"
@@ -728,7 +803,7 @@ shared:
   - get: L:MD11_OBS_AUDIO_PNL_ADF2_VOL_BT
   - get: L:MD11_OBS_AUDIO_PNL_MKR_VOL_KB
   - get: L:MD11_OBS_AUDIO_PNL_MKR_VOL_BT
-    
+
   # L MCDU
   - get: L:MD11_LMCDU_LSK_1L_BT
     set: "`${value ? 81925 : 81926} (>L:CEVENT)`"
@@ -869,7 +944,7 @@ shared:
     set: "`${value ? 82061 : 82062} (>L:CEVENT)`"
   - get: L:MD11_LMCDU_CLR_BT
     set: "`${value ? 82063 : 82064} (>L:CEVENT)`"
-  
+
   # R MCDU
   - get: L:MD11_RMCDU_LSK_1L_BT
     set: "`${value ? 82067 : 82068} (>L:CEVENT)`"
@@ -980,7 +1055,7 @@ shared:
     set: "`${value ? 82173 : 82174} (>L:CEVENT)`"
   - get: L:MD11_RMCDU_O_BT
     set: "`${value ? 82175 : 82176} (>L:CEVENT)`"
-  - get: L:MD11_RMCDU_P_BTf
+  - get: L:MD11_RMCDU_P_BT
     set: "`${value ? 82177 : 82178} (>L:CEVENT)`"
   - get: L:MD11_RMCDU_Q_BT
     set: "`${value ? 82179 : 82180} (>L:CEVENT)`"
@@ -1010,7 +1085,7 @@ shared:
     set: "`${value ? 82203 : 82204} (>L:CEVENT)`"
   - get: L:MD11_RMCDU_CLR_BT
     set: "`${value ? 82205 : 82206} (>L:CEVENT)`"
-  
+
   # R MCDU
   - get: L:MD11_CMCDU_LSK_1L_BT
     set: "`${value ? 70019 : 70020} (>L:CEVENT)`"
@@ -1121,7 +1196,7 @@ shared:
     set: "`${value ? 69931 : 69932} (>L:CEVENT)`"
   - get: L:MD11_CMCDU_O_BT
     set: "`${value ? 69933 : 69934} (>L:CEVENT)`"
-  - get: L:MD11_CMCDU_P_BTf
+  - get: L:MD11_CMCDU_P_BT
     set: "`${value ? 69935 : 69936} (>L:CEVENT)`"
   - get: L:MD11_CMCDU_Q_BT
     set: "`${value ? 69937 : 69938} (>L:CEVENT)`"
@@ -1157,27 +1232,22 @@ shared:
   #  set: 81922 (>L:CEVENT)
   - get: L:MD11_CTR_SLAT_STOW_BT
     set: "`${value ? 81920 : 81921} (>L:CEVENT)`"
-    
+
   # MIP STBY
   - get: L:MD11_MIP_STBY_AI_CAGE_BT
     set: "`${value ? 94986 : 95005} (>L:CEVENT)`"
-    
+
   # CTR
   - get: L:MD11_CTR_AUX_HYD_PUMP_BT
     set: "`${value ? 82207 : 82208} (>L:CEVENT)`"
   - get: L:MD11_CTR_ANTISKID_BT
     set: "`${value ? 82209 : 82210} (>L:CEVENT)`"
   - get: L:MD11_CTR_AUTOBRAKE_SW
-      
+
   # THR
   - get: L:MD11_THR_PARK_LVR
     set: 77848 (>L:CEVENT)
-  
-  # SPDBRK
-  - get: L:MD11_SPDBRK_RNG
-  - get: L:MD11_SPDBRK_HANDLE
-  - get: L:MD11_SPDBRK_LATCH
-    
+
   # THR
   - get: L:MD11_THR_GA_BT
     set: "`${value ? 77851 : 77852} (>L:CEVENT)`"
@@ -1193,9 +1263,7 @@ shared:
     set: "`${value ? 77849 : 77850} (>L:CEVENT)`"
 
   # FLAPS
-#  - get: L:MD11_FLAP_LATCH
-#  - get: L:MD11_FLAP_RNG
-#    set: 16383 (>K:FLAPS_SET)
+
 
   # CPT RADIO
   - get: A:COM ACTIVE FREQUENCY:1, Hz
@@ -1271,7 +1339,7 @@ shared:
   - get: L:MD11_PED_CPT_AUDIO_PNL_ADF2_VOL_BT
   - get: L:MD11_PED_CPT_AUDIO_PNL_MKR_VOL_KB
   - get: L:MD11_PED_CPT_AUDIO_PNL_MKR_VOL_BT
-  
+
   # FO RADIO
   - get: L:MD11_PED_FO_RADIO_PNL_VHF1_BT
     set: "`${value ? 69660 : 69661} (>L:CEVENT)`"
@@ -1334,7 +1402,7 @@ shared:
   - get: L:MD11_PED_FO_AUDIO_PNL_ADF2_VOL_BT
   - get: L:MD11_PED_FO_AUDIO_PNL_MKR_VOL_KB
   - get: L:MD11_PED_FO_AUDIO_PNL_MKR_VOL_BT
-    
+
   # DU
   - get: L:MD11_PED_DU1_BRT_KB
   - get: L:MD11_PED_DU2_BRT_KB
@@ -1342,7 +1410,7 @@ shared:
   - get: L:MD11_PED_DU4_BRT_KB
   - get: L:MD11_PED_DU5_BRT_KB
   - get: L:MD11_PED_DU6_BRT_KB
-  
+
   # SD
   - get: L:MD11_PED_SD_ENG_BT
     set: "`${value ? 69828 : 69829} (>L:CEVENT)`"
@@ -1364,7 +1432,7 @@ shared:
     set: "`${value ? 69844 : 69845} (>L:CEVENT)`"
   - get: L:MD11_PED_SD_MISC_BT
     set: "`${value ? 69846 : 69847} (>L:CEVENT)`"
-    
+
   # WXR
   - get: L:MD11_PED_WXR_OFF_BT
     set: "`${value ? 69883 : 69884} (>L:CEVENT)`"
@@ -1416,7 +1484,7 @@ shared:
     set: "`${value ? 69872 : 69873} (>L:CEVENT)`"
   - get: A:TRANSPONDER CODE:1, BCO16
     set: (>K:XPNDR_SET
-    
+
   # OBS RADIO
   - get: L:MD11_PED_OBS_RADIO_PNL_VHF1_BT
     set: "`${value ? 69670 : 69671} (>L:CEVENT)`"
@@ -1428,13 +1496,13 @@ shared:
     set: "`${value ? 69676 : 69677} (>L:CEVENT)`"
   - get: L:MD11_PED_OBS_RADIO_PNL_HF2_BT
     set: "`${value ? 69678 : 69679} (>L:CEVENT)`"
-  
+
   # CKPTDOOR
   - get: L:MD11_PED_CKPTDOOR_LOCK_KB
-    
+
   # ADG
   - get: L:MD11_PED_ADG_LVR
-  
+
   # GSL
   - get: L:MD11_GSL_MST_WRN_BT
     set: "`${value ? 86108 : 86109} (>L:CEVENT)`"
@@ -1589,7 +1657,7 @@ shared:
     set: "`${value ? 86112 : 86113} (>L:CEVENT)`"
   - get: L:MD11_GSR_GS_BT
     set: "`${value ? 86118 : 86119} (>L:CEVENT)`"
-  
+
   # LSIDE
   - get: L:MD11_LSIDE_PTT_BT
     set: "`${value ? 94216 : 94217} (>L:CEVENT)`"
@@ -1616,7 +1684,7 @@ shared:
     set: "`${value ? 94230 : 94231} (>L:CEVENT)`"
   - get: L:MD11_MIP_CAPT_EVTMKR_SW
     set: 94464 (>L:CEVENT)
-    
+
   # GEAR
   - get: L:MD11_MIP_CTR_GEAR_GRD
     set: 94979 (>L:CEVENT)
@@ -1651,7 +1719,7 @@ shared:
     set: "`${value ? 95510 : 95511} (>L:CEVENT)`"
   - get: L:MD11_MIP_FO_EVTMKR_SW
     set: 95744 (>L:CEVENT)
-    
+
   # CABIN
   - get: L:MD11_LSIDE_WINDOW
     set: 94237 (>L:CEVENT)
@@ -1667,9 +1735,8 @@ shared:
   - get: L:MD11_RSIDE_SHADE_Y
   - get: L:MD11_FLIGHTDECK_DOOR
     set: 70047 (>L:CEVENT)
-    
+
   # DOORS
   - get: L:MD11_EXT_DOOR_PAX_1R_ARMED_LVR
     set: 102400 (>L:CEVENT)
   - get: L:MD11_EXT_DOOR_PAXC_1R_OPEN_SW
-    
