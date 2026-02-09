@@ -17,8 +17,16 @@
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
-			<AssetDir>PackageDefinitions\fscopilot-bridge\ContentInfo</AssetDir>
-			<OutputDir>ContentInfo\fscopilot-bridge</OutputDir>
+			<AssetDir>PackageDefinitions\fscopilot-bridge\ContentInfo\</AssetDir>
+			<OutputDir>ContentInfo\fscopilot-bridge\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="modules">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\Modules\</AssetDir>
+			<OutputDir>modules\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="panel">
 			<Type Version="0">SPB</Type>

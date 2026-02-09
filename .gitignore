@@ -271,3 +271,4 @@ __pycache__/
 
 FsCopilot.Bridge/_PackageInt
 FsCopilot.Bridge/Packages
+FsCopilot.Bridge/PackageSources/Modules

@@ -22,11 +22,11 @@ public struct Physics
     /// <summary>
     /// Pitch angle, although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE PITCH DEGREES", "Radians", 4)] public double Pitch;
+    [SimVar("PLANE PITCH DEGREES", "Degrees", 4)] public double Pitch;
     /// <summary>
     /// Bank angle, although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE BANK DEGREES", "Radians", 5)] public double Bank;
+    [SimVar("PLANE BANK DEGREES", "Degrees", 5)] public double Bank;
     /// <summary>
     /// Heading indicator taken from the aircraft gyro.
     /// </summary>
@@ -34,7 +34,7 @@ public struct Physics
     /// <summary>
     /// Heading relative to true north - although the name mentions degrees the units used are radians.
     /// </summary>
-    [SimVar("PLANE HEADING DEGREES TRUE", "Radians", 7)] public double HdgDegTrue;
+    [SimVar("PLANE HEADING DEGREES TRUE", "Degrees", 7)] public double HdgDegTrue;
     /// <summary>
     /// The current indicated vertical speed for the aircraft.
     /// </summary>
@@ -61,6 +61,8 @@ public struct Physics
     [SimVar("VELOCITY WORLD Z", "Feet per second", 13)] public double Vz;
     // [SimVar("VELOCITY WORLD Y", "Feet per second", 8)]
     // public double Vy;
+    public ulong SessionId;
+    public uint TimeMs;
 
     public class Codec : IPacketCodec<Physics>
     {
@@ -79,6 +81,8 @@ public struct Physics
             bw.Write(packet.VBodyZ);
             bw.Write(packet.Vx);
             bw.Write(packet.Vz);
+            bw.Write(packet.SessionId);
+            bw.Write(packet.TimeMs);
         }
 
         public Physics Decode(BinaryReader br) => new()
@@ -95,37 +99,9 @@ public struct Physics
             VBodyY = br.ReadDouble(),
             VBodyZ = br.ReadDouble(),
             Vx = br.ReadDouble(),
-            Vz = br.ReadDouble()
+            Vz = br.ReadDouble(),
+            SessionId = br.ReadUInt64(),
+            TimeMs = br.ReadUInt32()
         };
     }
-
-    // public class Interpolator : IInterpolator<Physics>
-    // {
-    //     public Physics Lerp(in Physics a, in Physics b, double u)
-    //     {
-    //         var r = a;
-    //         r.Lat = LerpAngleDeg(a.Lat, b.Lat, u);
-    //         r.Lon = LerpAngleDeg(a.Lon, b.Lon, u);
-    //         r.AltFeet = LerpLin(a.AltFeet, b.AltFeet, u);
-    //         r.Pitch = LerpAngleDeg(a.Pitch, b.Pitch, u);
-    //         r.Bank  = LerpAngleDeg(a.Bank,  b.Bank,  u);
-    //         r.HdgDegTrue = LerpAngleDeg(a.HdgDegTrue, b.HdgDegTrue, u);
-    //         
-    //         r.Vx = LerpLin(a.Vx, b.Vx, u);
-    //         r.Vz = LerpLin(a.Vz, b.Vz, u);
-    //         r.VerticalSpeed = LerpLin(a.VerticalSpeed, b.VerticalSpeed, u);
-    //         r.GForce = LerpLin(a.GForce, b.GForce, u);
-    //         r.VBodyY = LerpLin(a.VBodyY, b.VBodyY, u);
-    //         r.VBodyZ = LerpLin(a.VBodyZ, b.VBodyZ, u);
-    //         return r;
-    //     }
-    //
-    //     private static double LerpLin(double x, double y, double u) => x + (y - x) * u;
-    //
-    //     private static double LerpAngleDeg(double a, double b, double u)
-    //     {
-    //         var d = (b - a + 540) % 360 - 180;
-    //         return a + d * u;
-    //     }
-    // }
 }
