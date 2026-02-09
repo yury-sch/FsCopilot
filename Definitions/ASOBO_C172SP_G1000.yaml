@@ -1,0 +1,133 @@
+include:
+  - modules/AS_G1000_NXi.yaml
+
+master:
+  - get: A:ELEVATOR TRIM PCT, Percent scaler 16k # TRIM
+    set: (>K:ELEVATOR_TRIM_SET)
+
+shared:
+  - get: L:XMLVAR_BATTERYSTBY_SWITCHSTATE # STBY BAT
+    set: (>B:ELECTRICAL_Battery_STBY_2_Set)
+  
+  - get: A:GENERAL ENG MASTER ALTERNATOR:1, Bool # ALT
+    set: "`${value} 1 (>K:ALTERNATOR_SET)`"
+  - get: A:ELECTRICAL MASTER BATTERY:'Main_Battery'_n, Bool # BAT
+  - set: (>K:TOGGLE_MASTER_BATTERY)
+
+  - get: A:LINE CONNECTION ON:'BUS_1_To_AVIONICS_BUS_1'_n, Bool # AVIONICS BUS 1
+  - get: A:LINE CONNECTION ON:'BUS_2_To_AVIONICS_BUS_2'_n, Bool # AVIONICS BUS 2
+
+  - get: L:LIGHTING_PANEL_1 # DIMMING SW / CB PANELS
+    set: (>B:LIGHTING_PANEL_1_Set)
+  - get: L:LIGHTING_PANEL_2 # DIMMING STB IND
+    set: (>B:LIGHTING_PANEL_2_Set)
+  - get: L:LIGHTING_PEDESTRAL_1 # DIMMING PEDESTAL
+    set: (>B:LIGHTING_PEDESTRAL_1_Set)
+  - get: L:LIGHTING_POTENTIOMETER_5 # DIMMING AVIONICS
+    set: (>B:LIGHTING_POTENTIOMETER_5_Set)
+
+  - get: A:LIGHT BEACON:1, Bool # BEACON
+  - get: A:LIGHT LANDING:1, Bool # LAND
+  - get: A:LIGHT TAXI:1, Bool # TAXI
+  - get: A:LIGHT NAV:0, Bool # NAV
+  - get: A:LIGHT STROBE:0, Bool # STROBE
+
+  - get: A:FUELSYSTEM PUMP SWITCH:1, Bool # FUEL PUMP
+    set: "`1 ${value} (>K:FUELSYSTEM_PUMP_SET)`"
+  - get: A:PITOT HEAT SWITCH, Bool # PITOT HEAT
+    set: "`${value} 1 (>K:PITOT_HEAT_SET)`"
+#  - get: B:ELECTRICAL_ELECTRICAL_SWITCH_POWER12V, Bool # CABIN PWR 12V
+#    set: (>B:ELECTRICAL_ELECTRICAL_SWITCH_POWER12V_Set)
+
+  - get: A:RECIP ENG RIGHT MAGNETO:1, Bool # MAGNETO RIGHT
+  - get: A:RECIP ENG LEFT MAGNETO:1, Bool # MAGNETO LEFT
+  - get: A:GENERAL ENG STARTER:1, Bool # START
+    set: (>K:SET_STARTER1_HELD)
+    
+  - get: A:LINE BREAKER PULLED:'Main_Alternator_To_ELEC_SPLIT_BUS'_n, Bool # ALT FIELD    
+  - get: A:LINE BREAKER PULLED:'CROSS_FEED_BUS_To_Warnings'_n, Bool # WARN
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_FuelPump'_n, Bool # FUEL PUMP
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_LightBeacon'_n, Bool # BCN LT
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_LightLanding'_n, Bool # LAND LT
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_CABIN_LIGHTS_BUS'_n, Bool # CABIN LTS / PWR
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_FlapsMotor'_n, Bool # FLAPS
+  - get: A:LINE BREAKER PULLED:'BUS_1_To_AVIONICS_BUS_1'_n, Bool # AVN 1
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_PitotHeat'_n, Bool # PITOT HEAT
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_NAV_LIGHTS_BUS'_n, Bool # NAV LTS
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_RECO_TAXI_LIGHTS_BUS'_n, Bool # RECOG / TAXI LTS
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_STROBE_LIGHTS_BUS'_n, Bool # STROBE LTS
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_PANEL_LIGHTS_BUS'_n, Bool # PANEL LTS
+  - get: A:LINE BREAKER PULLED:'BUS_2_To_AVIONICS_BUS_2'_n, Bool # AVN 2
+  - get: A:LINE BREAKER PULLED:'ESSENTIAL_BUS_To_PFD_BUS'_n, Bool # PFD
+  - get: A:LINE BREAKER PULLED:'ESSENTIAL_BUS_To_ADC_AHRS_BUS'_n, Bool # ADC AHRS
+  - get: A:LINE BREAKER PULLED:'ESSENTIAL_BUS_To_NAV1_ENG_BUS'_n, Bool # NAV 1 ENG
+  - get: A:LINE BREAKER PULLED:'ESSENTIAL_BUS_To_Com1'_n, Bool # COMM 1
+  - get: A:LINE BREAKER PULLED:'ESSENTIAL_BUS_STBY_Indicator_Light'_n, Bool # STBY IND LTS
+  - get: A:LINE BREAKER PULLED:'STBY_Battery_To_ESSENTIAL_BUS'_n, Bool # STBY BATT
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_1_To_PFD_BUS'_n, Bool # PFD
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_1_To_ADC_AHRS_BUS'_n, Bool # ADC AHRS
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_1_To_NAV1_ENG_BUS'_n, Bool # NAV 1 ENG
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_1_To_FIS'_n, Bool # FIS
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_MFD'_n, Bool # MFD
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_Transponder'_n, Bool # XPNDR
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_Nav2'_n, Bool # NAV 2
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_Com2'_n, Bool # COMM 2
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_Audio'_n, Bool # AUDIO
+  - get: A:LINE BREAKER PULLED:'AVIONICS_BUS_2_To_Autopilot'_n, Bool # AUTOPILOT
+    
+  - get: A:ALTERNATE STATIC SOURCE OPEN, Bool # ALT STATIC AIR
+    set: (>B:SAFETY_Alternate_Static_Air_Set)
+    
+  - get: A:AIRSPEED TRUE CALIBRATE, Degrees # AIRSPEED CALIBRATION
+    
+  - get: A:ATTITUDE BARS POSITION, Percent # ATTITUDE CALIBRATION
+    set: "`0 ${value} (>K:ATTITUDE_BARS_POSITION_SET)`"
+  
+  - get: L:XMLVAR_ELT_STATE # ELT
+    set: |
+      switch (value) {
+        case 1: return '(>B:SAFETY_ELT_1_ARM)'
+        case 2: return '(>B:SAFETY_ELT_1_ON)'
+        case 3: return '(>B:SAFETY_ELT_1_TEST)'
+        default: return ''
+      }
+      
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k # THROTTLE
+  - get: A:GENERAL ENG MIXTURE LEVER POSITION:1, Position 16k # MIXTURE
+    
+  - get: A:PNEUMATICS VALVE TARGET STATUS:'HotAirValve'_n, Percent # CABIN HIT
+    set: (>B:PNEUMATICS_IE_PNEUMATICS_Lever_Valve_HotAirValve_Set)
+  - get: A:PNEUMATICS VALVE TARGET STATUS:'CockpitValve'_n, Percent # CABIN AIR
+    set: (>B:PNEUMATICS_IE_PNEUMATICS_Lever_Valve_CockpitValve_Set)
+    
+  - get: A:FUELSYSTEM VALVE SWITCH:'ShutoffValve'_n, Bool # FUEL SHUT OFF
+    set: (>B:FUEL_Valve_ShutoffValve_Set)
+    
+  - get: A:FUELSYSTEM JUNCTION SETTING:'FuelSelector'_n, Number # FUEL SELECTOR
+    set: |
+      switch (value) {
+        case 1: return '(>B:FUEL_SELECTOR_1_LEFT)'
+        case 2: return '(>B:FUEL_SELECTOR_1_ALL)'
+        case 3: return '(>B:FUEL_SELECTOR_1_RIGHT)'
+        default: return ''
+      }
+      
+  - get: A:LEAD POLE SET, Position 16k
+    
+  - get: A:BRAKE PARKING POSITION, Bool # PARKING BRAKEd
+    set: (>K:PARKING_BRAKE_SET)
+    
+  - get: A:GRAPPLE HOOK SET, Bool
+    
+  - get: L:LIGHTING_CABIN_1
+    set: (>B:LIGHTING_CABIN_1_Set)
+  - get: L:LIGHTING_CABIN_2
+    set: (>B:LIGHTING_CABIN_2_Set)
+    
+  - get: L:XMLVAR_HUD_1_DOWN
+  - get: L:XMLVAR_HUD_2_DOWN
+    
+  - get: A:INTERACTIVE POINT GOAL:'WindowFrontLeft'_n, Bool
+    set: (>B:AIRCRAFT_Door_Window_Pilot_Set)
+  - get: A:INTERACTIVE POINT GOAL:'WindowFrontRight'_n, Bool
+    set: (>B:AIRCRAFT_Door_Window_Set)
