@@ -134,7 +134,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 
             return;
 
-            void Freeze(bool isFreeze) => sim.Set("L:FSC_FREEZE", isFreeze);
+            void Freeze(bool freeze) => sim.Set("L:FSC_FREEZE", freeze ? 1 : -1);
         });
     }
 

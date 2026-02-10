@@ -7,10 +7,8 @@
 
 namespace
 {
-
 enum : DWORD  // NOLINT(performance-enum-size)
 {
-    // DEF_CLOCK = 0xC001,
     def_freeze   = 0xF001,
     def_physics  = 0xBEEF,
     def_control  = 0xBEEE
@@ -30,7 +28,8 @@ static_assert(sizeof(freeze_state) == 20);
 HANDLE        h_sim                 = 0;
 volatile bool has_standalone_update = false;
 double        now                   = 0.0;
-freeze_state  freeze;
+bool frz_by_me = false;
+freeze_state  frz;
 
 stream_buffer<fsc::protocol::physics>  phys_buf;
 stream_buffer<fsc::protocol::control>  ctrl_buf;
@@ -59,7 +58,6 @@ void apply_physics(const fsc::protocol::physics& p)
                    "%.6f  (>A:VELOCITY WORLD X, Feet per second) "
                    "%.6f  (>A:VELOCITY WORLD Z, Feet per second)",
                    p.lat, p.lon, p.alt_feet, p.pitch, p.bank, p.hdg_deg_gyro, p.hdg_deg_true, p.vertical_speed, p.g_force, p.v_body_y, p.v_body_z, p.vx, p.vz);
-
     execute_calculator_code(cmd, nullptr, nullptr, nullptr);
 }
 
@@ -72,7 +70,6 @@ void apply_control(const fsc::protocol::control& c)
                    "%d (>A:ELEVATOR POSITION, Position 16k) "
                    "%d (>A:RUDDER POSITION, Position 16k)",
                    c.ail_pos, c.elev_pos, c.rud_pos);
-
     execute_calculator_code(cmd, nullptr, nullptr, nullptr);
 
     (void)snprintf(cmd, sizeof(cmd),
@@ -87,60 +84,78 @@ void apply_freeze(const bool is_frozen)
 {
     char cmd[256];
     (void)snprintf(cmd, sizeof(cmd),
-                   "%d (>K:FREEZE_LATITUDE_LONGITUDE_SE) "
+                   "%d (>K:FREEZE_LATITUDE_LONGITUDE_SET) "
                    "%d (>K:FREEZE_ALTITUDE_SET) "
                    "%d (>K:FREEZE_ATTITUDE_SET)",
                    is_frozen, is_frozen, is_frozen);
+    execute_calculator_code(cmd, nullptr, nullptr, nullptr);
+}
+
+// Applies freeze/unfreeze according to FSC policy.
+// fsc_freeze meaning:
+//  1  -> ensure frozen (if not already frozen)
+//  0  -> do nothing (never force unfreeze)
+// -1  -> unfreeze only if we froze it and sim isn't disabled by someone else
+void sync_freeze()
+{
+    const bool sim_frozen = frz.alt_freeze || frz.att_freeze || frz.lat_lon_freeze;
+
+    // Ensure freeze when requested.
+    if (frz.fsc_freeze == 1 && !sim_frozen)
+    {
+        apply_freeze(true);
+        frz_by_me = true;
+        execute_calculator_code("0 (>L:FSC_FREEZE)", nullptr, nullptr, nullptr);
+        return;
+    }
+
+    // Unfreeze only on explicit "-1" request and only if we own the freeze.
+    if (frz.fsc_freeze == -1 && frz_by_me && !frz.sim_disabled && sim_frozen)
+    {
+        apply_freeze(false);
+        frz_by_me = false;
+        execute_calculator_code("0 (>L:FSC_FREEZE)", nullptr, nullptr, nullptr);
+        return;
+    }
 }
 
 void interpolate()
 {
-    if (freeze.fsc_freeze && !freeze.alt_freeze && !freeze.att_freeze && !freeze.lat_lon_freeze)
-        apply_freeze(true);
-    else if (!freeze.fsc_freeze && !freeze.sim_disabled && (freeze.alt_freeze || freeze.att_freeze || freeze.lat_lon_freeze))
-        apply_freeze(false);
-
-    if (!freeze.fsc_freeze)
-        return;
+    if (!frz_by_me) return;
 
     const double render_t = now - k_delay_sec;
 
     // Physics
     fsc::protocol::physics p{};
     if (phys_buf.interpolate(render_t, p, fsc::interp::physics))
-    {
         apply_physics(p);
-    }
 
     // Control
     fsc::protocol::control c{};
     if (ctrl_buf.interpolate(render_t, c, fsc::interp::control))
-    {
         apply_control(c);
-    }
 }
 
 void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_context*/)
 {
-    if (!p_data)
-        return;
+    if (!p_data) return;
 
     if (p_data->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA)
     {
         const auto* d = reinterpret_cast<SIMCONNECT_RECV_SIMOBJECT_DATA*>(p_data);
         if (d->dwRequestID == def_freeze)
         {
-            const auto* fr = reinterpret_cast<const freeze_state*>(&d->dwData);
-            freeze = *fr;
-            
-            // (void)fprintf(stdout, "%s: FSC_FREEZE %d", "[FsCopilot]", fs->fsc_freeze);
+            const auto* freeze = reinterpret_cast<const freeze_state*>(&d->dwData);
+            frz = *freeze;
+
             // If MSFS2024 Update_StandAlone is active, we don't want double-ticking.
             // BUT we still keep SimConnect alive and continue handling messages above.
-            // MSFS2020 fallback tick: we use our clock packets as "per-frame" pulse
+            // MSFS2020 fallback tick: we use our visual frame packets as "per-frame" pulse
             if (!has_standalone_update)
             {
                 // now = chrono_system_clock_now();
                 now += 1.0 / 60.0;
+                sync_freeze();
                 interpolate();
             }
         }
@@ -162,14 +177,6 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             const double t_local = t_shifts[ctrl->session_id].to_local_sec(now, ctrl->time_ms);
             ctrl_buf.push(t_local, *ctrl);
         }
-
-        // if (!g_has_standalone_update && cd->dwRequestID == DEF_CLOCK)
-        // {
-        //     // If MSFS2024 Update_StandAlone is active, we don't want double-ticking.
-        //     // BUT we still keep SimConnect alive and continue handling messages above.
-        //     // MSFS2020 fallback tick: we use our clock packets as "per-frame" pulse
-        //     if (!g_has_standalone_update) interpolate();
-        // }
     }
 }
 } // namespace
@@ -179,20 +186,14 @@ extern "C" MSFS_CALLBACK void module_init(void)
     if (FAILED(SimConnect_Open(&h_sim, "FsCopilot Interpolation", nullptr, 0, 0, 0)))
         return;
 
-    // // Always set up fallback clock — harmless in 2024, critical in 2020.
-    // (void)SimConnect_MapClientDataNameToID(g_h_sim, "FSCP_CLOCK", DEF_CLOCK);
-    // (void)SimConnect_CreateClientData(g_h_sim, DEF_CLOCK, 4, 0);
-    // (void)SimConnect_AddToClientDataDefinition(g_h_sim, DEF_CLOCK, 0, 4, 0.0f, -1);
-    // (void)SimConnect_RequestClientData(g_h_sim, DEF_CLOCK, DEF_CLOCK, DEF_CLOCK,
-    // SIMCONNECT_CLIENT_DATA_PERIOD_VISUAL_FRAME, 0, 0, 0, 0);
-
     // freeze
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS LATITUDE LONGITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS ALTITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS ATTITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "SIM DISABLED", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "L:FSC_FREEZE", "Number", SIMCONNECT_DATATYPE_INT32);
-    // Просим обновлять каждый визуальный кадр (можно SIM_FRAME тоже)
+    // Request updates every visual frame.
+    // This is required to drive interpolation in MSFS 2020, where Update_StandAlone is not available.
     (void)SimConnect_RequestDataOnSimObject(h_sim, def_freeze, def_freeze, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_VISUAL_FRAME, 0, 0, 0, 0);
 
     // physics
@@ -214,11 +215,10 @@ extern "C" MSFS_CALLBACK void module_init(void)
 
 extern "C" MSFS_CALLBACK void module_deinit(void)
 {
-    if (h_sim != 0)
-    {
-        (void)SimConnect_Close(h_sim);
-        h_sim = 0;
-    }
+    if (h_sim == 0) return;
+
+    (void)SimConnect_Close(h_sim);
+    h_sim = 0;
 }
 
 // MSFS2024 standalone update hook
@@ -227,5 +227,6 @@ extern "C" MSFS_CALLBACK void Update_StandAlone(float d_time)
 {
     now += static_cast<double>(d_time);
     has_standalone_update = true;
+    sync_freeze();
     interpolate();
 }

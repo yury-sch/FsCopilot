@@ -28,7 +28,7 @@ public class MasterSwitch : IDisposable
         _d.Add(Observable
             .Interval(TimeSpan.FromMilliseconds(500))
             .WithLatestFrom(_master, (_, isMaster) => !isMaster)
-            .Subscribe(freeze => sim.Set("L:FSC_FREEZE", freeze)));
+            .Subscribe(freeze => sim.Set("L:FSC_FREEZE", freeze ? 1 : -1)));
         
         _d.Add(_master.DistinctUntilChanged()
             .Where(isMaster => isMaster)
