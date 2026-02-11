@@ -4,14 +4,17 @@
 #include <MSFS/MSFS.h>
 #include <MSFS/MSFS_WindowsTypes.h>
 #include <SimConnect.h>
+#include <MSFS/MSFS_CommBus.h>
 
 namespace
 {
 enum : DWORD  // NOLINT(performance-enum-size)
 {
-    def_freeze   = 0xF001,
-    def_physics  = 0xBEEF,
-    def_control  = 0xBEEE
+    def_comm_bus_out = 0xF501,
+    def_comm_bus_in  = 0xF502,
+    def_freeze       = 0xF001,
+    def_physics      = 0xBEEF,
+    def_control      = 0xBEEE
 };
 
 struct freeze_state
@@ -136,6 +139,18 @@ void interpolate()
         apply_control(c);
 }
 
+void receive_gauge_msg(const char* json, unsigned int size, void* /*sWasmGaugeData* */ ctx)
+{
+    (void)fprintf(stdout, "%s: Message received from gauge %s", "[FsCopilot]", json);
+    // const size_t len = std::strlen(json);
+    if (size > sizeof(fsc::protocol::comm_bus_msg::msg)) return;
+
+    fsc::protocol::comm_bus_msg msg{};
+    std::memcpy(msg.msg, json, size);
+
+    (void)SimConnect_SetClientData(h_sim, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::comm_bus_msg), &msg);
+}
+
 void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_context*/)
 {
     if (!p_data) return;
@@ -164,6 +179,13 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
     if (p_data->dwID == SIMCONNECT_RECV_ID_CLIENT_DATA)
     {
         const auto* cd = reinterpret_cast<SIMCONNECT_RECV_CLIENT_DATA*>(p_data);
+        if (cd->dwRequestID == def_comm_bus_in)
+        {
+            const auto*  msg     = reinterpret_cast<const fsc::protocol::comm_bus_msg*>(&cd->dwData);
+            (void)fprintf(stdout, "%s: Message received from client %s", "[FsCopilot]", msg->msg);
+            fsCommBusCall("FSC_CLIENT_EVENT", msg->msg, sizeof(msg->msg), FsCommBusBroadcast_JS);
+        }
+
         if (cd->dwRequestID == def_physics)
         {
             const auto*  physics = reinterpret_cast<const fsc::protocol::physics*>(&cd->dwData);
@@ -185,6 +207,15 @@ extern "C" MSFS_CALLBACK void module_init(void)
 {
     if (FAILED(SimConnect_Open(&h_sim, "FsCopilot Interpolation", nullptr, 0, 0, 0)))
         return;
+
+    // buss
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_OUT", def_comm_bus_out);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::comm_bus_msg), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_IN", def_comm_bus_in);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::comm_bus_msg), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_in, def_comm_bus_in, def_comm_bus_in, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    fsCommBusRegister("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
 
     // freeze
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS LATITUDE LONGITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
@@ -218,6 +249,7 @@ extern "C" MSFS_CALLBACK void module_deinit(void)
     if (h_sim == 0) return;
 
     (void)SimConnect_Close(h_sim);
+	fsCommBusUnregisterOneEvent("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
     h_sim = 0;
 }
 

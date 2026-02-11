@@ -13,9 +13,18 @@ public sealed class SimConnectConsumer : IDisposable
     private readonly BehaviorSubject<string?> _aircraft = new(null);
 
     private readonly Subject<SIMCONNECT_RECV_SIMOBJECT_DATA> _simObjectData = new();
+    private readonly Subject<SIMCONNECT_RECV_CLIENT_DATA> _simClientData = new();
 
     private readonly Channel<SIMCONNECT_RECV_SIMOBJECT_DATA> _simObjectDataCh =
         Channel.CreateUnbounded<SIMCONNECT_RECV_SIMOBJECT_DATA>(new()
+        {
+            SingleReader = true,
+            SingleWriter = true,
+            AllowSynchronousContinuations = true
+        });
+
+    private readonly Channel<SIMCONNECT_RECV_CLIENT_DATA> _simClientDataCh =
+        Channel.CreateUnbounded<SIMCONNECT_RECV_CLIENT_DATA>(new()
         {
             SingleReader = true,
             SingleWriter = true,
@@ -32,7 +41,8 @@ public sealed class SimConnectConsumer : IDisposable
             AllowSynchronousContinuations = true
         });
 
-    private readonly Task _pumpTask;
+    private readonly Task _pumpObjTask;
+    private readonly Task _pumpClientTask;
 
     private readonly string _appName;
     private readonly TimeSpan _reconnectDelay = TimeSpan.FromSeconds(2);
@@ -40,13 +50,20 @@ public sealed class SimConnectConsumer : IDisposable
     public IObservable<bool> Connected => _connected;
     public IObservable<string> Aircraft => _aircraft.Where(a => a != null).Select(a => a!).DistinctUntilChanged();
     public IObservable<SIMCONNECT_RECV_SIMOBJECT_DATA> SimObjectData => _simObjectData;
+    public IObservable<SIMCONNECT_RECV_CLIENT_DATA> SimClientData => _simClientData;
 
     public SimConnectConsumer(string appName)
     {
         _appName = appName + " (Consumer)";
 
-        _pumpTask = Task.Factory.StartNew(
+        _pumpObjTask = Task.Factory.StartNew(
             () => PumpAsync(_simObjectDataCh.Reader, _simObjectData, _cts.Token),
+            _cts.Token,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        _pumpClientTask = Task.Factory.StartNew(
+            () => PumpAsync(_simClientDataCh.Reader, _simClientData, _cts.Token),
             _cts.Token,
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);
@@ -64,9 +81,11 @@ public sealed class SimConnectConsumer : IDisposable
 
         _cfgQueue.Writer.TryComplete();
         _simObjectDataCh.Writer.TryComplete();
+        _simClientDataCh.Writer.TryComplete();
 
         try { _reconnectTask.Wait(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
-        try { _pumpTask.Wait(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
+        try { _pumpObjTask.Wait(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
+        try { _pumpClientTask.Wait(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
 
         _connected.OnCompleted();
         _aircraft.OnCompleted();
@@ -96,6 +115,7 @@ public sealed class SimConnectConsumer : IDisposable
             using var evt = new AutoResetEvent(false);
             using var sim = new SimConnect(_appName, IntPtr.Zero, 0, evt, 0);
             sim.OnRecvSimobjectData += (_, data) => _simObjectDataCh.Writer.TryWrite(data);
+            sim.OnRecvClientData += (_, data) => _simClientDataCh.Writer.TryWrite(data);
             sim.OnRecvEventFilename += (s, data) =>
             {
                 if (data.uEventID != (uint)EVT.AircraftLoaded) return;

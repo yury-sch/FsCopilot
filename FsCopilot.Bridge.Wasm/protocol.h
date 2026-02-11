@@ -43,9 +43,15 @@ struct throttle
     uint32_t time_ms;
 };
 
+struct comm_bus_msg
+{
+    char msg[512];
+};
+
 #pragma pack(pop)
 
 static_assert(sizeof(physics) == 116);
 static_assert(sizeof(control) == 24);
 static_assert(sizeof(throttle) == 28);
+static_assert(sizeof(comm_bus_msg) == 512);
 } // namespace fsc::protocol

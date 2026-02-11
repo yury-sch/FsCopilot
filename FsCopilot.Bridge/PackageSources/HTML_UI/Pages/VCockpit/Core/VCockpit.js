@@ -33,15 +33,16 @@ var jsLoaded = false;
     };
 })();
 
+Include.addImports(['/JS/Services/CommBus.js'], () =>
 Include.addImports(['/FsCopilot/common.js'], () =>
-Include.addImports(['/FsCopilot/network.js'], () =>
+Include.addImports(['/FsCopilot/bus.js'], () =>
 Include.addImports(['/FsCopilot/events.js'], () =>
 Include.addImports(['/FsCopilot/watcher.js'], () =>
 Include.addImports(['/FsCopilot/handler.js'], () => {
     console.log('[Hook] References loaded.');
     jsLoaded = true;
     if (templateToLoad != null) handler = new FsCopilotHandler(templateToLoad);
-})))));
+}))))));
 
 class VCockpitPanel extends HTMLElement {
     constructor() {

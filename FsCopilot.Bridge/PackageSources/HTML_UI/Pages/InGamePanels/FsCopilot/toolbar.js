@@ -1,14 +1,15 @@
 // https://github.com/parallel42/msfs-toolbar-interop
 (function () {
     Include.addImports(['/FsCopilot/common.js'], () =>
-    Include.addImports(['/FsCopilot/network.js'], initialize));
+    Include.addImports(['/FsCopilot/bus.js'], initialize));
 
     function initialize() {
         console.log('[FsCopilot] [Toolbar] Initialize');
-        let network = new FsCopilotNetwork();
-        network.addEventListener('open', () => { show_toolbar(true); });
-        network.addEventListener('close', () => { show_toolbar(false); });
-        show_toolbar(network.connected);
+        show_toolbar(false);
+        // let bus = new Bus();
+        // bus.addEventListener('open', () => { show_toolbar(true); });
+        // bus.addEventListener('close', () => { show_toolbar(false); });
+        // show_toolbar(bus.connected);
     }
 
     function show_toolbar(show) {

@@ -10,21 +10,21 @@ class FsCopilotPanel extends TemplateElement {
         const ingameUi = this.querySelector('ingame-ui');
         const tglControl = this.querySelector('#toggleControl');
 		if (!ingameUi || !tglControl) return;
-        
+
+        let bus = new Bus();
         tglControl.onclick = () => setTimeout(() => {
-            network.send({'type': 'config', 'control': tglControl.toggled});
+            bus.send({'type': 'config', 'control': tglControl.toggled});
         }, 100);
-        
-        let network = new FsCopilotNetwork();
-        network.addEventListener('open', () => network.send({'type': 'config'}));
-        network.addEventListener('message', msg => {
+
+        bus.addEventListener('open', () => bus.send({'type': 'config'}));
+        bus.addEventListener('message', msg => {
             switch (msg.type) {
                 case 'config':
                     tglControl.setValue(msg.control);
                     break;
             }
         });
-        network.addEventListener('close', () => ingameUi.closePanel());
+        bus.addEventListener('close', () => ingameUi.closePanel());
 	}
 }
 
