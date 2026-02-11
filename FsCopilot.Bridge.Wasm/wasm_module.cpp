@@ -1,17 +1,22 @@
 ﻿#include "wasm_module.h"
-#include <unordered_map>
-#include <MSFS/Legacy/gauges.h>
-#include <MSFS/MSFS.h>
-#include <MSFS/MSFS_WindowsTypes.h>
+#include "var_watcher.h"
 #include <SimConnect.h>
+#include <unordered_map>
+#include <MSFS/MSFS.h>
 #include <MSFS/MSFS_CommBus.h>
+#include <MSFS/MSFS_WindowsTypes.h>
+#include <MSFS/Legacy/gauges.h>
 
 namespace
 {
-enum : DWORD  // NOLINT(performance-enum-size)
+enum : DWORD // NOLINT(performance-enum-size)
 {
     def_comm_bus_out = 0xF501,
     def_comm_bus_in  = 0xF502,
+    def_watch        = 0xF503,
+    def_unwatch      = 0xF504,
+    def_variable     = 0xF505,
+    def_set          = 0xF506,
     def_freeze       = 0xF001,
     def_physics      = 0xBEEF,
     def_control      = 0xBEEE
@@ -31,11 +36,12 @@ static_assert(sizeof(freeze_state) == 20);
 HANDLE        h_sim                 = 0;
 volatile bool has_standalone_update = false;
 double        now                   = 0.0;
-bool frz_by_me = false;
+bool          frz_by_me             = false;
 freeze_state  frz;
+var_watcher   watcher(1e-6);
 
-stream_buffer<fsc::protocol::physics>  phys_buf;
-stream_buffer<fsc::protocol::control>  ctrl_buf;
+stream_buffer<fsc::protocol::physics> phys_buf;
+stream_buffer<fsc::protocol::control> ctrl_buf;
 
 std::unordered_map<uint64_t, time_shift> t_shifts;
 
@@ -124,7 +130,8 @@ void sync_freeze()
 
 void interpolate()
 {
-    if (!frz_by_me) return;
+    if (!frz_by_me)
+        return;
 
     const double render_t = now - k_delay_sec;
 
@@ -141,19 +148,30 @@ void interpolate()
 
 void receive_gauge_msg(const char* json, unsigned int size, void* /*sWasmGaugeData* */ ctx)
 {
-    (void)fprintf(stdout, "%s: Message received from gauge %s", "[FsCopilot]", json);
+    (void)fprintf(stdout, "%s: Gauge message %s", "[FsCopilot]", json);
     // const size_t len = std::strlen(json);
-    if (size > sizeof(fsc::protocol::comm_bus_msg::msg)) return;
+    if (size > sizeof(fsc::protocol::comm_bus::msg))
+        return;
 
-    fsc::protocol::comm_bus_msg msg{};
+    fsc::protocol::comm_bus msg{};
     std::memcpy(msg.msg, json, size);
 
-    (void)SimConnect_SetClientData(h_sim, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::comm_bus_msg), &msg);
+    (void)SimConnect_SetClientData(h_sim, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::comm_bus), &msg);
+}
+
+void var_update(const char* name, double value, void* user)
+{
+    (void)fprintf(stdout, "%s: %s -> %f", "[FsCopilot]", name, value);
+    fsc::protocol::var_set msg = {};
+    strncpy(msg.name, name, sizeof(msg.name) - 1);
+    msg.value = value;
+    (void)SimConnect_SetClientData(h_sim, def_variable, def_variable, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::var_set), &msg);
 }
 
 void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_context*/)
 {
-    if (!p_data) return;
+    if (!p_data)
+        return;
 
     if (p_data->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA)
     {
@@ -161,7 +179,7 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
         if (d->dwRequestID == def_freeze)
         {
             const auto* freeze = reinterpret_cast<const freeze_state*>(&d->dwData);
-            frz = *freeze;
+            frz                = *freeze;
 
             // If MSFS2024 Update_StandAlone is active, we don't want double-ticking.
             // BUT we still keep SimConnect alive and continue handling messages above.
@@ -172,6 +190,7 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
                 now += 1.0 / 60.0;
                 sync_freeze();
                 interpolate();
+                watcher.poll(&var_update, nullptr);
             }
         }
     }
@@ -179,12 +198,6 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
     if (p_data->dwID == SIMCONNECT_RECV_ID_CLIENT_DATA)
     {
         const auto* cd = reinterpret_cast<SIMCONNECT_RECV_CLIENT_DATA*>(p_data);
-        if (cd->dwRequestID == def_comm_bus_in)
-        {
-            const auto*  msg     = reinterpret_cast<const fsc::protocol::comm_bus_msg*>(&cd->dwData);
-            (void)fprintf(stdout, "%s: Message received from client %s", "[FsCopilot]", msg->msg);
-            fsCommBusCall("FSC_CLIENT_EVENT", msg->msg, sizeof(msg->msg), FsCommBusBroadcast_JS);
-        }
 
         if (cd->dwRequestID == def_physics)
         {
@@ -199,6 +212,36 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             const double t_local = t_shifts[ctrl->session_id].to_local_sec(now, ctrl->time_ms);
             ctrl_buf.push(t_local, *ctrl);
         }
+
+        if (cd->dwRequestID == def_comm_bus_in)
+        {
+            const auto* msg = reinterpret_cast<const fsc::protocol::comm_bus*>(&cd->dwData);
+            (void)fprintf(stdout, "%s: Client message %s", "[FsCopilot]", msg->msg);
+            fsCommBusCall("FSC_CLIENT_EVENT", msg->msg, sizeof(msg->msg), FsCommBusBroadcast_JS);
+        }
+
+        if (cd->dwRequestID == def_watch)
+        {
+            const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
+            (void)fprintf(stdout, "%s: Watch %s, %s", "[FsCopilot]", msg->name, msg->units);
+            watcher.watch(msg->name, msg->units);
+        }
+
+        if (cd->dwRequestID == def_unwatch)
+        {
+            const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
+            (void)fprintf(stdout, "%s: Unwatch %s", "[FsCopilot]", msg->name);
+            watcher.unwatch(msg->name);
+        }
+
+        if (cd->dwRequestID == def_set)
+        {
+            const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
+            char cmd[128];
+            (void)snprintf(cmd, sizeof(cmd), "%.15g (>%s)", msg->value, msg->name);
+            execute_calculator_code(cmd, nullptr, nullptr, nullptr);
+            (void)fprintf(stdout, "%s: %s", "[FsCopilot]", cmd);
+        }
     }
 }
 } // namespace
@@ -207,15 +250,6 @@ extern "C" MSFS_CALLBACK void module_init(void)
 {
     if (FAILED(SimConnect_Open(&h_sim, "FsCopilot Interpolation", nullptr, 0, 0, 0)))
         return;
-
-    // buss
-    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_OUT", def_comm_bus_out);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::comm_bus_msg), 0, 0);
-    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
-    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_IN", def_comm_bus_in);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::comm_bus_msg), 0, 0);
-    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_in, def_comm_bus_in, def_comm_bus_in, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
-    fsCommBusRegister("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
 
     // freeze
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS LATITUDE LONGITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
@@ -239,6 +273,29 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_control, 0, sizeof(fsc::protocol::control), 0.0f, -1);
     (void)SimConnect_RequestClientData(h_sim, def_control, def_control, def_control, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
 
+    // buss
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_OUT", def_comm_bus_out);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::comm_bus), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_IN", def_comm_bus_in);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::comm_bus), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_in, def_comm_bus_in, def_comm_bus_in, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    fsCommBusRegister("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
+
+    // watch
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_WATCH", def_watch);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_watch, 0, sizeof(fsc::protocol::var_set), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_watch, def_watch, def_watch, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_UNWATCH", def_unwatch);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_unwatch, 0, sizeof(fsc::protocol::var_set), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_unwatch, def_unwatch, def_unwatch, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_VARIABLE", def_variable);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_variable, 0, sizeof(fsc::protocol::var_set), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_variable, def_variable, def_variable, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_SET", def_set);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_set, 0, sizeof(fsc::protocol::var_set), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_set, def_set, def_set, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+
     (void)SimConnect_CallDispatch(h_sim, dispatch, nullptr);
 
     (void)fprintf(stdout, "%s: Initialized", "[FsCopilot]");
@@ -246,10 +303,11 @@ extern "C" MSFS_CALLBACK void module_init(void)
 
 extern "C" MSFS_CALLBACK void module_deinit(void)
 {
-    if (h_sim == 0) return;
+    if (h_sim == 0)
+        return;
 
     (void)SimConnect_Close(h_sim);
-	fsCommBusUnregisterOneEvent("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
+    fsCommBusUnregisterOneEvent("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
     h_sim = 0;
 }
 
@@ -261,4 +319,5 @@ extern "C" MSFS_CALLBACK void Update_StandAlone(float d_time)
     has_standalone_update = true;
     sync_freeze();
     interpolate();
+    watcher.poll(&var_update, nullptr);
 }

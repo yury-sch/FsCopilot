@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClInclude Include="interpolators.h" />
     <ClInclude Include="protocol.h" />
+    <ClInclude Include="var_watcher.h" />
     <ClInclude Include="wasm_module.h" />
     <ClInclude Include="stream_buffer.h" />
     <ClInclude Include="time_shift.h" />

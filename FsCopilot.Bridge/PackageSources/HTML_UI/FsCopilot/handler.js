@@ -6,32 +6,15 @@ class FsCopilotHandler {
         SimVar.SetSimVarValue('L:FSC_HANDLER', 'number', this.panelId);
 
         this.bus = new Bus();
-        this.watcher = new VarWatcher();
         this.bus.addEventListener('message', msg => {
             if (!this._canProcess()) return;
 
             switch (msg.type) {
-                case 'watch':
-                    this.watcher.watch(msg.name, msg.units);
-                    break;
-                case 'unwatch':
-                    this.watcher.unwatch(msg.name);
-                    break;
-                case 'set':
-                    SimVar.SetSimVarValue(msg.name, 'number', parseFloat(msg.value));
-                    break;
                 case 'interact':
                     if (instrument.instrumentIdentifier !== msg.instrument) break;
                     HtmlEvents.dispatch(msg.event, msg.id, msg.value);
                     break;
             }
-        });
-        this.watcher.addEventListener('update', ev => {
-            if (!this._canProcess()) {
-                this.watcher.clear();
-                return;
-            }
-            this.bus.send({type: 'var', name: ev.name, value: ev.value});
         });
         if (instrument.isInteractive) {
             const events = new HtmlEvents();
