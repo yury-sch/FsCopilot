@@ -34,12 +34,12 @@ public class MasterSwitch : IDisposable
             .Where(isMaster => isMaster)
             .Subscribe(_ => net.SendAll(new SetMaster(PeerId))));
         
-        _d.Add(sim.Config.Where(c => c.Undefined).Subscribe(_ => sim.Set(new SimConfig(false, _master.Value))));
-        _d.Add(_master.Subscribe(val => sim.Set(new SimConfig(false, val))));
-        _d.Add(sim.Config.Where(c => !c.Undefined).Subscribe(c =>
-        {
-            if (c.Control) TakeControl();
-        }));
+        // _d.Add(sim.Config.Where(c => c.Undefined).Subscribe(_ => sim.Set(new SimConfig(false, _master.Value))));
+        // _d.Add(_master.Subscribe(val => sim.Set(new SimConfig(false, val))));
+        // _d.Add(sim.Config.Where(c => !c.Undefined).Subscribe(c =>
+        // {
+        //     if (c.Control) TakeControl();
+        // }));
     }
 
     public void TakeControl() => _master.OnNext(true);

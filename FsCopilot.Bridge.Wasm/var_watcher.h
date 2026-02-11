@@ -32,14 +32,15 @@ public:
     {
     }
 
-    void watch(const char* name, const char* units)
+    bool watch(const char* name, const char* units)
     {
         const std::string key(name);
 
         if (vars_.find(key) != vars_.end())
-            return;
+            return false;
 
         vars_[key] = watch_entry(wrap_expression(name, units));
+        return true;
     }
 
     void unwatch(const char* name)

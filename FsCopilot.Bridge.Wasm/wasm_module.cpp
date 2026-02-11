@@ -11,6 +11,7 @@ namespace
 {
 enum : DWORD // NOLINT(performance-enum-size)
 {
+    def_ready        = 0xF500,
     def_comm_bus_out = 0xF501,
     def_comm_bus_in  = 0xF502,
     def_watch        = 0xF503,
@@ -148,20 +149,20 @@ void interpolate()
 
 void receive_gauge_msg(const char* json, unsigned int size, void* /*sWasmGaugeData* */ ctx)
 {
-    (void)fprintf(stdout, "%s: Gauge message %s", "[FsCopilot]", json);
     // const size_t len = std::strlen(json);
-    if (size > sizeof(fsc::protocol::comm_bus::msg))
+    if (size > sizeof(fsc::protocol::str_msg::msg))
         return;
 
-    fsc::protocol::comm_bus msg{};
+    fsc::protocol::str_msg msg{};
     std::memcpy(msg.msg, json, size);
 
-    (void)SimConnect_SetClientData(h_sim, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::comm_bus), &msg);
+    (void)SimConnect_SetClientData(h_sim, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(fsc::protocol::str_msg), &msg);
+    (void)fprintf(stdout, "Send %s", json);
 }
 
 void var_update(const char* name, double value, void* user)
 {
-    (void)fprintf(stdout, "%s: %s -> %f", "[FsCopilot]", name, value);
+    (void)fprintf(stdout, "%s -> %f", name, value);
     fsc::protocol::var_set msg = {};
     strncpy(msg.name, name, sizeof(msg.name) - 1);
     msg.value = value;
@@ -215,23 +216,23 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
 
         if (cd->dwRequestID == def_comm_bus_in)
         {
-            const auto* msg = reinterpret_cast<const fsc::protocol::comm_bus*>(&cd->dwData);
-            (void)fprintf(stdout, "%s: Client message %s", "[FsCopilot]", msg->msg);
+            const auto* msg = reinterpret_cast<const fsc::protocol::str_msg*>(&cd->dwData);
+            (void)fprintf(stdout, "Receive %s", msg->msg);
             fsCommBusCall("FSC_CLIENT_EVENT", msg->msg, sizeof(msg->msg), FsCommBusBroadcast_JS);
         }
 
         if (cd->dwRequestID == def_watch)
         {
             const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
-            (void)fprintf(stdout, "%s: Watch %s, %s", "[FsCopilot]", msg->name, msg->units);
-            watcher.watch(msg->name, msg->units);
+            if (watcher.watch(msg->name, msg->units))
+                (void)fprintf(stdout, "Watch %s, %s", msg->name, msg->units);
         }
 
         if (cd->dwRequestID == def_unwatch)
         {
             const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
-            (void)fprintf(stdout, "%s: Unwatch %s", "[FsCopilot]", msg->name);
             watcher.unwatch(msg->name);
+            (void)fprintf(stdout, "Unwatch %s", msg->name);
         }
 
         if (cd->dwRequestID == def_set)
@@ -240,7 +241,7 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             char cmd[128];
             (void)snprintf(cmd, sizeof(cmd), "%.15g (>%s)", msg->value, msg->name);
             execute_calculator_code(cmd, nullptr, nullptr, nullptr);
-            (void)fprintf(stdout, "%s: %s", "[FsCopilot]", cmd);
+            (void)fprintf(stdout, cmd);
         }
     }
 }
@@ -260,6 +261,11 @@ extern "C" MSFS_CALLBACK void module_init(void)
     // Request updates every visual frame.
     // This is required to drive interpolation in MSFS 2020, where Update_StandAlone is not available.
     (void)SimConnect_RequestDataOnSimObject(h_sim, def_freeze, def_freeze, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_VISUAL_FRAME, 0, 0, 0, 0);
+    
+    // ready
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_READY", def_ready);
+    (void)SimConnect_CreateClientData(h_sim, def_ready, sizeof(fsc::protocol::str_msg), 0);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_ready, 0, sizeof(fsc::protocol::str_msg), 0, 0);
 
     // physics
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_Physics", def_physics);
@@ -275,40 +281,48 @@ extern "C" MSFS_CALLBACK void module_init(void)
 
     // buss
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_OUT", def_comm_bus_out);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::comm_bus), 0, 0);
-    (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_CreateClientData(h_sim, def_comm_bus_out, sizeof(fsc::protocol::str_msg), 0);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::str_msg), 0, 0);
+    // (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_IN", def_comm_bus_in);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::comm_bus), 0, 0);
+    (void)SimConnect_CreateClientData(h_sim, def_comm_bus_in, sizeof(fsc::protocol::str_msg), 0);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::str_msg), 0, 0);
     (void)SimConnect_RequestClientData(h_sim, def_comm_bus_in, def_comm_bus_in, def_comm_bus_in, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     fsCommBusRegister("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
 
     // watch
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_WATCH", def_watch);
+    (void)SimConnect_CreateClientData(h_sim, def_watch, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_watch, 0, sizeof(fsc::protocol::var_set), 0, 0);
     (void)SimConnect_RequestClientData(h_sim, def_watch, def_watch, def_watch, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_UNWATCH", def_unwatch);
+    (void)SimConnect_CreateClientData(h_sim, def_unwatch, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_unwatch, 0, sizeof(fsc::protocol::var_set), 0, 0);
     (void)SimConnect_RequestClientData(h_sim, def_unwatch, def_unwatch, def_unwatch, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_VARIABLE", def_variable);
+    (void)SimConnect_CreateClientData(h_sim, def_variable, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_variable, 0, sizeof(fsc::protocol::var_set), 0, 0);
-    (void)SimConnect_RequestClientData(h_sim, def_variable, def_variable, def_variable, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    // (void)SimConnect_RequestClientData(h_sim, def_variable, def_variable, def_variable, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_SET", def_set);
+    (void)SimConnect_CreateClientData(h_sim, def_set, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_set, 0, sizeof(fsc::protocol::var_set), 0, 0);
     (void)SimConnect_RequestClientData(h_sim, def_set, def_set, def_set, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
 
     (void)SimConnect_CallDispatch(h_sim, dispatch, nullptr);
+    
+    fsc::protocol::str_msg msg;
+    strncpy(msg.msg, "1.1", sizeof(msg.msg) - 1);
+    (void)SimConnect_SetClientData(h_sim, def_ready, def_ready, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(msg), &msg);
 
-    (void)fprintf(stdout, "%s: Initialized", "[FsCopilot]");
+    (void)fprintf(stdout, "Initialized");
 }
 
 extern "C" MSFS_CALLBACK void module_deinit(void)
 {
-    if (h_sim == 0)
-        return;
-
-    (void)SimConnect_Close(h_sim);
+    if (h_sim != 0) (void)SimConnect_Close(h_sim);
     fsCommBusUnregisterOneEvent("FSC_GAUGE_EVENT", receive_gauge_msg, nullptr);
     h_sim = 0;
+    (void)fprintf(stdout, "Deinitialized");
 }
 
 // MSFS2024 standalone update hook
