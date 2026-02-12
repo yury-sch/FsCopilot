@@ -107,3 +107,6 @@ shared:
   - get: L:CB_GP2
   - get: L:CB_AUD
   - get: L:CB_AFC
+
+# G1000
+  - get: L:G1000_REV_FORCE # Display backup

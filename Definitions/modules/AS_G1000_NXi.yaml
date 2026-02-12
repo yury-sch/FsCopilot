@@ -8,8 +8,7 @@ shared:
     set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
   - get: A:NAV VOLUME:2, Percent # VOL
     set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
-  - get: L:AS1000_PFD_SelectedNavIndex # NAV 1/2
-    set: (>B:AS1000_PFD_1_NAV_Khz_Button_Push)
+  - get: H:AS1000_PFD_NAV_Push # NAV 1/2
   - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
     set: (>K:NAV1_RADIO_SET_HZ)
   - get: A:NAV ACTIVE FREQUENCY:2, Hz # NAV2 ACTIVE
@@ -25,29 +24,29 @@ shared:
     set: "current == 0 ? `${value} 1 (>K:AP_ALT_VAR_SET_ENGLISH)` : `${value} (>A:AUTOPILOT ALTITUDE LOCK VAR:1)`"
     
   - get: H:AS1000_PFD_SOFTKEYS_1
-    set: (>B:AS1000_PFD_1_Softkey_1_Push)
+    set: (>B:G1000_PFD_SOFTKEY1)
   - get: H:AS1000_PFD_SOFTKEYS_2
-    set: (>B:AS1000_PFD_1_Softkey_2_Push)
+    set: (>B:G1000_PFD_SOFTKEY2)
   - get: H:AS1000_PFD_SOFTKEYS_3
-    set: (>B:AS1000_PFD_1_Softkey_3_Push)
+    set: (>B:G1000_PFD_SOFTKEY3)
   - get: H:AS1000_PFD_SOFTKEYS_4
-    set: (>B:AS1000_PFD_1_Softkey_4_Push)
+    set: (>B:G1000_PFD_SOFTKEY4)
   - get: H:AS1000_PFD_SOFTKEYS_5
-    set: (>B:AS1000_PFD_1_Softkey_5_Push)
+    set: (>B:G1000_PFD_SOFTKEY5)
   - get: H:AS1000_PFD_SOFTKEYS_6
-    set: (>B:AS1000_PFD_1_Softkey_6_Push)
+    set: (>B:G1000_PFD_SOFTKEY6)
   - get: H:AS1000_PFD_SOFTKEYS_7
-    set: (>B:AS1000_PFD_1_Softkey_7_Push)
+    set: (>B:G1000_PFD_SOFTKEY7)
   - get: H:AS1000_PFD_SOFTKEYS_8
-    set: (>B:AS1000_PFD_1_Softkey_8_Push)
+    set: (>B:G1000_PFD_SOFTKEY8)
   - get: H:AS1000_PFD_SOFTKEYS_9
-    set: (>B:AS1000_PFD_1_Softkey_9_Push)
+    set: (>B:G1000_PFD_SOFTKEY9)
   - get: H:AS1000_PFD_SOFTKEYS_10
-    set: (>B:AS1000_PFD_1_Softkey_10_Push)
+    set: (>B:G1000_PFD_SOFTKEY10)
   - get: H:AS1000_PFD_SOFTKEYS_11
-    set: (>B:AS1000_PFD_1_Softkey_11_Push)
+    set: (>B:G1000_PFD_SOFTKEY11)
   - get: H:AS1000_PFD_SOFTKEYS_12
-    set: (>B:AS1000_PFD_1_Softkey_12_Push)
+    set: (>B:G1000_PFD_SOFTKEY12)
   - get: L:PFD_CDI_Source # CDI
     set: (>K:AP_NAV_SELECT_SET)
     skp: H:AS1000_PFD_SOFTKEYS_6
@@ -71,8 +70,7 @@ shared:
     set: "`${value} (>K:COM1_VOLUME_SET)`"
   - get: A:COM VOLUME:2, Percent # VOL
     set: "`${value} (>K:COM2_VOLUME_SET)`"
-  - get: L:AS1000_PFD_SelectedComIndex # COM 1/2
-    set: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
+  - get: H:AS1000_PFD_COM_Push # COM 1/2
   - get: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
     set: (>K:COM_RADIO_SET_HZ)
   - get: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
@@ -94,41 +92,36 @@ shared:
     set: (>K:VOR2_SET)
     #  - get: L:CRS_FIX_1 # CRS CTR
   - get: H:AS1000_PFD_CLR
-    set: (>B:AS1000_PFD_1_Clear_Push)
+    set: (>B:G1000_PFD_CLEAR_BUTTON)
   - get: H:AS1000_PFD_ENT_Push
-    set: (>B:AS1000_PFD_1_Enter_Push)
+    set: (>B:G1000_PFD_ENTER_BUTTON)
   - get: H:AS1000_PFD_FPL_Push
-    set: (>B:AS1000_PFD_1_FlightPlan_Push)
+    set: (>B:G1000_PFD_FLIGHTPLAN_BUTTON)
   - get: H:AS1000_PFD_PROC_Push
-    set: (>B:AS1000_PFD_1_Procedure_Push)
+    set: (>B:G1000_PFD_PROCEDURE_BUTTON)
   - get: H:AS1000_PFD_DIRECTTO
-    set: (>B:AS1000_PFD_1_DirectTo_Push)
+    set: (>B:G1000_PFD_DIRECTTO_BUTTON)
   - get: H:AS1000_PFD_MENU_Push
-    set: (>B:AS1000_PFD_1_Menu_Push)
+    set: (>B:G1000_PFD_MENU_BUTTON)
   - get: H:AS1000_PFD_JOYSTICK_PUSH
-    set: (>B:AS1000_PFD_1_Range_Cursor_Push)
+    set: (>B:G1000_PFD_CURSOR_BUTTON)
   - get: H:AS1000_PFD_RANGE_INC
-    set: (>B:AS1000_PFD_1_Range_Zoom_Out)
+    set: (>B:G1000_PFD_ZOOMOUT_BUTTON)
   - get: H:AS1000_PFD_RANGE_DEC
-    set: (>B:AS1000_PFD_1_Range_Zoom_In)
+    set: (>B:G1000_PFD_ZOOMIN_BUTTON)
   - get: H:AS1000_PFD_JOYSTICK_LEFT
-    set: (>B:AS1000_PFD_1_Range_Pan_X_Left)
   - get: H:AS1000_PFD_JOYSTICK_RIGHT
-    set: (>B:AS1000_PFD_1_Range_Pan_X_Right)
   - get: H:AS1000_PFD_JOYSTICK_UP
-    set: (>B:AS1000_PFD_1_Range_Pan_Y_Up)
   - get: H:AS1000_PFD_JOYSTICK_DOWN
-    set: (>B:AS1000_PFD_1_Range_Pan_Y_Down)
   - get: H:AS1000_PFD_FMS_Lower_INC
-    set: (>B:AS1000_PFD_1_FMS_Outer_Inc)
+    set: (>B:G1000_PFD_PAGE_KNOB_INC)
   - get: H:AS1000_PFD_FMS_Lower_DEC
-    set: (>B:AS1000_PFD_1_FMS_Outer_Dec)
+    set: (>B:G1000_PFD_PAGE_KNOB_DEC)
   - get: H:AS1000_PFD_FMS_Upper_INC
-    set: (>B:AS1000_PFD_1_FMS_Inner_Inc)
+    set: (>B:G1000_PFD_GROUP_KNOB_INC)
   - get: H:AS1000_PFD_FMS_Upper_DEC
-    set: (>B:AS1000_PFD_1_FMS_Inner_Dec)
+    set: (>B:G1000_PFD_GROUP_KNOB_DEC)
   - get: H:AS1000_PFD_FMS_Upper_PUSH
-    set: (>B:AS1000_PFD_1_FMS_Inner_Button_Push)
   #  - get: L:AS1000_PFD_STATE
 #  - get: L:AS1000_PFD_Brightness
 #  - get: L:AS1000_PFD_Brightness_IsAuto
@@ -156,7 +149,6 @@ shared:
     set: (>K:RADIO_ADF_IDENT_TOGGLE)
   - get: A:NAV SOUND:2, Bool # NAV2
     set: (>K:RADIO_VOR2_IDENT_TOGGLE)
-  - get: L:G1000_REV_FORCE # Display backup
   
   # MFD
   - get: A:AUTOPILOT MASTER, Bool # On/off flag
@@ -185,63 +177,58 @@ shared:
     set: (>K:AP_SPD_VAR_SET)
 
   - get: H:AS1000_MFD_SOFTKEYS_1
-    set: (>B:AS1000_MFD_1_Softkey_1_Push)
+    set: (>B:G1000_MFD_SOFTKEY1)
   - get: H:AS1000_MFD_SOFTKEYS_2
-    set: (>B:AS1000_MFD_1_Softkey_2_Push)
+    set: (>B:G1000_MFD_SOFTKEY2)
   - get: H:AS1000_MFD_SOFTKEYS_3
-    set: (>B:AS1000_MFD_1_Softkey_3_Push)
+    set: (>B:G1000_MFD_SOFTKEY3)
   - get: H:AS1000_MFD_SOFTKEYS_4
-    set: (>B:AS1000_MFD_1_Softkey_4_Push)
+    set: (>B:G1000_MFD_SOFTKEY4)
   - get: H:AS1000_MFD_SOFTKEYS_5
-    set: (>B:AS1000_MFD_1_Softkey_5_Push)
+    set: (>B:G1000_MFD_SOFTKEY5)
   - get: H:AS1000_MFD_SOFTKEYS_6
-    set: (>B:AS1000_MFD_1_Softkey_6_Push)
+    set: (>B:G1000_MFD_SOFTKEY6)
   - get: H:AS1000_MFD_SOFTKEYS_7
-    set: (>B:AS1000_MFD_1_Softkey_7_Push)
+    set: (>B:G1000_MFD_SOFTKEY7)
   - get: H:AS1000_MFD_SOFTKEYS_8
-    set: (>B:AS1000_MFD_1_Softkey_8_Push)
+    set: (>B:G1000_MFD_SOFTKEY8)
   - get: H:AS1000_MFD_SOFTKEYS_9
-    set: (>B:AS1000_MFD_1_Softkey_9_Push)
+    set: (>B:G1000_MFD_SOFTKEY9)
   - get: H:AS1000_MFD_SOFTKEYS_10
-    set: (>B:AS1000_MFD_1_Softkey_10_Push)
+    set: (>B:G1000_MFD_SOFTKEY10)
   - get: H:AS1000_MFD_SOFTKEYS_11
-    set: (>B:AS1000_MFD_1_Softkey_11_Push)
+    set: (>B:G1000_MFD_SOFTKEY11)
   - get: H:AS1000_MFD_SOFTKEYS_12
-    set: (>B:AS1000_MFD_1_Softkey_12_Push)
+    set: (>B:G1000_MFD_SOFTKEY12)
 
   - get: H:AS1000_MFD_JOYSTICK_PUSH
-    set: (>B:AS1000_MFD_1_Range_Cursor_Push)
+    set: (>B:G1000_MFD_CURSOR_BUTTON)
   - get: H:AS1000_MFD_RANGE_INC
-    set: (>B:AS1000_MFD_1_Range_Zoom_Out)
+    set: (>B:G1000_MFD_ZOOMOUT_BUTTON)
   - get: H:AS1000_MFD_RANGE_DEC
-    set: (>B:AS1000_MFD_1_Range_Zoom_In)
+    set: (>B:G1000_MFD_ZOOMIN_BUTTON)
   - get: H:AS1000_MFD_JOYSTICK_LEFT
-    set: (>B:AS1000_MFD_1_Range_Pan_X_Left)
   - get: H:AS1000_MFD_JOYSTICK_RIGHT
-    set: (>B:AS1000_MFD_1_Range_Pan_X_Right)
   - get: H:AS1000_MFD_JOYSTICK_UP
-    set: (>B:AS1000_MFD_1_Range_Pan_Y_Up)
   - get: H:AS1000_MFD_JOYSTICK_DOWN
-    set: (>B:AS1000_MFD_1_Range_Pan_Y_Down)
   - get: H:AS1000_MFD_CLR
-    set: (>B:AS1000_MFD_1_Clear_Push)
+    set: (>B:G1000_MFD_CLEAR_BUTTON)
   - get: H:AS1000_MFD_ENT_Push
-    set: (>B:AS1000_MFD_1_Enter_Push)
+    set: (>B:G1000_MFD_ENTER_BUTTON)
   - get: H:AS1000_MFD_FPL_Push
-    set: (>B:AS1000_MFD_1_FlightPlan_Push)
+    set: (>B:G1000_MFD_FLIGHTPLAN_BUTTON)
   - get: H:AS1000_MFD_PROC_Push
-    set: (>B:AS1000_MFD_1_Procedure_Push)
+    set: (>B:G1000_MFD_PROCEDURE_BUTTON)
   - get: H:AS1000_MFD_DIRECTTO
-    set: (>B:AS1000_MFD_1_DirectTo_Push)
+    set: (>B:G1000_MFD_DIRECTTO_BUTTON)
   - get: H:AS1000_MFD_MENU_Push
-    set: (>B:AS1000_MFD_1_Menu_Push)
+    set: (>B:G1000_MFD_MENU_BUTTON)
   - get: H:AS1000_MFD_FMS_Lower_INC
-    set: (>B:AS1000_MFD_1_FMS_Outer_Inc)
+    set: (>B:G1000_MFD_PAGE_KNOB_INC)
   - get: H:AS1000_MFD_FMS_Lower_DEC
-    set: (>B:AS1000_MFD_1_FMS_Outer_Dec)
+    set: (>B:G1000_MFD_PAGE_KNOB_DEC)
   - get: H:AS1000_MFD_FMS_Upper_INC
-    set: (>B:AS1000_MFD_1_FMS_Inner_Inc)
+    set: (>B:G1000_MFD_GROUP_KNOB_INC)
   - get: H:AS1000_MFD_FMS_Upper_DEC
-    set: (>B:AS1000_MFD_1_FMS_Inner_Dec)
+    set: (>B:G1000_MFD_GROUP_KNOB_DEC)
   - get: H:AS1000_MFD_FMS_Upper_PUSH
-    set: (>B:AS1000_MFD_1_FMS_Inner_Button_Push)

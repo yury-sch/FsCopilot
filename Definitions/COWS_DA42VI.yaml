@@ -148,3 +148,6 @@ shared:
   - get: A:LIGHT CABIN:1, Bool
   - get: A:LIGHT CABIN:2, Bool
   - get: A:LIGHT CABIN:3, Bool
+  
+  # G1000
+  - get: L:G1000_REV_FORCE # Display backup
