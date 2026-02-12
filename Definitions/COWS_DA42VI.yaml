@@ -6,9 +6,15 @@ include:
 master:
   - get: L:INPUT_AILERON
   - get: L:INPUT_ELEVATOR
+  - get: L:INPUT_RUDDER
+  - get: L:WT_TOGA_ACTIVE
+    set: (>K:AUTO_THROTTLE_TO_GA)
   - get: L:INPUT_TRIM_AXIS
-
+  - get: L:INPUT_BRAKE_AXIS_LEFT
+  - get: L:INPUT_BRAKE_AXIS_RIGHT
+  - get: L:INPUT_AP_DISC
 shared:
+#  - get: L:HEADSET
   #Fuel
   - get: L:XFER_SWITCH:1
   - get: L:XFER_SWITCH:2
@@ -41,7 +47,7 @@ shared:
   - get: L:LANDING_GEAR_gear
     set: (>K:GEAR_SET)
   - get: L:GEAR_EMERGENCY
-  - get:  L:ENGINE_ALTERNATE_AIR
+  - get: L:ENGINE_ALTERNATE_AIR
   - get: L:GEAR_FIRE_TEST_IsDown
   - get: A:CIRCUIT SWITCH ON:39, Bool
   - get: A:ELECTRICAL MASTER BATTERY:1, Bool
@@ -70,7 +76,7 @@ shared:
 
   #GlairShield
   - get: L:LIGHTING_PANEL_1
-    set: (>B:LIGHTING_PANEL_1_Set) 
+    set: (>B:LIGHTING_PANEL_1_Set)
   - get: L:LIGHTING_GLARESHIELD_1
     set: (>B:LIGHTING_GLARESHIELD_1_Set)
   - get: A:LIGHT LANDING, Bool
@@ -79,24 +85,27 @@ shared:
   - get: A:LIGHT STROBE, Bool
   - get: L:EMERGENCY_BATT_COVER
   - get: L:EMERGENCY_BATT
+  - get: L:ATT_CAGE
   - get: L:ATT_CAGE_IsDown
   - get: L:KOHLSMAN SETTING HG:2
 
   #DEICE
+  - get: L:DEICE_MAX
   - get: L:DEICE_MAX_IsDown
   - get: L:DEICE_SWITCH
   - get: L:DEICE_ALTERNATE_COVER
   - get: L:DEICE_ALTERNATE_SWITCH
+  - get: L:DEICE_WIND
   - get: L:DEICE_WIND_IsDown
+  - get: A:LIGHT WING, Bool
   - get: L:DEICE_LIGHT_SWITCH
-    set: |
-      switch (value) {
-        case 0: return '1 (>A:LIGHT WING)'
-        case 1: return '0 (>A:LIGHT WING)'
-        case 2: return '2 (>L:DEICE_LIGHT_SWITCH)'
-        default: return ''
-      }
-  - get: L:DEICE_PUMP_SWITCH
+#    set: |
+#      switch (value) {
+#        case 0: return '1 (>A:LIGHT WING, Bool)'
+#        case 1: return current == 0 ? '0 (>A:LIGHT WING, Bool)' : '1 (>L:DEICE_LIGHT_SWITCH)' 
+#        case 2: return '2 (>L:DEICE_LIGHT_SWITCH)'
+#        default: return ''
+#      } # doesn't work because we can't set A variables without 'get' subscription to this variable. Waiting for next updates
 
   #Curcuit Board
   - get: L:CB_CM1
@@ -141,7 +150,7 @@ shared:
   #Window
   - get: A:INTERACTIVE POINT GOAL:2, Bool
   - get: A:INTERACTIVE POINT GOAL:3, Bool
-  - get: A:INTERACTIVE POINT GOAL:6, Bool 
+  - get: A:INTERACTIVE POINT GOAL:6, Bool
   - get: A:INTERACTIVE POINT GOAL:7, Bool
 
   #Overhead Lighting
