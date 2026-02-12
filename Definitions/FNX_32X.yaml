@@ -3,6 +3,9 @@
 include:
   - modules/FSDT_GSX.yaml
 
+master:
+  - get: L:A_FC_ELEVATOR_TRIM
+
 shared:
   - get: L:N_FC_SIDESTICK_CAPT_PITCH
   - get: L:N_FC_SIDESTICK_CAPT_BANK
@@ -15,8 +18,8 @@ shared:
   - get: L:N_FC_BRAKE_RIGHT_CAPT
   - get: L:N_FC_BRAKE_LEFT_FO
   - get: L:N_FC_BRAKE_RIGHT_FO
-
-#WEIGHTS
+  
+  #WEIGHTS
   - get: A:PAYLOAD STATION WEIGHT:1, Pounds
   - get: A:PAYLOAD STATION WEIGHT:2, Pounds
   - get: A:PAYLOAD STATION WEIGHT:3, Pounds
@@ -31,7 +34,7 @@ shared:
   - get: A:PAYLOAD STATION WEIGHT:13, Pounds
   - get: A:PAYLOAD STATION WEIGHT:14, Pounds
   - get: A:PAYLOAD STATION WEIGHT:15, Pounds
-#EFIS
+  #EFIS
   - get: L:E_FCU_EFIS1_BARO
   - get: L:S_FCU_EFIS1_BARO_STD
   - get: L:S_FCU_EFIS1_BARO_MODE
@@ -60,7 +63,7 @@ shared:
   - get: L:S_FCU_EFIS2_ND_ZOOM
   - get: L:S_FCU_EFIS2_NAV1
   - get: L:S_FCU_EFIS2_NAV2
-#FCU
+  #FCU
   - get: L:S_FCU_SPD_MACH
   - get: L:S_FCU_HDGVS_TRKFPA
   - get: L:S_FCU_METRIC_ALT
@@ -79,7 +82,7 @@ shared:
   - get: L:S_FCU_ALTITUDE_SCALE
   - get: L:E_FCU_VS
   - get: L:S_FCU_VERTICAL_SPEED
-#MIP
+  #MIP
   - get: L:S_MIP_GPWS_VISUAL_ALERT_CAPT
   - get: L:S_MIP_GPWS_VISUAL_ALERT_FO
   - get: L:A_DISPLAY_BRIGHTNESS_CO
@@ -155,7 +158,7 @@ shared:
   - get: L:S_TRAY_TABLE_FO
   - get: L:S_MIP_ATC_MSG_CAPT
   - get: L:S_MIP_ATC_MSG_FO
-#MISC
+  #MISC
   - get: L:A_CHART_LIGHT_TEMP_CAPT
   - get: L:A_CHART_LIGHT_TEMP_FO
   - get: L:S_CHART_LIGHT_TEMP_CAPT
@@ -240,8 +243,8 @@ shared:
   - get: L:S_JUMPSEAT
   - get: L:B_CONFIG_CABIN_VISIBILITY
   - get: L:B_RUDDER_TOGGLE
-
-# Pedestal
+  
+  # Pedestal
   # KCCU LEFT
   - get: L:S_CDU1_KEY_LSK1L
   - get: L:S_CDU1_KEY_LSK2L
@@ -603,7 +606,7 @@ shared:
   - get: L:S_HYD_GRAVITY_GEAR_EXTEND
   - get: L:S_FC_RUDDER_TRIM_RESET
   - get: L:S_FC_RUDDER_TRIM
-# Overhead
+  # Overhead
   - get: L:S_OH_ELT_Cover
   - get: L:S_OH_ELT
   - get: L:S_OH_ELT_TEST
