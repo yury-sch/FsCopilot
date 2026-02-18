@@ -1,6 +1,7 @@
 ﻿#include "wasm_module.h"
 #include "var_watcher.h"
 #include <SimConnect.h>
+#include <chrono>
 #include <unordered_map>
 #include <MSFS/MSFS.h>
 #include <MSFS/MSFS_CommBus.h>
@@ -35,8 +36,8 @@ struct freeze_state
 static_assert(sizeof(freeze_state) == 20);
 
 HANDLE        h_sim                 = 0;
+std::chrono::steady_clock::time_point g_start;
 volatile bool has_standalone_update = false;
-double        now                   = 0.0;
 bool          frz_by_me             = false;
 freeze_state  frz;
 var_watcher   watcher(1e-6);
@@ -134,6 +135,8 @@ void interpolate()
     if (!frz_by_me)
         return;
 
+    const auto tp = std::chrono::steady_clock::now();
+    const auto now = std::chrono::duration<double>(tp - g_start).count();
     const double render_t = now - k_delay_sec;
 
     // Physics
@@ -187,8 +190,6 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             // MSFS2020 fallback tick: we use our visual frame packets as "per-frame" pulse
             if (!has_standalone_update)
             {
-                // now = chrono_system_clock_now();
-                now += 1.0 / 60.0;
                 sync_freeze();
                 interpolate();
                 watcher.poll(&var_update, nullptr);
@@ -199,6 +200,8 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
     if (p_data->dwID == SIMCONNECT_RECV_ID_CLIENT_DATA)
     {
         const auto* cd = reinterpret_cast<SIMCONNECT_RECV_CLIENT_DATA*>(p_data);
+        const auto tp = std::chrono::steady_clock::now();
+        const auto now = std::chrono::duration<double>(tp - g_start).count();
 
         if (cd->dwRequestID == def_physics)
         {
@@ -249,6 +252,8 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
 
 extern "C" MSFS_CALLBACK void module_init(void)
 {
+    g_start = std::chrono::steady_clock::now();
+    
     if (FAILED(SimConnect_Open(&h_sim, "FsCopilot Interpolation", nullptr, 0, 0, 0)))
         return;
 
@@ -329,7 +334,7 @@ extern "C" MSFS_CALLBACK void module_deinit(void)
 // ReSharper disable once CppInconsistentNaming
 extern "C" MSFS_CALLBACK void Update_StandAlone(float d_time)
 {
-    now += static_cast<double>(d_time);
+    // now += static_cast<double>(d_time);
     has_standalone_update = true;
     sync_freeze();
     interpolate();
