@@ -220,7 +220,6 @@ public class Node : ReactiveObject, IDisposable
         Title = title.ToString();
         
         _sub = sim.Stream(getVar, units)
-            .Sample(TimeSpan.FromMilliseconds(250))
             .Do(value => Log.Information("[DEVELOP] RECV {Name} {Value}", getVar, value))
             .WithPreviousFirstPair()
             .ObserveOn(RxApp.MainThreadScheduler)
