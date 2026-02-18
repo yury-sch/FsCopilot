@@ -10,6 +10,8 @@
 
 namespace
 {
+constexpr const char* k_version = "1.1-dev";
+
 enum : DWORD // NOLINT(performance-enum-size)
 {
     def_ready        = 0xF500,
@@ -316,7 +318,7 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_CallDispatch(h_sim, dispatch, nullptr);
     
     fsc::protocol::str_msg msg;
-    strncpy(msg.msg, "1.1", sizeof(msg.msg) - 1);
+    strncpy(msg.msg, k_version, sizeof(msg.msg) - 1);
     (void)SimConnect_SetClientData(h_sim, def_ready, def_ready, SIMCONNECT_CLIENT_DATA_SET_FLAG_DEFAULT, 0, sizeof(msg), &msg);
 
     (void)fprintf(stdout, "Initialized");
