@@ -50,6 +50,7 @@ public:
 
     void clear()
     {
+        if (vars_.empty()) return;
         vars_.clear();
     }
 

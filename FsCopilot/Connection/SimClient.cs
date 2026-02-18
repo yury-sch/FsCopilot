@@ -38,6 +38,7 @@ public class SimClient : IDisposable
         _producer = new(appName);
         
         var readyDefId = RegisterClientStruct<StrMsg>("FSC_READY", producer: false);
+        var pingDefId = RegisterClientStruct<StrMsg>("FSC_PING", producer: true);
         var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUSS_OUT", producer: false);
         _commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUSS_IN", producer: true);
         _watchDefId = RegisterClientStruct<VarSetMsg>("FSC_WATCH", producer: true);
@@ -56,6 +57,10 @@ public class SimClient : IDisposable
         //     .Select(connected => connected ? wasmReady : Observable.Return(false))
         //     .Switch()
         //     .Subscribe(x => _wasmReady.OnNext(x));
+
+        Observable.Interval(TimeSpan.FromMilliseconds(200))
+            .Subscribe(_ => _producer.Post(sim => sim.SetClientData(pingDefId, pingDefId,
+                SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new StrMsg())));
         
         _consumer.Configure(sim =>
         {

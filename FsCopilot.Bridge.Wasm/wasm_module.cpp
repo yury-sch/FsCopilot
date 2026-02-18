@@ -10,7 +10,7 @@
 
 namespace
 {
-constexpr const char* k_version = "1.1-dev";
+constexpr auto k_version = "1.1-dev";
 
 enum : DWORD // NOLINT(performance-enum-size)
 {
@@ -21,6 +21,7 @@ enum : DWORD // NOLINT(performance-enum-size)
     def_unwatch      = 0xF504,
     def_variable     = 0xF505,
     def_set          = 0xF506,
+    def_ping         = 0xF507,
     def_freeze       = 0xF001,
     def_physics      = 0xBEEF,
     def_control      = 0xBEEE
@@ -33,12 +34,14 @@ struct freeze_state
     int32_t att_freeze;
     int32_t sim_disabled;
     int32_t fsc_freeze;
+    int32_t fsc_control;
 };
 
-static_assert(sizeof(freeze_state) == 20);
+static_assert(sizeof(freeze_state) == 24);
 
 HANDLE        h_sim                 = 0;
 std::chrono::steady_clock::time_point g_start;
+double        g_last_seen           = 0;
 volatile bool has_standalone_update = false;
 bool          frz_by_me             = false;
 freeze_state  frz;
@@ -109,8 +112,20 @@ void apply_freeze(const bool is_frozen)
 //  1  -> ensure frozen (if not already frozen)
 //  0  -> do nothing (never force unfreeze)
 // -1  -> unfreeze only if we froze it and sim isn't disabled by someone else
-void sync_freeze()
+void sync_freeze(const double now)
 {
+    if (frz.fsc_freeze == 0) return;
+    
+    if (frz.fsc_freeze == 1 && frz.fsc_control != 2)
+    {
+        execute_calculator_code("2 (>L:FSC_CONTROL)", nullptr, nullptr, nullptr);
+    }
+    
+    if (frz.fsc_freeze == -1 && frz.fsc_control != 1)
+    {
+        execute_calculator_code("1 (>L:FSC_CONTROL)", nullptr, nullptr, nullptr);
+    }
+
     const bool sim_frozen = frz.alt_freeze || frz.att_freeze || frz.lat_lon_freeze;
 
     // Ensure freeze when requested.
@@ -118,27 +133,25 @@ void sync_freeze()
     {
         apply_freeze(true);
         frz_by_me = true;
-        execute_calculator_code("0 (>L:FSC_FREEZE)", nullptr, nullptr, nullptr);
         return;
     }
 
     // Unfreeze only on explicit "-1" request and only if we own the freeze.
-    if (frz.fsc_freeze == -1 && frz_by_me && !frz.sim_disabled && sim_frozen)
+    if (frz.fsc_freeze == -1 && sim_frozen && frz_by_me && !frz.sim_disabled)
     {
         apply_freeze(false);
         frz_by_me = false;
-        execute_calculator_code("0 (>L:FSC_FREEZE)", nullptr, nullptr, nullptr);
         return;
     }
+
+    execute_calculator_code("0 (>L:FSC_FREEZE)", nullptr, nullptr, nullptr);
 }
 
-void interpolate()
+void interpolate(const double now)
 {
     if (!frz_by_me)
         return;
 
-    const auto tp = std::chrono::steady_clock::now();
-    const auto now = std::chrono::duration<double>(tp - g_start).count();
     const double render_t = now - k_delay_sec;
 
     // Physics
@@ -176,8 +189,10 @@ void var_update(const char* name, double value, void* user)
 
 void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_context*/)
 {
-    if (!p_data)
-        return;
+    if (!p_data) return;
+
+    const auto tp = std::chrono::steady_clock::now();
+    const auto now = std::chrono::duration<double>(tp - g_start).count();
 
     if (p_data->dwID == SIMCONNECT_RECV_ID_SIMOBJECT_DATA)
     {
@@ -192,9 +207,14 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             // MSFS2020 fallback tick: we use our visual frame packets as "per-frame" pulse
             if (!has_standalone_update)
             {
-                sync_freeze();
-                interpolate();
+                sync_freeze(now);
+                interpolate(now);
                 watcher.poll(&var_update, nullptr);
+                if (frz.fsc_control != 0 && now - g_last_seen > 1)
+                {
+                    execute_calculator_code("0 (>L:FSC_CONTROL)", nullptr, nullptr, nullptr);
+                    watcher.clear();
+                }
             }
         }
     }
@@ -202,8 +222,11 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
     if (p_data->dwID == SIMCONNECT_RECV_ID_CLIENT_DATA)
     {
         const auto* cd = reinterpret_cast<SIMCONNECT_RECV_CLIENT_DATA*>(p_data);
-        const auto tp = std::chrono::steady_clock::now();
-        const auto now = std::chrono::duration<double>(tp - g_start).count();
+
+        if (cd->dwRequestID == def_ping)
+        {
+            g_last_seen = now;
+        }
 
         if (cd->dwRequestID == def_physics)
         {
@@ -265,6 +288,7 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "IS ATTITUDE FREEZE ON", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "SIM DISABLED", "Bool", SIMCONNECT_DATATYPE_INT32);
     (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "L:FSC_FREEZE", "Number", SIMCONNECT_DATATYPE_INT32);
+    (void)SimConnect_AddToDataDefinition(h_sim, def_freeze, "L:FSC_CONTROL", "Number", SIMCONNECT_DATATYPE_INT32);
     // Request updates every visual frame.
     // This is required to drive interpolation in MSFS 2020, where Update_StandAlone is not available.
     (void)SimConnect_RequestDataOnSimObject(h_sim, def_freeze, def_freeze, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_VISUAL_FRAME, 0, 0, 0, 0);
@@ -273,6 +297,12 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_READY", def_ready);
     (void)SimConnect_CreateClientData(h_sim, def_ready, sizeof(fsc::protocol::str_msg), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_ready, 0, sizeof(fsc::protocol::str_msg), 0, 0);
+    
+    // ping
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_PING", def_ping);
+    (void)SimConnect_CreateClientData(h_sim, def_ping, sizeof(fsc::protocol::str_msg), 0);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_ping, 0, sizeof(fsc::protocol::str_msg), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_ping, def_ping, def_ping, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
 
     // physics
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_Physics", def_physics);
@@ -290,7 +320,6 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_OUT", def_comm_bus_out);
     (void)SimConnect_CreateClientData(h_sim, def_comm_bus_out, sizeof(fsc::protocol::str_msg), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_out, 0, sizeof(fsc::protocol::str_msg), 0, 0);
-    // (void)SimConnect_RequestClientData(h_sim, def_comm_bus_out, def_comm_bus_out, def_comm_bus_out, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_BUSS_IN", def_comm_bus_in);
     (void)SimConnect_CreateClientData(h_sim, def_comm_bus_in, sizeof(fsc::protocol::str_msg), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_comm_bus_in, 0, sizeof(fsc::protocol::str_msg), 0, 0);
@@ -309,7 +338,6 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_VARIABLE", def_variable);
     (void)SimConnect_CreateClientData(h_sim, def_variable, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_variable, 0, sizeof(fsc::protocol::var_set), 0, 0);
-    // (void)SimConnect_RequestClientData(h_sim, def_variable, def_variable, def_variable, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
     (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_SET", def_set);
     (void)SimConnect_CreateClientData(h_sim, def_set, sizeof(fsc::protocol::var_set), 0);
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_set, 0, sizeof(fsc::protocol::var_set), 0, 0);
@@ -336,9 +364,16 @@ extern "C" MSFS_CALLBACK void module_deinit(void)
 // ReSharper disable once CppInconsistentNaming
 extern "C" MSFS_CALLBACK void Update_StandAlone(float d_time)
 {
+    const auto tp = std::chrono::steady_clock::now();
+    const auto now = std::chrono::duration<double>(tp - g_start).count();
     // now += static_cast<double>(d_time);
     has_standalone_update = true;
-    sync_freeze();
-    interpolate();
+    sync_freeze(now);
+    interpolate(now);
     watcher.poll(&var_update, nullptr);
+    if (frz.fsc_control != 0 && now - g_last_seen > 1)
+    {
+        execute_calculator_code("0 (>L:FSC_CONTROL)", nullptr, nullptr, nullptr);
+        watcher.clear();
+    }
 }
