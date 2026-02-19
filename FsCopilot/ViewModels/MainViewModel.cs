@@ -198,11 +198,7 @@ public class MainViewModel : ReactiveObject, IDisposable
                 IsBusy = false;;
             }
 
-            if (result == ConnectionResult.Success)
-            {
-                ConnectionCode = string.Empty;
-            }
-            else if (result == ConnectionResult.Failed)
+            if (result == ConnectionResult.Failed)
             {
                 Errors |= ViewErrors.Failed;
                 _ = Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(_ => Errors &= ~ViewErrors.Failed);
