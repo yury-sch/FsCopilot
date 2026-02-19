@@ -1,16 +1,34 @@
 /*
- * This file is derived from the YourControls project.
- *
- * Original author: Sequal32
- * Source: https://github.com/Sequal32/YourControls
- * License: GNU General Public License v3.0
- *
- * Modifications:
- * - Minor changes applied (refactoring / adjustments).
- */
+ This file is a direct copy of the original MSFS 2024:
 
+   MSFS2024/Packages/asobo-vcockpit-core/HTML_UI/VCockpit/Core/VCockpit.js
+
+ It is included in this package under the exact same virtual path:
+   HTML_UI/VCockpit/Core/VCockpit.js
+
+ Due to the MSFS virtual file system (VFS) and package load order
+ (PackageOrderHint = PANEL_PATCH), this file overrides the default
+ simulator version at runtime.
+
+ As a result, the simulator loads this patched version instead of
+ the stock VCockpit.js provided by Asobo.
+
+ IMPORTANT:
+ This file must be kept in sync with the original simulator version
+ after MSFS updates, otherwise avionics/instruments may break.
+
+ In practice, this implementation has remained stable for a long time
+ and has not significantly changed across recent simulator updates.
+*/
+
+class VCockpitInstrumentData {
+}
+class VCockpitPanelData {
+}
 var globalPanelData = null;
-var globalInstrumentListener = RegisterViewListener('JS_LISTENER_INSTRUMENTS');
+var globalInstrumentListener = RegisterViewListener("JS_LISTENER_INSTRUMENTS");
+
+/* FS Copilot Integration */
 var handler = null;
 var templateToLoad = null;
 var jsLoaded = false;
@@ -19,7 +37,7 @@ var jsLoaded = false;
     const orig = EventTarget.prototype.addEventListener;
     const store = new WeakMap();
     window.fscListeners = store;
-    
+
     EventTarget.prototype.addEventListener = function(type, listener, options) {
         if (this instanceof HTMLElement) {
             let set = store.get(this);
@@ -42,6 +60,7 @@ Include.addImports(['/FsCopilot/handler.js'], () => {
     jsLoaded = true;
     if (templateToLoad != null) handler = new FsCopilotHandler(templateToLoad);
 })))));
+/* End of FS Copilot Integration */
 
 class VCockpitPanel extends HTMLElement {
     constructor() {
@@ -55,39 +74,37 @@ class VCockpitPanel extends HTMLElement {
         this.vignettageHandler = null;
     }
     connectedCallback() {
-        console.log('[Hook] (connectedCallback) called');
         if (globalPanelData) {
-            console.log('[Hook] (connectedCallback) this.load(globalPanelData)');
             this.load(globalPanelData);
         }
-        let debugMouse = document.querySelector('#debugmouse');
+        let debugMouse = document.querySelector("#debugmouse");
         if (debugMouse) {
-            diffAndSetStyle(debugMouse, StyleProperty.display, 'block');
-            window.document.addEventListener('mousemove', (e) => {
-                debugMouse.style.left = (e.clientX - 7.5) + 'px';
-                debugMouse.style.top = (e.clientY - 7.5) + 'px';
+            diffAndSetStyle(debugMouse, StyleProperty.display, "block");
+            window.document.addEventListener("mousemove", (e) => {
+                debugMouse.style.left = (e.clientX - 7.5) + "px";
+                debugMouse.style.top = (e.clientY - 7.5) + "px";
             });
         }
-        this.virtualMouse = document.querySelector('#virtualmouse');
+        this.virtualMouse = document.querySelector("#virtualmouse");
         if (this.virtualMouse) {
-            window.document.addEventListener('mousemove', (e) => {
-                this.virtualMouse.style.left = (e.clientX - 7.5) + 'px';
-                this.virtualMouse.style.top = (e.clientY - 2.5) + 'px';
+            window.document.addEventListener("mousemove", (e) => {
+                this.virtualMouse.style.left = (e.clientX - 7.5) + "px";
+                this.virtualMouse.style.top = (e.clientY - 2.5) + "px";
             });
         }
-        this.vignettage = document.querySelector('#vignettage');
+        this.vignettage = document.querySelector("#vignettage");
     }
     disconnectedCallback() {
-        console.log('[Hook] (disconnectedCallback) called');
     }
     load(_data) {
-        console.log('[Hook] (load) called');
         this.data = _data;
         this.curInstrumentIndex = -1;
         if (this.data) {
-            document.title = 'FsCopilot Hook';
+            /* FS Copilot Integration */
+            document.title = 'FS Copilot Hook';
+            // document.title = _data.sName;
+            /* End of FS Copilot Integration */
             this.setAttributes(this.data.daAttributes);
-            console.log('[Hook] (load) this.loadNextInstrument()');
             this.loadNextInstrument();
         }
     }
@@ -104,16 +121,16 @@ class VCockpitPanel extends HTMLElement {
         let gamepad = false;
         for (var i = 0; i < _attributes.length; i++) {
             diffAndSetAttribute(document.body, _attributes[i].name, _attributes[i].value);
-            if (_attributes[i].name == 'quality') {
-                if (_attributes[i].value == 'hidden' || _attributes[i].value == 'disabled') {
-                    diffAndSetStyle(this, StyleProperty.display, 'none');
+            if (_attributes[i].name == "quality") {
+                if (_attributes[i].value == "hidden" || _attributes[i].value == "disabled") {
+                    diffAndSetStyle(this, StyleProperty.display, "none");
                 }
                 else {
-                    diffAndSetStyle(this, StyleProperty.display, 'block');
+                    diffAndSetStyle(this, StyleProperty.display, "block");
                 }
             }
-            if (_attributes[i].name == 'gamepad') {
-                if (_attributes[i].value == 'true') {
+            if (_attributes[i].name == "gamepad") {
+                if (_attributes[i].value == "true") {
                     gamepad = true;
                 }
             }
@@ -131,51 +148,50 @@ class VCockpitPanel extends HTMLElement {
             for (var i = 0; i < this.children.length; i++) {
                 var instrument = this.children[i];
                 if (instrument) {
-                    if (_target && instrument.getAttribute('Guid') != _target)
+                    if (_target && instrument.getAttribute("Guid") != _target)
                         continue;
-                    diffAndSetStyle(this.virtualMouse, StyleProperty.display, (_show) ? 'block' : 'none');
+                    diffAndSetStyle(this.virtualMouse, StyleProperty.display, (_show) ? "block" : "none");
                 }
             }
         }
     }
     registerInstrument(_instrumentName, _instrumentClass) {
-        console.log(`[Hook] (registerInstrument) called (${_instrumentName})`);
-        var pattern = Include.absolutePath(window.location.pathname, '../Instruments/');
+        var pattern = Include.absolutePath(window.location.pathname, VCockpitPanel.instrumentRoot);
         var stillLoading = Include.isLoadingScript(pattern);
         if (stillLoading) {
-            console.log('[Hook] (registerInstrument) Still Loading Dependencies. Retrying...');
+            console.log("Still Loading Dependencies. Retrying...");
             setTimeout(this.registerInstrument.bind(this, _instrumentName, _instrumentClass), 1000);
             return;
         }
         window.customElements.define(_instrumentName, _instrumentClass);
-        console.log(`[Hook] (registerInstrument) Instrument registered. Call this.createInstrument(${_instrumentName}})`);
+        console.log("Instrument registered");
+        console.log("Creating instrument " + _instrumentName + "...");
         this.createInstrument(_instrumentName, _instrumentClass);
     }
     createInstrument(_instrumentName, _instrumentClass) {
-        console.log(`[Hook] (createInstrument) called (${_instrumentName})`);
         try {
             var template = document.createElement(_instrumentName);
         }
         catch (error) {
-            console.error('[Hook] (createInstrument) Error while creating instrument. Retrying...');
+            console.error("Error while creating instrument. Retrying...");
             setTimeout(this.createInstrument.bind(this, _instrumentName, _instrumentClass), 1000);
             return;
         }
         if (template) {
-            console.log('[Hook] (createInstrument) Instrument created. Call this.setupInstrument(template)');
+            console.log("Instrument created");
             this.setupInstrument(template);
             if (this.vignettage) {
-                template.addEventListener('mouseenter', (e) => {
+                template.addEventListener("mouseenter", (e) => {
                     this.showVignettage(template);
                 });
-                template.addEventListener('mouseleave', (e) => {
+                template.addEventListener("mouseleave", (e) => {
                     this.hideVignettage();
                 });
             }
             this.data.daInstruments[this.curInstrumentIndex].templateName = _instrumentName;
             this.data.daInstruments[this.curInstrumentIndex].templateClass = _instrumentClass;
-            document.title += ' - ' + template.instrumentIdentifier;
-            // FsCopilot
+            document.title += " - " + template.instrumentIdentifier;
+            /* FS Copilot Integration */
             if (jsLoaded) {
                 try { handler = new FsCopilotHandler(template); }
                 catch (error) { console.error(error); }
@@ -183,38 +199,39 @@ class VCockpitPanel extends HTMLElement {
             else {
                 templateToLoad = template;
             }
+            /* End of FS Copilot Integration */
         }
-        console.log('[Hook] (createInstrument) Call this.loadNextInstrument()');
         this.loadNextInstrument();
     }
     loadNextInstrument() {
-        console.log('[Hook] (loadNextInstrument) called');
         this.curInstrumentIndex++;
         if (this.curInstrumentIndex < this.data.daInstruments.length) {
             var instrument = this.data.daInstruments[this.curInstrumentIndex];
-            // var url = '../Instruments/' + instrument.sUrl;
+            /* FS Copilot Integration */
+            // for some reason default realisation cause errors on early stage of development. Need recheck 
             var url = '/Pages/VCockpit/Instruments/' + instrument.sUrl;
+            // var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
+            /* End of FS Copilot Integration */
+            console.log("Importing instrument " + url);
             var index = this.urlAlreadyImported(instrument.sUrl);
             if (index >= 0) {
                 var instrumentName = this.data.daInstruments[index].templateName;
                 var instrumentClass = this.data.daInstruments[index].templateClass;
-                console.log(`[Hook] (loadNextInstrument) Instrument ${url} already imported. Creating right now. Call this.createInstrument(${instrumentName}, ${instrumentClass})`);
+                console.log("Instrument " + url + " already imported. Creating right now.");
                 this.createInstrument(instrumentName, instrumentClass);
             }
             else {
                 Include.setAsyncLoading(false);
-                console.log(`[Hook] (loadNextInstrument) Importing ${url} instrument. Call Include.addImport(${url});`);
                 Include.addImport(url);
             }
         }
     }
     setupInstrument(_elem) {
-        console.log('[Hook] (setupInstrument) called');
         var instrument = this.data.daInstruments[this.curInstrumentIndex];
-        var url = '../Instruments/' + instrument.sUrl;
+        var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
         url = Include.absoluteURL(window.location.pathname, url);
-        diffAndSetAttribute(_elem, 'Guid', instrument.iGUId + '');
-        diffAndSetAttribute(_elem, 'Url', url);
+        diffAndSetAttribute(_elem, "Guid", instrument.iGUId + '');
+        diffAndSetAttribute(_elem, "Url", url);
         var fRatioX = this.data.vDisplaySize.x / this.data.vLogicalSize.x;
         var fRatioY = this.data.vDisplaySize.y / this.data.vLogicalSize.y;
         var x = Math.round(instrument.vPosAndSize.x * fRatioX);
@@ -225,18 +242,18 @@ class VCockpitPanel extends HTMLElement {
             w = 10;
         if (h <= 0)
             h = 10;
-        _elem.style.position = 'absolute';
-        _elem.style.left = x + 'px';
-        _elem.style.top = y + 'px';
-        _elem.style.width = w + 'px';
-        _elem.style.height = h + 'px';
+        _elem.style.position = "absolute";
+        _elem.style.left = x + "px";
+        _elem.style.top = y + "px";
+        _elem.style.width = w + "px";
+        _elem.style.height = h + "px";
         _elem.setConfigFile(this.data.sConfigFile);
         this.appendChild(_elem);
     }
     urlAlreadyImported(_url) {
-        var realUrl = _url.split('?')[0];
+        var realUrl = _url.split("?")[0];
         for (var i = 0; i < this.curInstrumentIndex; i++) {
-            var instrumentRealUrl = this.data.daInstruments[i].sUrl.split('?')[0];
+            var instrumentRealUrl = this.data.daInstruments[i].sUrl.split("?")[0];
             if (realUrl === instrumentRealUrl) {
                 return i;
             }
@@ -245,17 +262,17 @@ class VCockpitPanel extends HTMLElement {
     }
     showVignettage(_elem) {
         if (this.vignettage && this.vignettageNeeded) {
-            diffAndSetStyle(this.vignettage, StyleProperty.display, 'block');
-            this.vignettage.style.top = _elem.clientTop + 'px';
-            this.vignettage.style.left = _elem.clientLeft + 'px';
-            this.vignettage.style.width = _elem.clientWidth + 'px';
-            this.vignettage.style.height = _elem.clientHeight + 'px';
+            diffAndSetStyle(this.vignettage, StyleProperty.display, "block");
+            this.vignettage.style.top = _elem.style.top;
+            this.vignettage.style.left = _elem.style.left;
+            this.vignettage.style.width = _elem.style.width;
+            this.vignettage.style.height = _elem.style.height;
             if (this.vignettageHandler != null) {
                 let opacity = 0;
                 let animSpeed = 2;
                 let deltaTime = 0.032;
                 this.vignettageHandler = setInterval(() => {
-                    if (this.vignettage.style.display == 'block') {
+                    if (this.vignettage.style.display == "block") {
                         this.vignettage.style.opacity = opacity + '';
                         opacity += deltaTime * animSpeed;
                         if (opacity > 1.0) {
@@ -273,7 +290,7 @@ class VCockpitPanel extends HTMLElement {
     }
     hideVignettage() {
         if (this.vignettage) {
-            diffAndSetStyle(this.vignettage, StyleProperty.display, 'none');
+            diffAndSetStyle(this.vignettage, StyleProperty.display, "none");
             if (this.vignettageHandler) {
                 clearInterval(this.vignettageHandler);
                 this.vignettageHandler = undefined;
@@ -281,50 +298,47 @@ class VCockpitPanel extends HTMLElement {
         }
     }
 }
-
-window.customElements.define('vcockpit-panel', VCockpitPanel);
-
+VCockpitPanel.instrumentRoot = "../Instruments/";
+window.customElements.define("vcockpit-panel", VCockpitPanel);
 function registerInstrument(_instrumentName, _instrumentClass) {
-    console.log(`(registerInstrument) called ${_instrumentName}`);
-    var panel = window.document.getElementById('panel');
+    var panel = window.document.getElementById("panel");
     if (panel) {
-        console.log(`(registerInstrument) Register instrument ${_instrumentName}`);
+        console.log("Registering instrument " + _instrumentName + "...");
         setTimeout(panel.registerInstrument.bind(panel, _instrumentName, _instrumentClass), 1000);
     }
 }
-
-Coherent.on('ShowVCockpitPanel', function (_data) {
+Coherent.on("ShowVCockpitPanel", function (_data) {
+    console.log("Initializing Panel " + _data.sName);
     globalPanelData = _data;
-    var panel = window.document.getElementById('panel');
+    var panel = window.document.getElementById("panel");
     if (panel) {
         if (panel.hasData()) {
-            console.log('[Coherent] (ShowVCockpitPanel) Reloading panel...');
-            window.location.reload(true);
+            console.log("Reloading panel...");
+            window.location.reload();
         }
         else {
-            console.log('[Coherent] (ShowVCockpitPanel) Loading panel...');
             panel.load(_data);
         }
     }
 });
-
-Coherent.on('RefreshVCockpitPanel', function (_data) {
-    var panel = window.document.getElementById('panel');
+Coherent.on("RefreshVCockpitPanel", function (_data) {
+    var panel = window.document.getElementById("panel");
     if (panel) {
         panel.setAttributes(_data.daAttributes);
     }
 });
-
-Coherent.on('OnInteractionEvent', function (_target, _args) {
+Coherent.on("OnInteractionEvent", function (_target, _args) {
     if (!closed) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
+            /* FS Copilot Integration */
             if (!!handler) handler.interact(_args[0]);
-
+            /* End of FS Copilot Integration */
+            
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (_target && instrument.getAttribute('Guid') != _target)
+                    if ((_target && instrument.getAttribute("Guid") != _target) || instrument.urlConfig.noEvent)
                         continue;
                     instrument.onInteractionEvent(_args);
                 }
@@ -332,62 +346,58 @@ Coherent.on('OnInteractionEvent', function (_target, _args) {
         }
     }
 });
-
-Coherent.on('OnMouseEnter', function (_target, _x, _y) {
+Coherent.on("OnMouseEnter", function (_target, _x, _y) {
     if (!closed && _target) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (instrument.getAttribute('Guid') != _target)
+                    if (instrument.getAttribute("Guid") != _target)
                         continue;
                     let element = window.document.elementFromPoint(_x, _y);
                     if (element)
-                        element.dispatchEvent(new MouseEvent('mouseenter'));
-                    instrument.dispatchEvent(new MouseEvent('mouseenter'));
+                        element.dispatchEvent(new MouseEvent("mouseenter"));
+                    instrument.dispatchEvent(new MouseEvent("mouseenter"));
                 }
             }
         }
     }
 });
-
-Coherent.on('OnMouseLeave', function (_target, _x, _y) {
+Coherent.on("OnMouseLeave", function (_target, _x, _y) {
     if (!closed && _target) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (instrument.getAttribute('Guid') != _target)
+                    if (instrument.getAttribute("Guid") != _target)
                         continue;
                     let element = window.document.elementFromPoint(_x, _y);
                     if (element)
-                        element.dispatchEvent(new MouseEvent('mouseleave'));
-                    instrument.dispatchEvent(new MouseEvent('mouseleave'));
+                        element.dispatchEvent(new MouseEvent("mouseleave"));
+                    instrument.dispatchEvent(new MouseEvent("mouseleave"));
                 }
             }
         }
     }
 });
-
-Coherent.on('ShowVirtualMouse', function (_target, _show) {
+Coherent.on("ShowVirtualMouse", function (_target, _show) {
     if (!closed) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             panel.showVirtualMouse(_target, _show);
         }
     }
 });
-
-Coherent.on('StartHighlight', function (_target, _event) {
+Coherent.on("StartHighlight", function (_target, _event) {
     if (!closed) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (_target && instrument.getAttribute('Guid') != _target)
+                    if (_target && instrument.getAttribute("Guid") != _target)
                         continue;
                     instrument.startHighlight(_event);
                 }
@@ -395,15 +405,14 @@ Coherent.on('StartHighlight', function (_target, _event) {
         }
     }
 });
-
-Coherent.on('StopHighlight', function (_target, _event) {
+Coherent.on("StopHighlight", function (_target, _event) {
     if (!closed) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (_target && instrument.getAttribute('Guid') != _target)
+                    if (_target && instrument.getAttribute("Guid") != _target)
                         continue;
                     instrument.stopHighlight(_event);
                 }
@@ -411,15 +420,14 @@ Coherent.on('StopHighlight', function (_target, _event) {
         }
     }
 });
-
-Coherent.on('OnSoundEnd', function (_target, _eventId) {
+Coherent.on("OnSoundEnd", function (_target, _eventId) {
     if (!closed) {
-        var panel = window.document.getElementById('panel');
+        var panel = window.document.getElementById("panel");
         if (panel) {
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
-                    if (_target && instrument.getAttribute('Guid') != _target)
+                    if (_target && instrument.getAttribute("Guid") != _target)
                         continue;
                     instrument.onSoundEnd(_eventId);
                 }
@@ -427,13 +435,11 @@ Coherent.on('OnSoundEnd', function (_target, _eventId) {
         }
     }
 });
-
-Coherent.on('OnAllInstrumentsLoaded', function () {
+Coherent.on("OnAllInstrumentsLoaded", function () {
     if (!closed) {
         BaseInstrument.allInstrumentsLoaded = true;
     }
 });
-
 function getDomPath(elt) {
     var path = [];
     while (elt != null) {
@@ -447,8 +453,7 @@ function getDomPath(elt) {
     }
     return path.join('>');
 }
-
-Coherent.on('Raycast', function (_id, _x, _y) {
+Coherent.on("Raycast", function (_id, _x, _y) {
     var elt = document.elementFromPoint(_x, _y);
     var result = {};
     if (elt && elt.id) {
@@ -465,3 +470,131 @@ Coherent.on('Raycast', function (_id, _x, _y) {
     Coherent.trigger('ON_VCOCKPIT_RAYCAST_RESULT', _id, JSON.stringify(result), rect.x, rect.y, rect.width, rect.height);
 });
 checkAutoload();
+if (EDITION_MODE()) {
+    g_debugMgr.AddDebugButton("Test VCockpit", () => {
+        let data = new VCockpitPanelData();
+        data.sName = "VCockpit01";
+        data.vLogicalSize = new Vec2(1024, 768);
+        data.vDisplaySize = new Vec2(1024, 768);
+        data.daAttributes = [];
+        data.daInstruments = [];
+        let instrument = new VCockpitInstrumentData();
+        instrument.iGUId = 0;
+        instrument.sUrl = "NavSystems/AS1000/MFD/AS1000_MFD.html";
+        instrument.templateName = "";
+        instrument.vPosAndSize = { x: 0, y: 0, z: 1024, w: 768 };
+        data.daInstruments.push(instrument);
+        Coherent.trigger("ShowVCockpitPanel", data);
+        setTimeout(() => { Coherent.trigger("OnAllInstrumentsLoaded"); }, 5000);
+    });
+    let g_UpdateRunning = -1;
+    g_debugMgr.AddDebugButton("STOP", () => {
+        if (g_UpdateRunning >= 0)
+            cancelAnimationFrame(g_UpdateRunning);
+    });
+    g_debugMgr.AddDebugButton("Test string", () => {
+        if (g_UpdateRunning >= 0)
+            cancelAnimationFrame(g_UpdateRunning);
+        let update = () => {
+            for (let i = 0; i < 1000; i++) {
+                Coherent.trigger("TEST_EVENT", "HUHU");
+            }
+            g_UpdateRunning = requestAnimationFrame(update);
+        };
+        update();
+    });
+    g_debugMgr.AddDebugButton("Test string variable", () => {
+        if (g_UpdateRunning >= 0)
+            cancelAnimationFrame(g_UpdateRunning);
+        const TEST = "TEST_EVENT";
+        const TEST2 = "HUHU";
+        let update = () => {
+            for (let i = 0; i < 1000; i++) {
+                Coherent.trigger(TEST, TEST2);
+            }
+            g_UpdateRunning = requestAnimationFrame(update);
+        };
+        update();
+    });
+    g_debugMgr.AddDebugButton("Test simvar array", () => {
+        if (g_UpdateRunning >= 0)
+            cancelAnimationFrame(g_UpdateRunning);
+        let batches = [];
+        for (let i = 0; i < 200; i++) {
+            let approachBatch = new SimVar.SimVarBatch("C:fs9gps:FlightPlanApproachWaypointsNumber", "C:fs9gps:FlightPlanWaypointApproachIndex");
+            approachBatch.instrumentID = "Instr " + 1;
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachICAO", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachName", "string", "string");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLatitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLongitude", "degree", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachLegTotalDistance", "nautical miles", "number");
+            approachBatch.add("C:fs9gps:FlightPlanWaypointApproachType", "number", "number");
+            batches.push(approachBatch);
+        }
+        let update = () => {
+            for (let i = 0; i < batches.length; i++) {
+                SimVar.GetSimVarArrayValues(batches[i], function (_Values) {
+                }, "data_" + i);
+            }
+            g_UpdateRunning = requestAnimationFrame(update);
+        };
+        update();
+    });
+    g_debugMgr.AddDebugButton("Test simvar", () => {
+        if (g_UpdateRunning >= 0)
+            cancelAnimationFrame(g_UpdateRunning);
+        let simName = "TRANSPONDER CODE:1";
+        let simUnit = "number";
+        let update = () => {
+            for (let i = 0; i < 1000; i++) {
+                SimVar.GetSimVarValue(simName, simUnit);
+            }
+            g_UpdateRunning = requestAnimationFrame(update);
+        };
+        update();
+    });
+}
+//# sourceMappingURL=VCockpit.js.map
