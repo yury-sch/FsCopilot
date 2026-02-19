@@ -158,6 +158,19 @@ public class MainViewModel : ReactiveObject, IDisposable
             })
             .DisposeWith(_d);
         
+        net.Peers
+            .Select(p => p.Count)
+            .DistinctUntilChanged()
+            .Scan(
+                seed: (Prev: 0, Curr: 0),
+                accumulator: (state, curr) => (Prev: state.Curr, Curr: curr))
+            .Subscribe(x =>
+            {
+                if (x.Curr > x.Prev) UiSounds.Play("connect");
+                else if (x.Curr < x.Prev) UiSounds.Play("disconnect");
+            })
+            .DisposeWith(_d);
+        
         masterSwitch.Master
             .Sample(TimeSpan.FromMilliseconds(250))
             .Select(isMaster => !isMaster)
