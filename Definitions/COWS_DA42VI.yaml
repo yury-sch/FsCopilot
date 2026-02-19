@@ -2,6 +2,8 @@
 
 include:
   - modules/AS_G1000_NXi.yaml
+  - modules/payload.yaml
+  - modules/fuel.yaml
 
 master:
   - get: L:INPUT_AILERON
@@ -42,8 +44,7 @@ shared:
     set: (>K:RUDDER_TRIM_SET_EX1)
 
   #MIP
-  - get: A:FLAPS HANDLE PERCENT, position 16k
-    set: (>K:FLAPS_SET)
+  - get: A:FLAPS HANDLE INDEX, Number
   - get: L:LANDING_GEAR_gear
     set: (>K:GEAR_SET)
   - get: L:GEAR_EMERGENCY

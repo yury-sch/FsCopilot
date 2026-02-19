@@ -1,10 +1,9 @@
 # Original author: https://discord.com/channels/1454265644416765974/1467595209759129610
+# Updated: 2026-02-19
 
 include:
   - modules/FSDT_GSX.yaml
-
-master:
-  - get: L:A_FC_ELEVATOR_TRIM
+  - modules/payload.yaml
 
 shared:
   - get: L:N_FC_SIDESTICK_CAPT_PITCH
@@ -19,21 +18,6 @@ shared:
   - get: L:N_FC_BRAKE_LEFT_FO
   - get: L:N_FC_BRAKE_RIGHT_FO
   
-  #WEIGHTS
-  - get: A:PAYLOAD STATION WEIGHT:1, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:2, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:3, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:4, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:5, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:6, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:7, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:8, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:9, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:10, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:12, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:13, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:14, Pounds
-  - get: A:PAYLOAD STATION WEIGHT:15, Pounds
   #EFIS
   - get: L:E_FCU_EFIS1_BARO
   - get: L:S_FCU_EFIS1_BARO_STD
@@ -854,12 +838,13 @@ shared:
   - get: L:I_OH_OXYGEN_PASSENGER_U
   - get: L:S_OH_OXYGEN_CREW_OXYGEN
   #CALLS PANEL
-  - get: L:S_OH_ELEC_
-  - get: L:A320_Audio:Cabin_call_fwd
-  - get: L:A320_Audio:Cabin_call_aft
-  - get: L:A320_Audio:Cabin_call
+  - get: L:S_OH_CALLS_FWD
+  - get: L:S_OH_CALLS_ALL
+  - get: L:S_OH_CALLS_AFT
+  - get: L:S_OH_CALLS_MECH
   - get: L:S_OH_CALLS_EMER
   - get: L:S_OH_CALLS_EMER_Cover
+  - get: L:S_OH_CALLS_MECH
   #PNEUMATIC PANEL
   - get: L:S_OH_PNEUMATIC_ENG1_BLEED
   - get: L:S_OH_PNEUMATIC_ENG2_BLEED
@@ -889,6 +874,8 @@ shared:
   #WIPERS
   - get: L:S_MISC_WIPER_CAPT
   - get: L:S_MISC_WIPER_FO
+  - get: L:S_MISC_WIPER_REPELLENT_CAPT
+  - get: L:S_MISC_WIPER_REPELLENT_FO
   #ANTI ICE PANEL
   - get: L:S_OH_PNEUMATIC_WING_ANTI_ICE
   - get: L:S_OH_PNEUMATIC_ENG1_ANTI_ICE

@@ -892,6 +892,9 @@
     set: "`${value * 16384} (>K:SPOILERS_SET)`"
   - get: L:A32NX_SPOILERS_ARMED # GND SPOILER ARM
     set: (>K:SPOILERS_ARM_TOGGLE)
+
+  # FLAPS
+  - get: L:A32NX_FLAPS_HANDLE_INDEX
     
 # Instrument
   # Autobrake, Gear Lever and Gear Annunciation

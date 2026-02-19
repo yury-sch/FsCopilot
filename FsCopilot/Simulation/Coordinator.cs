@@ -28,63 +28,25 @@ public class Coordinator : IDisposable
         
         net.RegisterPacket<Update, Update.Codec>();
         net.RegisterPacket<Interact, InteractCodec>();
+
+        _sim.Register<Physics>();
+        _sim.Register<Surfaces>();
         _net.RegisterPacket<Physics, Physics.Codec>();
         _net.RegisterPacket<Surfaces, Surfaces.Codec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
         
-        _d.Add(sim.Aircraft.Take(1).Subscribe(_ =>
+        _d.Add(sim.Aircraft.Take(1).Subscribe(_ => AddLink((ref Physics physics) =>
         {
-            AddLink<Physics, Physics.Codec>((ref Physics physics) =>
-            {
-                physics.SessionId = sessionId;
-                physics.TimeMs = (uint)sw.ElapsedMilliseconds;
-            });
-            AddLink<Surfaces, Surfaces.Codec>((ref Surfaces surfaces) =>
-            {
-                surfaces.SessionId = sessionId;
-                surfaces.TimeMs = (uint)sw.ElapsedMilliseconds;
-            });
- 
-            AddLink("FUEL TANK CENTER LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK CENTER2 LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK CENTER3 LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK EXTERNAL1 LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK EXTERNAL2 LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK LEFT AUX LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK LEFT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK LEFT TIP LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK RIGHT AUX LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK RIGHT MAIN LEVEL", "Percent Over 100", master: true, unreliable: true);
-            AddLink("FUEL TANK RIGHT TIP LEVEL", "Percent Over 100", master: true, unreliable: true);
-
-            AddLink("PAYLOAD STATION WEIGHT:1", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:2", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:3", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:4", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:5", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:6", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:7", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:8", "Pounds");
-            AddLink("PAYLOAD STATION WEIGHT:9", "Pounds");
-            
-            AddLink("FLAPS HANDLE INDEX:0", "Number");
-            AddLink("FLAPS HANDLE INDEX:1", "Number");
-            AddLink("FLAPS HANDLE INDEX:2", "Number");
-            AddLink("FLAPS HANDLE INDEX:3", "Number");
-            AddLink("FLAPS HANDLE INDEX:4", "Number");
-            AddLink("FLAPS HANDLE INDEX:5", "Number");
-            AddLink("FLAPS HANDLE INDEX:6", "Number");
-            AddLink("FLAPS HANDLE INDEX:7", "Number");
-            AddLink("FLAPS HANDLE INDEX:8", "Number");
-            AddLink("FLAPS HANDLE INDEX:9", "Number");
-            AddLink("FLAPS HANDLE INDEX:10", "Number");
-            AddLink("FLAPS HANDLE INDEX:11", "Number");
-            AddLink("FLAPS HANDLE INDEX:12", "Number");
-            AddLink("FLAPS HANDLE INDEX:13", "Number");
-            AddLink("FLAPS HANDLE INDEX:14", "Number");
-            AddLink("FLAPS HANDLE INDEX:15", "Number");
-        }));
+            physics.SessionId = sessionId;
+            physics.TimeMs = (uint)sw.ElapsedMilliseconds;
+        })));
+        
+        _d.Add(sim.Aircraft.Take(1).Subscribe(_ => AddLink((ref Surfaces surfaces) =>
+        {
+            surfaces.SessionId = sessionId;
+            surfaces.TimeMs = (uint)sw.ElapsedMilliseconds;
+        })));
 
         _d.Add(_sim.Interactions
             .Subscribe(interact => _net.SendAll(interact)));
@@ -115,12 +77,9 @@ public class Coordinator : IDisposable
         foreach (var def in definitions) AddLink(def);
     }
     
-    private void AddLink<TPacket, TCodec>(RefAction<TPacket> modify)
+    private void AddLink<TPacket>(RefAction<TPacket> modify)
         where TPacket : unmanaged
-        where TCodec : IPacketCodec<TPacket>, new()
     {
-        _sim.Register<TPacket>();
-
         _d.Add(_sim.Stream<TPacket>()
             .Where(_ => _masterSwitch.IsMaster)
             .Subscribe(update =>
@@ -139,18 +98,6 @@ public class Coordinator : IDisposable
             }, ex => { Log.Fatal(ex, "[Coordinator] Error while processing a message from client"); }));
     }
 
-    private void AddLink(string name, string units, bool master = false, bool unreliable = false)
-    {
-        var key = $"FSC_{name}";
-        _d.Add(_sim.Stream(name, units)
-            .Where(_ => !master || _masterSwitch.IsMaster)
-            .Subscribe(value => _net.SendAll(new Update(key, value), unreliable)));
-
-        _d.Add(_net.Stream<Update>()
-            .Where(update => update.Name == key)
-            .Subscribe(update => _sim.Set(name, update.Value)));
-    }
-
     private void AddLink(Definition def)
     {
         var master = !def.Shared;
@@ -165,7 +112,7 @@ public class Coordinator : IDisposable
             .Subscribe(value =>
             {
                 if (def.Skip != null) Skip.Next(def.Skip);
-                _net.SendAll(new Update(getVar, value));
+                _net.SendAll(new Update(getVar, value), unreliable: master);
                 Log.Verbose("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
 

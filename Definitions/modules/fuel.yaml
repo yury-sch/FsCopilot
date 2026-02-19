@@ -1,0 +1,12 @@
+master:
+  - get: A:FUEL TANK CENTER LEVEL, Percent Over 100
+  - get: A:FUEL TANK CENTER2 LEVEL, Percent Over 100
+  - get: A:FUEL TANK CENTER3 LEVEL, Percent Over 100
+  - get: A:FUEL TANK EXTERNAL1 LEVEL, Percent Over 100
+  - get: A:FUEL TANK EXTERNAL2 LEVEL, Percent Over 100
+  - get: A:FUEL TANK LEFT AUX LEVEL, Percent Over 100
+  - get: A:FUEL TANK LEFT MAIN LEVEL, Percent Over 100
+  - get: A:FUEL TANK LEFT TIP LEVEL, Percent Over 100
+  - get: A:FUEL TANK RIGHT AUX LEVEL, Percent Over 100
+  - get: A:FUEL TANK RIGHT MAIN LEVEL, Percent Over 100
+  - get: A:FUEL TANK RIGHT TIP LEVEL, Percent Over 100

@@ -1,5 +1,7 @@
 include:
   - modules/AS_G1000_NXi.yaml
+  - modules/payload.yaml
+  - modules/fuel.yaml
 
 master:
   - get: A:ELEVATOR TRIM PCT, Percent scaler 16k # TRIM
@@ -94,6 +96,8 @@ shared:
       
   - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k # THROTTLE
   - get: A:GENERAL ENG MIXTURE LEVER POSITION:1, Position 16k # MIXTURE
+  
+  - get: A:FLAPS HANDLE INDEX, Number # FLAPS
     
   - get: A:PNEUMATICS VALVE TARGET STATUS:'HotAirValve'_n, Percent # CABIN HIT
     set: (>B:PNEUMATICS_IE_PNEUMATICS_Lever_Valve_HotAirValve_Set)

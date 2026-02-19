@@ -1,5 +1,7 @@
 include:
   - modules/AS_G1000_NXi.yaml
+  - modules/payload.yaml
+  - modules/fuel.yaml
   
 master:
   - get: L:INPUT_AILERON
@@ -51,6 +53,8 @@ shared:
   - get: L:XFER_SWITCH # Fuel trans
   - get: A:PITOT HEAT SWITCH:1, Bool # Pitot
     set: "`${value} 1 (>K:PITOT_HEAT_SET)`"
+
+  - get: A:FLAPS HANDLE INDEX, Number # Flaps
 
   - get: L:INPUT_PARK # Parking brake
   # Defrost and cabin heat is not functional

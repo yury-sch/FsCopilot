@@ -1,6 +1,8 @@
 include:
   - modules/AS_GNS530.yaml
   - modules/AS_GNS430.yaml
+  - modules/payload.yaml
+  - modules/fuel.yaml
 
 shared:
 # M803
@@ -100,6 +102,8 @@ shared:
 
   - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, Position 16k # THROTTLE
   - get: A:GENERAL ENG MIXTURE LEVER POSITION:1, Position 16k # MIX
+
+  - get: A:FLAPS HANDLE INDEX, Number # FLAPS
     
   - get: L:XMLVAR_Cabin_Air_1_Position # CABIN AIR
   - get: L:XMLVAR_Cabin_Heat_1_Position # CABIN HT
