@@ -71,9 +71,11 @@ public class MainViewModel : ReactiveObject, IDisposable
     public string ErrorMessage =>
         _errors.HasFlag(ViewErrors.Failed) ? "Failed to connect." :
         _errors.HasFlag(ViewErrors.NotRunning) ? "Microsoft Flight Simulator is not running!" :
-        _errors.HasFlag(ViewErrors.NotSupported) ? $"{_aircraft} is not supported." :
-        _errors.HasFlag(ViewErrors.Rejected) ? "Peer version mismatch." :
-        _errors.HasFlag(ViewErrors.Conflict) ? "Conflict detected with YourControls module." :
+        _errors.HasFlag(ViewErrors.NotLoadedBridge) ? "Bridge package is not loaded. Check your Community folder." :
+        _errors.HasFlag(ViewErrors.BridgeMismatch) ? "Bridge version mismatch. Update Community package." :
+        _errors.HasFlag(ViewErrors.NotSupported) ? $"{_aircraft} is not supported. Provide profile for aircraft." :
+        _errors.HasFlag(ViewErrors.Rejected) ? "Both sides must use the same FS Copilot version." :
+        _errors.HasFlag(ViewErrors.Conflict) ? "Conflict detected with YourControls package." :
         string.Empty;
 
     public ObservableCollection<Connection> Connections { get; set; } = [];
@@ -111,6 +113,23 @@ public class MainViewModel : ReactiveObject, IDisposable
             .Subscribe(notRunning => Errors = notRunning
                 ? _errors | ViewErrors.NotRunning
                 : _errors & ~ViewErrors.NotRunning)
+            .DisposeWith(_d);
+        
+        sim.WasmReady
+            .Sample(TimeSpan.FromMilliseconds(250))
+            .Select(connected => !connected)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(notLoaded => Errors = notLoaded
+                ? _errors | ViewErrors.NotLoadedBridge
+                : _errors & ~ViewErrors.NotLoadedBridge)
+            .DisposeWith(_d);
+        
+        sim.WasmVersionMismatch
+            .Sample(TimeSpan.FromMilliseconds(250))
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(notLoaded => Errors = notLoaded
+                ? _errors | ViewErrors.BridgeMismatch
+                : _errors & ~ViewErrors.BridgeMismatch)
             .DisposeWith(_d);
         
         sim.Conflict
@@ -196,12 +215,14 @@ public class MainViewModel : ReactiveObject, IDisposable
     [Flags]
     private enum ViewErrors : byte
     {
-        None         = 0b_0000_0000,
-        Failed       = 0b_0000_0001,
-        NotRunning   = 0b_0000_0010,
-        NotSupported = 0b_0000_0100,
-        Rejected     = 0b_0000_1000,
-        Conflict     = 0b_0001_0000
+        None            = 0b_0000_0000,
+        Failed          = 0b_0000_0001,
+        NotRunning      = 0b_0000_0010,
+        NotSupported    = 0b_0000_0100,
+        Rejected        = 0b_0000_1000,
+        Conflict        = 0b_0001_0000,
+        NotLoadedBridge = 0b_0010_0000,
+        BridgeMismatch  = 0b_0100_0000
     }
 
     public record Connection(string PeerId, string Name, int Ping, bool IsDirect, bool HasSeparatorAfter)

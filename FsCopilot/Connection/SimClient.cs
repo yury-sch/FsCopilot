@@ -8,6 +8,8 @@ using Microsoft.FlightSimulator.SimConnect;
 
 public class SimClient : IDisposable
 {
+    private const string WasmVersion = "1.1-dev";
+    
     private static readonly object DefaultHValue = 1;
     
     private readonly SimConnectConsumer _consumer;
@@ -19,7 +21,6 @@ public class SimClient : IDisposable
     // private readonly IObservable<WatchedVar> _varMessages;
     private readonly IObservable<string> _hEvents;
     private readonly IObservable<bool> _conflict;
-    // private readonly BehaviorSubject<bool> _wasmReady = new BehaviorSubject<bool>(false);
     private readonly BehaviorSubject<BehaviorControl> _control = new(BehaviorControl.Master);
     private readonly DEF _commBusDefId;
     private readonly DEF _varWatchDefId;
@@ -30,6 +31,8 @@ public class SimClient : IDisposable
     public IObservable<bool> Connected => _consumer.Connected.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<string> Aircraft => _consumer.Aircraft.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<bool> Conflict => _conflict.ObserveOn(TaskPoolScheduler.Default);
+    public IObservable<bool> WasmReady;
+    public IObservable<bool> WasmVersionMismatch;
     public IObservable<Interact> Interactions { get; }
     // public IObservable<SimConfig> Config { get; }
 
@@ -47,32 +50,27 @@ public class SimClient : IDisposable
         _varWatchDefId = RegisterClientStruct<VarSetMsg>("FSC_VARIABLE", producer: false);
         _setDefId = RegisterClientStruct<VarSetMsg>("FSC_SET", producer: true);
 
-        // subscribe before RequestClientData
-        // var wasmReady = new Subject<bool>();
-        // _consumer.SimClientData
-        //     .Where(e => (DEF)e.dwDefineID == readyDefId && e.dwData is { Length: > 0 })
-        //     .Select(e => (StrMsg)e.dwData[0])
-        //     .Subscribe(_ => wasmReady.OnNext(true));
+        var wasmVersion = new Subject<string>();
+        _consumer.SimClientData
+            .Where(e => (DEF)e.dwDefineID == readyDefId && e.dwData is { Length: > 0 })
+            .Select(e => (StrMsg)e.dwData[0])
+            .Subscribe(msg => wasmVersion.OnNext(msg.Msg));
        
-        // _consumer.Connected
-        //     .Select(connected => connected ? wasmReady : Observable.Return(false))
-        //     .Switch()
-        //     .Subscribe(x => _wasmReady.OnNext(x));
+        WasmReady = wasmVersion
+            .Select(v => !string.IsNullOrWhiteSpace(v));
+       
+        WasmVersionMismatch = wasmVersion
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => !v.Equals(WasmVersion));
 
         Observable.Interval(TimeSpan.FromMilliseconds(200))
             .WithLatestFrom(_control, (_, control) => control)
             .Subscribe(control => _producer.Post(sim => sim.SetClientData(controlDefId, controlDefId,
                 SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new ControlMsg { Value = (int)control })));
         
-        _consumer.Configure(sim =>
-        {
-            sim.RequestClientData(
-                readyDefId, readyDefId, readyDefId,
-                SIMCONNECT_CLIENT_DATA_PERIOD.ONCE, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
-            sim.RequestClientData(
-                readyDefId, readyDefId, readyDefId,
-                SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
-        }, _ => {});
+        _consumer.Configure(sim => sim.RequestClientData(
+            readyDefId, readyDefId, readyDefId,
+            SIMCONNECT_CLIENT_DATA_PERIOD.SECOND, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0), _ => {});
 
         _consumer.Configure(sim => sim.RequestClientData(
             commBusDefId, commBusDefId, commBusDefId, 
