@@ -29,7 +29,7 @@ public class Coordinator : IDisposable
         net.RegisterPacket<Update, Update.Codec>();
         net.RegisterPacket<Interact, InteractCodec>();
         _net.RegisterPacket<Physics, Physics.Codec>();
-        _net.RegisterPacket<Control, Control.Codec>();
+        _net.RegisterPacket<Surfaces, Surfaces.Codec>();
         
         _d.Add(sim.Aircraft.Subscribe(Load));
         
@@ -40,10 +40,10 @@ public class Coordinator : IDisposable
                 physics.SessionId = sessionId;
                 physics.TimeMs = (uint)sw.ElapsedMilliseconds;
             });
-            AddLink<Control, Control.Codec>((ref Control control) =>
+            AddLink<Surfaces, Surfaces.Codec>((ref Surfaces surfaces) =>
             {
-                control.SessionId = sessionId;
-                control.TimeMs = (uint)sw.ElapsedMilliseconds;
+                surfaces.SessionId = sessionId;
+                surfaces.TimeMs = (uint)sw.ElapsedMilliseconds;
             });
  
             AddLink("FUEL TANK CENTER LEVEL", "Percent Over 100", master: true, unreliable: true);

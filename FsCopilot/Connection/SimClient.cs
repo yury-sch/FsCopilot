@@ -1,8 +1,8 @@
 namespace FsCopilot.Connection;
 
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Reflection;
 using System.Text.Json;
 using Microsoft.FlightSimulator.SimConnect;
 
@@ -20,6 +20,7 @@ public class SimClient : IDisposable
     private readonly IObservable<string> _hEvents;
     private readonly IObservable<bool> _conflict;
     // private readonly BehaviorSubject<bool> _wasmReady = new BehaviorSubject<bool>(false);
+    private readonly BehaviorSubject<BehaviorControl> _control = new(BehaviorControl.Master);
     private readonly DEF _commBusDefId;
     private readonly DEF _varWatchDefId;
     private readonly DEF _watchDefId;
@@ -38,14 +39,14 @@ public class SimClient : IDisposable
         _producer = new(appName);
         
         var readyDefId = RegisterClientStruct<StrMsg>("FSC_READY", producer: false);
-        var pingDefId = RegisterClientStruct<StrMsg>("FSC_PING", producer: true);
-        var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUSS_OUT", producer: false);
-        _commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUSS_IN", producer: true);
+        var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_OUT", producer: false);
+        var controlDefId = RegisterClientStruct<ControlMsg>("FSC_CONTROL", producer: true);
+        _commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_IN", producer: true);
         _watchDefId = RegisterClientStruct<VarSetMsg>("FSC_WATCH", producer: true);
         _unwatchDefId = RegisterClientStruct<VarSetMsg>("FSC_UNWATCH", producer: true);
         _varWatchDefId = RegisterClientStruct<VarSetMsg>("FSC_VARIABLE", producer: false);
         _setDefId = RegisterClientStruct<VarSetMsg>("FSC_SET", producer: true);
-       
+
         // subscribe before RequestClientData
         // var wasmReady = new Subject<bool>();
         // _consumer.SimClientData
@@ -59,8 +60,9 @@ public class SimClient : IDisposable
         //     .Subscribe(x => _wasmReady.OnNext(x));
 
         Observable.Interval(TimeSpan.FromMilliseconds(200))
-            .Subscribe(_ => _producer.Post(sim => sim.SetClientData(pingDefId, pingDefId,
-                SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new StrMsg())));
+            .WithLatestFrom(_control, (_, control) => control)
+            .Subscribe(control => _producer.Post(sim => sim.SetClientData(controlDefId, controlDefId,
+                SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new ControlMsg { Value = (int)control })));
         
         _consumer.Configure(sim =>
         {
@@ -160,7 +162,7 @@ public class SimClient : IDisposable
 
         void InitializeProducer(SimConnect sim)
         {
-            sim.MapClientDataNameToID($"FSC_{typeof(T).Name}", defId);
+            sim.MapClientDataNameToID($"FSC_{typeof(T).Name.ToUpper()}", defId);
 
             var size = (uint)Unsafe.SizeOf<T>();
             try { sim.CreateClientData(defId, size, SIMCONNECT_CREATE_CLIENT_DATA_FLAG.DEFAULT); }
@@ -191,6 +193,8 @@ public class SimClient : IDisposable
     //     
     //     _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new CommBusMsg { Msg = msg }));
     // }
+
+    public void SetControl(BehaviorControl value) => _control.OnNext(value);
 
     public void Set(Interact interact)
     {
@@ -531,12 +535,17 @@ public class SimClient : IDisposable
     // }
     
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
+    private struct ControlMsg
+    {
+        public int Value;
+    }
+    
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     private struct StrMsg
     {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 512)]
         public string Msg;
     }
-    // }
     
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     private struct VarSetMsg

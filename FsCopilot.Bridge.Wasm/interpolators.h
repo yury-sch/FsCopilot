@@ -95,7 +95,7 @@ inline void physics(const protocol::physics& a, const protocol::physics& b, cons
     out.vz             = lerp(a.vz, b.vz, t);
 }
 
-inline void control(const protocol::control& a, const protocol::control& b, const double t, protocol::control& out)
+inline void control(const protocol::surfaces& a, const protocol::surfaces& b, const double t, protocol::surfaces& out)
 {
     out.ail_pos  = static_cast<int32_t>(llround(lerp(a.ail_pos, b.ail_pos, t)));
     out.elev_pos = static_cast<int32_t>(llround(lerp(a.elev_pos, b.elev_pos, t)));

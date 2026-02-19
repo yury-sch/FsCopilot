@@ -69,7 +69,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
         ReloadCommand = ReactiveCommand.Create(() => _reload.OnNext(Unit.Default));
 
         sim.Register<Physics>();
-        sim.Register<Control>();
+        sim.Register<Surfaces>();
         Trace? trace = null;
         
         RecordCommand = ReactiveCommand.Create(() =>
@@ -81,7 +81,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             
                 _recording.Disposable = new CompositeDisposable(
                     sim.Stream<Physics>().Record(trace.Physics),
-                    sim.Stream<Control>().Record(trace.Controls)
+                    sim.Stream<Surfaces>().Record(trace.Controls)
                     // _vars.Record(_trace.Vars)
                 );
             }
@@ -97,7 +97,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             if (IsPlaying)
             {
                 var rnd = new System.Random();
-                Freeze(true);
+                sim.SetControl(BehaviorControl.Slave);
                 trace ??= new();
                 _playing.Disposable = Observable.Merge(
                     trace.Physics.Playback()
@@ -123,18 +123,16 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 ).Subscribe(_ => {}, () =>
                 {
                     IsPlaying = false;
-                    Freeze(false);
+                    sim.SetControl(BehaviorControl.Master);
                 });
             }
             else
             {
                 _playing.Disposable?.Dispose();
-                Freeze(false);
+                sim.SetControl(BehaviorControl.Master);
             }
 
             return;
-
-            void Freeze(bool freeze) => sim.Set("L:FSC_FREEZE", freeze ? 1 : -1);
         });
     }
 
@@ -269,7 +267,7 @@ public class Node : ReactiveObject, IDisposable
 public class Trace
 {
     public List<Recorded<Physics>> Physics { get; } = [];
-    public List<Recorded<Control>> Controls { get; } = [];
+    public List<Recorded<Surfaces>> Controls { get; } = [];
     // public List<Recorded<Var>> Vars { get; set; } = [];
 
     // public record Var(string Name, object Value);

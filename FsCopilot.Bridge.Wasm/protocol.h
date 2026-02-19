@@ -24,7 +24,7 @@ struct physics
     uint32_t time_ms;
 };
 
-struct control
+struct surfaces
 {
     int32_t  ail_pos;
     int32_t  elev_pos;
@@ -33,14 +33,9 @@ struct control
     uint32_t time_ms;
 };
 
-struct throttle
+struct control
 {
-    int32_t   throttle1;
-    int32_t   throttle2;
-    int32_t   throttle3;
-    int32_t   throttle4;
-    uint64_t session_id;
-    uint32_t time_ms;
+    int32_t state;
 };
 
 struct str_msg
@@ -58,8 +53,8 @@ struct var_set
 #pragma pack(pop)
 
 static_assert(sizeof(physics) == 116);
-static_assert(sizeof(control) == 24);
-static_assert(sizeof(throttle) == 28);
+static_assert(sizeof(surfaces) == 24);
+static_assert(sizeof(control) == 4);
 static_assert(sizeof(str_msg) == 512);
 static_assert(sizeof(var_set) == 200);
 } // namespace fsc::protocol

@@ -6,8 +6,7 @@ using Network;
 public class MasterSwitch : IDisposable
 {
     private static readonly string PeerId = Guid.NewGuid().ToString();
-    
-    // private readonly Peer2Peer _peer2Peer;
+
     private readonly BehaviorSubject<bool> _master = new(true);
     private readonly CompositeDisposable _d = new();
 
@@ -25,10 +24,8 @@ public class MasterSwitch : IDisposable
                 if (newMaster != IsMaster) _master.OnNext(newMaster);
             }));
         
-        _d.Add(Observable
-            .Interval(TimeSpan.FromMilliseconds(500))
-            .WithLatestFrom(_master, (_, isMaster) => !isMaster)
-            .Subscribe(freeze => sim.Set("L:FSC_FREEZE", freeze ? 1 : -1)));
+        _d.Add(_master
+            .Subscribe(isMaster => sim.SetControl(isMaster ? BehaviorControl.Master : BehaviorControl.Slave)));
         
         _d.Add(_master.DistinctUntilChanged()
             .Where(isMaster => isMaster)
