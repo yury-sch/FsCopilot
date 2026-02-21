@@ -1,11 +1,11 @@
 
-[![Discord](https://img.shields.io/discord/1454265644416765974?label=Discord&logo=discord&color=5865F2)](https://discord.gg/HyKMRp47ka) 👈 Join our Discord
-> 🌐 Visit the official website — [FS Copilot — Shared Cockpit for MSFS 2024](https://fscopilot.com)
+[![Discord](https://img.shields.io/discord/1454265644416765974?label=Discord&logo=discord&color=5865F2)](https://discord.gg/HyKMRp47ka)
+[![Support on Boosty](https://img.shields.io/badge/Support-Boosty-orange)](https://boosty.to/fscopilot)
 
-> [!WARNING]
-> **FS Copilot is currently in active development.**
-> This preview version is provided for **testing and familiarization purposes only**.
-> Features, stability, and compatibility may change in future updates.
+☝️ Join our Discord
+☝️ Support here
+
+> 🌐 Visit the official website — [FS Copilot — Shared Cockpit for MSFS 2024](https://fscopilot.com)
 
 # 🛫 FS Copilot
 
