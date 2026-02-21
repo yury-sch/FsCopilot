@@ -10,7 +10,7 @@
 
 namespace
 {
-constexpr auto k_version = "1.1-dev";
+constexpr auto k_version = "1.1";
 
 enum : DWORD // NOLINT(performance-enum-size)
 {

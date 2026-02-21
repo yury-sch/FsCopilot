@@ -9,7 +9,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>FsCopilot</RootNamespace>
         <ApplicationIcon>Assets/fscopilot.ico</ApplicationIcon>
-        <Version>1.1-dev</Version>
+        <Version>1.1</Version>
 
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <Platforms>x64;AnyCPU</Platforms>
