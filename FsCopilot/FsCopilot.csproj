@@ -64,12 +64,20 @@
         </Content>
     </ItemGroup>
 
+<!--    <ItemGroup>-->
+<!--        <Content Include="..\FsCopilot.Bridge\Packages\**\*">-->
+<!--            <Link>Community\%(RecursiveDir)%(Filename)%(Extension)</Link>-->
+<!--            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>-->
+<!--            <CopyToPublishDirectory>Always</CopyToPublishDirectory>-->
+<!--        </Content>-->
+<!--    </ItemGroup>-->
+
     <ItemGroup>
-        <Content Include="..\FsCopilot.Bridge\Packages\**\*">
-            <Link>Community\%(RecursiveDir)%(Filename)%(Extension)</Link>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-        </Content>
+        <None Include="..\FsCopilot.Bridge\Packages\**\*"
+              CopyToOutputDirectory="PreserveNewest"
+              CopyToPublishDirectory="Always"
+              ExcludeFromSingleFile="true"
+              TargetPath="Community\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
