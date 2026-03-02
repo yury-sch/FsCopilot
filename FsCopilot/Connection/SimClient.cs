@@ -8,10 +8,10 @@ using Microsoft.FlightSimulator.SimConnect;
 
 public class SimClient : IDisposable
 {
-    private const string WasmVersion = "1.1";
-    
+    private const string WasmVersion = "1.2";
+
     private static readonly object DefaultHValue = 1;
-    
+
     private readonly SimConnectConsumer _consumer;
     private readonly SimConnectProducer _producer;
     private readonly ConcurrentDictionary<string, DEF> _defs = new();
@@ -40,7 +40,7 @@ public class SimClient : IDisposable
     {
         _consumer = new(appName);
         _producer = new(appName);
-        
+
         var readyDefId = RegisterClientStruct<StrMsg>("FSC_READY", producer: false);
         var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_OUT", producer: false);
         var controlDefId = RegisterClientStruct<ControlMsg>("FSC_CONTROL", producer: true);
@@ -55,10 +55,10 @@ public class SimClient : IDisposable
             .Where(e => (DEF)e.dwDefineID == readyDefId && e.dwData is { Length: > 0 })
             .Select(e => (StrMsg)e.dwData[0])
             .Subscribe(msg => wasmVersion.OnNext(msg.Msg));
-       
+
         WasmReady = wasmVersion
             .Select(v => !string.IsNullOrWhiteSpace(v));
-       
+
         WasmVersionMismatch = wasmVersion
             .Where(v => !string.IsNullOrWhiteSpace(v))
             .Select(v => !v.Equals(WasmVersion));
@@ -67,19 +67,19 @@ public class SimClient : IDisposable
             .WithLatestFrom(_control, (_, control) => control)
             .Subscribe(control => _producer.Post(sim => sim.SetClientData(controlDefId, controlDefId,
                 SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new ControlMsg { Value = (int)control })));
-        
+
         _consumer.Configure(sim => sim.RequestClientData(
             readyDefId, readyDefId, readyDefId,
             SIMCONNECT_CLIENT_DATA_PERIOD.SECOND, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0), _ => {});
 
         _consumer.Configure(sim => sim.RequestClientData(
-            commBusDefId, commBusDefId, commBusDefId, 
+            commBusDefId, commBusDefId, commBusDefId,
             SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0), _ => {});
-       
+
         _consumer.Configure(sim => sim.RequestClientData(
-            _varWatchDefId, _varWatchDefId, _varWatchDefId, 
+            _varWatchDefId, _varWatchDefId, _varWatchDefId,
             SIMCONNECT_CLIENT_DATA_PERIOD.ON_SET, SIMCONNECT_CLIENT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0), _ => {});
- 
+
         var socketMessages = _consumer.SimClientData
             .ObserveOn(TaskPoolScheduler.Default)
             .Where(e => (DEF)e.dwDefineID == commBusDefId)
@@ -107,10 +107,10 @@ public class SimClient : IDisposable
        _conflict = Stream("L:YourControlsPanelId", "number")
            .Select(value => Convert.ToInt32(value) > 0)
            .DistinctUntilChanged()
-           .Replay(0).RefCount(); 
-       
+           .Replay(0).RefCount();
+
        return;
-       
+
        DEF RegisterClientStruct<T>(string name, bool producer)
        {
            var defId = (DEF)Interlocked.Increment(ref _defId);
@@ -122,10 +122,10 @@ public class SimClient : IDisposable
                sim.AddToClientDataDefinition(defId, 0, size, 0, 0);
                sim.RegisterStruct<SIMCONNECT_RECV_CLIENT_DATA, T>(defId);
            };
-           
+
            if (producer) _producer.Configure(configure, _ => {});
            else _consumer.Configure(configure, _ => {});
-        
+
            return defId;
        }
     }
@@ -135,18 +135,18 @@ public class SimClient : IDisposable
         _consumer.Dispose();
         _producer.Dispose();
     }
-    
+
     public IDisposable Register<T>() where T : unmanaged
     {
         var key = typeof(T).FullName!;
         var defId = (DEF)Interlocked.Increment(ref _defId);
         if (!_defs.TryAdd(typeof(T).FullName!, defId)) return Disposable.Empty;
-        
+
         return new CompositeDisposable(
             _consumer.Configure(InitializeConsumer, DeinitializeConsumer),
             _producer.Configure(InitializeProducer, DeinitializeProducer),
             Disposable.Create(() => _defs.TryRemove(key, out _)));
-        
+
         void InitializeConsumer(SimConnect sim)
         {
             sim.AddToDataDefinitionFromStruct<T>(defId);
@@ -168,17 +168,17 @@ public class SimClient : IDisposable
 
             sim.AddToClientDataDefinition(defId, 0, size, 0.0f, 0xFFFFFFFF);
         }
-        
+
         void DeinitializeProducer(SimConnect sim)
         {
             sim.ClearClientDataDefinition(defId);
-        }   
+        }
     }
 
     public void Set<T>(T def) where T : unmanaged
     {
         if (!_defs.TryGetValue(typeof(T).FullName!, out var defId)) return;
-        
+
         _producer.Post(sim => sim.SetClientData(defId, defId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, def));
     }
 
@@ -188,7 +188,7 @@ public class SimClient : IDisposable
     //     {
     //         writer.WriteBoolean("control", config.Control);
     //     });
-    //     
+    //
     //     _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new CommBusMsg { Msg = msg }));
     // }
 
@@ -205,10 +205,10 @@ public class SimClient : IDisposable
         });
         _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new StrMsg { Msg = msg }));
     }
-    
+
     public void Set(string eventName, object value) =>
         Set(eventName, value, null, null, null, null);
-    
+
     public void Set(string name, object value, object? value1, object? value2, object? value3, object? value4)
     {
         if (name.StartsWith("L:")) SetLVar(name, Convert.ToSingle(value));
@@ -238,16 +238,16 @@ public class SimClient : IDisposable
             }, _ => { });
             return nextId;
         });
-        
-        _producer.Post(sim => sim.SetDataOnSimObject(defId, 
+
+        _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
     private void SetSimVar(string datumName, object value)
     {
         if (!_defs.TryGetValue(datumName, out var defId)) return;
-        
-        _producer.Post(sim => sim.SetDataOnSimObject(defId, 
+
+        _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
@@ -310,7 +310,7 @@ public class SimClient : IDisposable
     {
         var key = typeof(T).FullName!;
         if (!_defs.TryGetValue(key, out var defId)) return Observable.Empty<T>();
-        
+
         return (IObservable<T>)_streams.GetOrAdd(key, _ => Observable.Create<T>(observer =>
         {
             var scheduler = new EventLoopScheduler();
@@ -367,7 +367,7 @@ public class SimClient : IDisposable
         return Observable.Empty<object>();
     }
 
-    private IObservable<object> SimVar(string datumName, string sUnits, SIMCONNECT_DATATYPE? datatype = null) => 
+    private IObservable<object> SimVar(string datumName, string sUnits, SIMCONNECT_DATATYPE? datatype = null) =>
         (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
         {
             var defId = (DEF)Interlocked.Increment(ref _defId);
@@ -403,7 +403,7 @@ public class SimClient : IDisposable
                         BindingFlags.Public | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType)
                     .Invoke(sim, [defId]);
-            
+
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
@@ -438,7 +438,7 @@ public class SimClient : IDisposable
             }
         }).Replay(1).RefCount());
 
-    private IObservable<object> ClientVar(string datumName, string sUnits) => 
+    private IObservable<object> ClientVar(string datumName, string sUnits) =>
         (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
         {
             var sub = _consumer.SimClientData
@@ -456,7 +456,7 @@ public class SimClient : IDisposable
                 // .Where(ready => ready)
                 .Subscribe(_ => _producer.Post(sim => sim.SetClientData(_watchDefId, _watchDefId,
                     SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarSetMsg { Name = datumName, Units = sUnits })));
- 
+
             return () =>
             {
                 watch.Dispose();
@@ -465,14 +465,14 @@ public class SimClient : IDisposable
                     SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarSetMsg { Name = datumName }));
             };
         }).Replay(1).RefCount());
-    
-    // private IObservable<object> ZVar(string name) => 
+
+    // private IObservable<object> ZVar(string name) =>
     //     (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
     //     {
     //         var sub = _varMessages
     //             .Where(var => var.Name.Equals(name))
     //             .Subscribe(var => observer.OnNext(var.Value % 1 == 0 ? (int)var.Value : var.Value));
-    //         
+    //
     //         var watch = Envelope("watch", writer =>
     //         {
     //             writer.WriteString("name", name);
@@ -488,13 +488,13 @@ public class SimClient : IDisposable
     //         };
     //     }).Replay(1).RefCount());
 
-    private IObservable<object> HVar(string name) => 
+    private IObservable<object> HVar(string name) =>
         (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
         {
             var sub = _hEvents
                 .Where(ev => ev.Equals(name[2..]))
                 .Subscribe(row => observer.OnNext(DefaultHValue));
-    
+
             return () => sub.Dispose();
         }).Replay(1).RefCount());
 
@@ -506,7 +506,7 @@ public class SimClient : IDisposable
             writer.WriteStartObject();
             writer.WriteString("type", type);
             write(writer);
-            writer.WriteEndObject();    
+            writer.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
@@ -517,7 +517,7 @@ public class SimClient : IDisposable
     private enum GRP { DUMMY, INPUTS }
 
     // private record WatchedVar(string Name, double Value);
-    
+
     // [StructLayout(LayoutKind.Sequential, Pack = 1)]
     // private struct InterpolateHeader
     // {
@@ -531,20 +531,20 @@ public class SimClient : IDisposable
     //     public InterpolateHeader Header;
     //     public T Data;
     // }
-    
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     private struct ControlMsg
     {
         public int Value;
     }
-    
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     private struct StrMsg
     {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 512)]
         public string Msg;
     }
-    
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
     private struct VarSetMsg
     {

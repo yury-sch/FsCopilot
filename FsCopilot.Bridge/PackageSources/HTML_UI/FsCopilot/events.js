@@ -3,12 +3,10 @@
 class HtmlEvents extends Emitter {
     constructor() {
         super();
-        
-        if (!HtmlEvents._id2El) {
-            HtmlEvents._id2El = new Map();
-            HtmlEvents._el2Id = new Map();
-        }
-        
+
+        this._id2El = new Map();
+        this._el2Id = new Map();
+
         this._watched = {
             input: new WeakSet(),
             keypress: new WeakSet(),
@@ -19,22 +17,22 @@ class HtmlEvents extends Emitter {
             if (ev.selfEmit || ev.button !== 0) return;
 
             let el = ev.target;
-            while (el && !HtmlEvents._el2Id.get(el)) el = el.parentNode;
+            while (el && !this._el2Id.get(el)) el = el.parentNode;
             if (!el) return;
-            this.dispatchEvent('emit', {type:'mouseup', id: HtmlEvents._el2Id.get(el)});
+            this.dispatchEvent('emit', {type:'mouseup', id: this._el2Id.get(el)});
         };
         this._onInput = (ev) => {
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'input', id: HtmlEvents._el2Id.get(ev.target), value: ev.target.value});
+            this.dispatchEvent('emit', {type: 'input', id: this._el2Id.get(ev.target), value: ev.target.value});
         }
         this._onKeypress = (ev) => {
             console.log('keypress', ev.keyCode);
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'keypress', id: HtmlEvents._el2Id.get(ev.target), value: ev.keyCode});
+            this.dispatchEvent('emit', {type: 'keypress', id: this._el2Id.get(ev.target), value: ev.keyCode});
         };
         this._onKeydown = (ev) => {
             if (ev.selfEmit) return;
-            this.dispatchEvent('emit', {type: 'keydown', id: HtmlEvents._el2Id.get(ev.target), value: ev.keyCode});
+            this.dispatchEvent('emit', {type: 'keydown', id: this._el2Id.get(ev.target), value: ev.keyCode});
         };
 
         document.addEventListener('mouseup', this._onMouse, false);
@@ -51,15 +49,15 @@ class HtmlEvents extends Emitter {
     }
 
     /**
-     * Static entrypoint used to replay events back into the DOM
+     * Entrypoint used to replay events back into the DOM
      * (simulating user input on a specific element by id).
      *
      * @param {'mouseup'|'input'|'keypress'|'keydown'} type
      * @param {string} id
      * @param {string|number} [value]
      */
-    static dispatch(type, id, value) {
-        const el = HtmlEvents._id2El.get(id);
+    dispatch(type, id, value) {
+        const el = this._id2El.get(id);
         if (!el) return;
         let evt;
         switch (type) {
@@ -97,7 +95,7 @@ class HtmlEvents extends Emitter {
     }
 
     _assignId(el) {
-        if (HtmlEvents._el2Id.has(el)) return;
+        if (this._el2Id.has(el)) return;
 
         const pathParts = [];
         let node = el;
@@ -130,8 +128,8 @@ class HtmlEvents extends Emitter {
         }
 
         // el.id = id;
-        HtmlEvents._el2Id.set(el, id);
-        HtmlEvents._id2El.set(id, el);
+        this._el2Id.set(el, id);
+        this._id2El.set(id, el);
     }
 
     _attachListeners(el) {

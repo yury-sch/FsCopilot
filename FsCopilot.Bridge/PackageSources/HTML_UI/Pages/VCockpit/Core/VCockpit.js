@@ -29,7 +29,7 @@ var globalPanelData = null;
 var globalInstrumentListener = RegisterViewListener("JS_LISTENER_INSTRUMENTS");
 
 /* FS Copilot Integration */
-var handler = null;
+var hook = null;
 var templateToLoad = null;
 var jsLoaded = false;
 
@@ -55,10 +55,10 @@ Include.addImports(['/JS/Services/CommBus.js'], () =>
 Include.addImports(['/FsCopilot/common.js'], () =>
 Include.addImports(['/FsCopilot/bus.js'], () =>
 Include.addImports(['/FsCopilot/events.js'], () =>
-Include.addImports(['/FsCopilot/handler.js'], () => {
+Include.addImports(['/FsCopilot/hook.js'], () => {
     console.log('[Hook] References loaded.');
     jsLoaded = true;
-    if (templateToLoad != null) handler = new FsCopilotHandler(templateToLoad);
+    if (templateToLoad != null) hook = new Hook(templateToLoad);
 })))));
 /* End of FS Copilot Integration */
 
@@ -100,10 +100,6 @@ class VCockpitPanel extends HTMLElement {
         this.data = _data;
         this.curInstrumentIndex = -1;
         if (this.data) {
-            /* FS Copilot Integration */
-            document.title = 'FS Copilot Hook';
-            // document.title = _data.sName;
-            /* End of FS Copilot Integration */
             this.setAttributes(this.data.daAttributes);
             this.loadNextInstrument();
         }
@@ -193,7 +189,7 @@ class VCockpitPanel extends HTMLElement {
             document.title += " - " + template.instrumentIdentifier;
             /* FS Copilot Integration */
             if (jsLoaded) {
-                try { handler = new FsCopilotHandler(template); }
+                try { hook = new Hook(template); }
                 catch (error) { console.error(error); }
             }
             else {
@@ -208,7 +204,7 @@ class VCockpitPanel extends HTMLElement {
         if (this.curInstrumentIndex < this.data.daInstruments.length) {
             var instrument = this.data.daInstruments[this.curInstrumentIndex];
             /* FS Copilot Integration */
-            // for some reason default realisation cause errors on early stage of development. Need recheck 
+            // for some reason default realisation cause errors on early stage of development. Need recheck
             var url = '/Pages/VCockpit/Instruments/' + instrument.sUrl;
             // var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
             /* End of FS Copilot Integration */
@@ -331,10 +327,6 @@ Coherent.on("OnInteractionEvent", function (_target, _args) {
     if (!closed) {
         var panel = window.document.getElementById("panel");
         if (panel) {
-            /* FS Copilot Integration */
-            if (!!handler) handler.interact(_args[0]);
-            /* End of FS Copilot Integration */
-            
             for (var i = 0; i < panel.children.length; i++) {
                 var instrument = panel.children[i];
                 if (instrument) {
