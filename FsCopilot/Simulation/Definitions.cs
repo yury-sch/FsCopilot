@@ -19,7 +19,7 @@ public class Definitions : IReadOnlyCollection<Definition>
             return Activator.CreateInstance(type)!;
         })
         .WithNamingConvention(UnderscoredNamingConvention.Instance)
-        // .IgnoreUnmatchedProperties() 
+        // .IgnoreUnmatchedProperties()
         .Build();
 
     private readonly Definition[] _links;
@@ -61,7 +61,7 @@ public class Definitions : IReadOnlyCollection<Definition>
             node = DefinitionNode.Empty;
             return false;
         }
-        
+
         var master = (cfg.Master ?? [])
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(false, m.Get, m.Set, m.Skp)).ToArray();
@@ -100,7 +100,7 @@ public class Definitions : IReadOnlyCollection<Definition>
         ignore.AddRange(node.Ignore);
     }
 
-    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties 
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties
                                 | DynamicallyAccessedMemberTypes.NonPublicConstructors)]
     private class Config
     {
@@ -160,7 +160,7 @@ public class Definition
         Skip = skp?.Trim();
     }
 
-    public string Set(object value, object current, 
+    public string Set(object value, object current, out string sUnits,
         out object value0, out object? value1, out object? value2, out object? value3, out object? value4)
     {
         value0 = value;
@@ -168,8 +168,12 @@ public class Definition
         value2 = null;
         value3 = null;
         value4 = null;
-        
-        if (_set == null) return Get;
+
+        if (_set == null)
+        {
+            sUnits = Units;
+            return Get;
+        }
         var set = _set;
         if (_set.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
         {
@@ -181,19 +185,27 @@ public class Definition
             catch (Exception e)
             {
                 Log.Error(e, "[Definitions] Unable to parse event expression {Name}", _set);
+                sUnits = Units;
                 return Get;
             }
         }
-        
-        var rx = new Regex(@"^(?<args>.*?)\s*\(>\s*(?<name>[^)]+)\)$", RegexOptions.CultureInvariant);
+
+        var rx = new Regex(
+            @"^(?<args>.*?)\s*\(\>\s*(?<name>[^,\)]+)\s*(?:,\s*(?<units>[^\)]+))?\s*\)$",
+            RegexOptions.CultureInvariant);
         // var rx = new Regex(@"^([A-Z]):([^(:]+)(?:\(([^)]*)\))?$", RegexOptions.CultureInvariant);
 
         var m = rx.Match(set);
-        if (!m.Success) return Get;
+        if (!m.Success)
+        {
+            sUnits = Units;
+            return Get;
+        }
 
         // value = TransformValue(value);
 
         set = m.Groups["name"].Value.Trim();
+        sUnits = m.Groups["units"].Value.Trim();
         var pars = m.Groups["args"].Value
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(p => p.Trim())
@@ -208,12 +220,12 @@ public class Definition
 
         return set;
 
-        object? ParseParam(string p) => uint.TryParse(p, out var ui) 
-            ? ui 
-            : int.TryParse(p, out var i) 
-                ? i 
+        object? ParseParam(string p) => uint.TryParse(p, out var ui)
+            ? ui
+            : int.TryParse(p, out var i)
+                ? i
                 : double.TryParse(p, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
-                    ? d 
+                    ? d
                     : p;
     }
 }

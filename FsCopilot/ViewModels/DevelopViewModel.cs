@@ -23,11 +23,11 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     private readonly Subject<Unit> _reload = new();
     private readonly SerialDisposable _recording = new();
     private readonly SerialDisposable _playing = new();
-    
+
     private string _loaded = string.Empty;
     private bool _isPlaying;
     private bool _isRecording;
-    
+
     public string Loaded
     {
         get => _loaded;
@@ -55,7 +55,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     {
         var latestTree = new SerialDisposable().DisposeWith(_d);
         var sw = Stopwatch.StartNew();
-        
+
         Span<byte> sessionBytes = stackalloc byte[8];
         RandomNumberGenerator.Fill(sessionBytes);
         var sessionId = BitConverter.ToUInt64(sessionBytes);
@@ -71,14 +71,14 @@ public class DevelopViewModel : ReactiveObject, IDisposable
         sim.Register<Physics>();
         sim.Register<Surfaces>();
         Trace? trace = null;
-        
+
         RecordCommand = ReactiveCommand.Create(() =>
         {
             IsRecording = !IsRecording;
             if (IsRecording)
             {
                 trace = new();
-            
+
                 _recording.Disposable = new CompositeDisposable(
                     sim.Stream<Physics>().Record(trace.Physics),
                     sim.Stream<Surfaces>().Record(trace.Controls)
@@ -90,7 +90,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
                 _recording.Disposable?.Dispose();
             }
         });
-        
+
         PlayCommand = ReactiveCommand.Create(() =>
         {
             IsPlaying = !IsPlaying;
@@ -163,7 +163,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             var include = new ObservableCollection<Node>();
             var master = new ObservableCollection<Node>();
             var shared = new ObservableCollection<Node>();
-        
+
             foreach (var i in node.Include) include.Add(new(i.Path, new(PopulateTree(sim, i)), false));
             foreach (var def in node.Master) master.Add(new(sim, def));
             foreach (var def in node.Shared) shared.Add(new(sim, def));
@@ -180,7 +180,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 public class Node : ReactiveObject, IDisposable
 {
     private readonly IDisposable? _sub;
-    
+
     private bool _isPulse;
 
     public string Title { get; }
@@ -209,19 +209,19 @@ public class Node : ReactiveObject, IDisposable
     public Node(SimClient sim, Definition def) : this(string.Empty, false)
     {
         SubNodes = [];
-        
+
         var getVar = def.Get;
         var units = def.Units;
         var title = new StringBuilder();
         title.Append(getVar);
         if (!string.IsNullOrWhiteSpace(units)) title.Append($", {units}");
         Title = title.ToString();
-        
+
         _sub = sim.Stream(getVar, units)
             .Do(value => Log.Information("[DEVELOP] RECV {Name} {Value}", getVar, value))
             .WithPreviousFirstPair()
             .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(pair => 
+            .Subscribe(pair =>
             {
                 if (SubNodes.Count >= 20) SubNodes.Clear();
                 SubNodes.Add(new(sim, def, pair.Curr, pair.Prev));
@@ -246,15 +246,16 @@ public class Node : ReactiveObject, IDisposable
     private Node(SimClient sim, Definition def, object value, object prevValue) : this(string.Empty, false)
     {
         IsVariable = true;
-        var setVar = def.Set(value, prevValue, out var val0, out var val1, out var val2, out var val3, out var val4);
+        var setVar = def.Set(value, prevValue, out var sUnits, out var val0, out var val1, out var val2, out var val3, out var val4);
         Title += $"{Convert.ToString(val0, CultureInfo.InvariantCulture)} ";
         if (val1 != null) Title += $"{Convert.ToString(val1, CultureInfo.InvariantCulture)} ";
         if (val2 != null) Title += $"{Convert.ToString(val2, CultureInfo.InvariantCulture)} ";
         if (val3 != null) Title += $"{Convert.ToString(val3, CultureInfo.InvariantCulture)} ";
         if (val4 != null) Title += $"{Convert.ToString(val4, CultureInfo.InvariantCulture)} ";
-        Title += $"(>{setVar})";
+        var units = !string.IsNullOrWhiteSpace(sUnits) ? $", {sUnits}" : string.Empty;
+        Title += $"(>{setVar}{units})";
 
-        PushCommand = ReactiveCommand.Create(() => sim.Set(setVar, val0, val1, val2, val3, val4));
+        PushCommand = ReactiveCommand.Create(() => sim.Set(setVar, sUnits, val0, val1, val2, val3, val4));
     }
 
     public void Dispose()

@@ -29,11 +29,11 @@ public class SimClient : IDisposable
     private readonly DEF _unwatchDefId;
     private readonly DEF _setDefId;
 
+    public readonly IObservable<bool> WasmReady;
+    public readonly IObservable<bool> WasmVersionMismatch;
     public IObservable<bool> Connected => _consumer.Connected.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<string> Aircraft => _consumer.Aircraft.ObserveOn(TaskPoolScheduler.Default);
     public IObservable<bool> Conflict => _conflict.ObserveOn(TaskPoolScheduler.Default);
-    public IObservable<bool> WasmReady;
-    public IObservable<bool> WasmVersionMismatch;
     public IObservable<Interact> Interactions { get; }
     // public IObservable<SimConfig> Config { get; }
 
@@ -211,21 +211,21 @@ public class SimClient : IDisposable
     }
 
     public void Set(string eventName, object value) =>
-        Set(eventName, value, null, null, null, null);
+        Set(eventName, null, value, null, null, null, null);
 
-    public void Set(string name, object value, object? value1, object? value2, object? value3, object? value4)
+    public void Set(string name, string? sUnits, object value, object? value1, object? value2, object? value3, object? value4)
     {
-        if (name.StartsWith("L:")) SetLVar(name, Convert.ToSingle(value));
-        if (name.StartsWith("A:")) SetSimVar(name[2..], value);
+        if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(value));
+        if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, value);
         if (name.StartsWith("Z:")) SetClientVar(name, value);
         if (name.StartsWith("H:")) SetClientVar(name, value);
         if (name.StartsWith("B:")) SetClientVar(name, value);
         if (name.StartsWith("K:")) TransmitKEvent(name[2..], value, value1, value2, value3, value4);
     }
 
-    private void SetLVar(string datumName, object value)
+    private void SetLVar(string datumName, string? sUnits, object value)
     {
-        var defId = _defs.GetOrAdd(datumName, _ =>
+        var defId = _defs.GetOrAdd($"PRODUCER_{datumName}_{sUnits}", _ =>
         {
             var nextId = (DEF)Interlocked.Increment(ref _defId);
             _producer.Configure(sim =>
@@ -233,7 +233,8 @@ public class SimClient : IDisposable
                 const SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE.FLOAT32;
                 var clrType = SimConnectExtensions.ToClrType(datumType);
 
-                sim.AddToDataDefinition(nextId, datumName, "number", datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+                sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
+                sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
                 typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
                         BindingFlags.Public | BindingFlags.Instance)!
@@ -247,9 +248,26 @@ public class SimClient : IDisposable
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
 
-    private void SetSimVar(string datumName, object value)
+    private void SetSimVar(string datumName, string? sUnits, object value)
     {
-        if (!_defs.TryGetValue(datumName, out var defId)) return;
+        var defId = _defs.GetOrAdd($"PRODUCER_{datumName}_{sUnits}", _ =>
+        {
+            var nextId = (DEF)Interlocked.Increment(ref _defId);
+            _producer.Configure(sim =>
+            {
+                sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
+                var datumType = SimConnectExtensions.InferDataType(sUnits);
+                var clrType = SimConnectExtensions.ToClrType(datumType);
+
+                sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+
+                typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
+                        BindingFlags.Public | BindingFlags.Instance)!
+                    .MakeGenericMethod(clrType)
+                    .Invoke(sim, [nextId]);
+            }, _ => { });
+            return nextId;
+        });
 
         _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
@@ -301,13 +319,8 @@ public class SimClient : IDisposable
 
     private void SetClientVar(string name, object value)
     {
-        var msg = Envelope("set", writer =>
-        {
-            writer.WriteString("name", name);
-            writer.WritePrimitive("value", value);
-        });
-        // _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new CommBusMsg { Msg = msg }));
-        _producer.Post(sim => sim.SetClientData(_setDefId, _setDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarSetMsg { Name = name, Value = Convert.ToDouble(value) }));
+        _producer.Post(sim => sim.SetClientData(_setDefId, _setDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
+            new VarSetMsg { Name = name, Value = Convert.ToDouble(value) }));
     }
 
     public IObservable<T> Stream<T>() where T : struct
@@ -386,19 +399,17 @@ public class SimClient : IDisposable
                 observer.OnError,
                 observer.OnCompleted);
 
-            var producerConfig = _producer.Configure(InitializeProducer, DeinitializeProducer);
             var consumerConfig = consumer.Configure(InitializeConsumer, DeinitializeConsumer);
 
             return () =>
             {
                 sub.Dispose();
                 consumerConfig.Dispose();
-                producerConfig.Dispose();
             };
 
             void InitializeConsumer(SimConnect sim)
             {
-                SIMCONNECT_DATATYPE datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
+                var datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
 
                 sim.AddToDataDefinition(defId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
@@ -422,24 +433,6 @@ public class SimClient : IDisposable
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
                 sim.ClearDataDefinition(defId);
                 _defs.TryRemove(key, out _);
-            }
-
-            void InitializeProducer(SimConnect sim)
-            {
-                SIMCONNECT_DATATYPE datumType = datatype ?? SimConnectExtensions.InferDataType(sUnits);
-                var clrType = SimConnectExtensions.ToClrType(datumType);
-
-                sim.AddToDataDefinition(defId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-
-                typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
-                        BindingFlags.Public | BindingFlags.Instance)!
-                    .MakeGenericMethod(clrType)
-                    .Invoke(sim, [defId]);
-            }
-
-            void DeinitializeProducer(SimConnect sim)
-            {
-                sim.ClearDataDefinition(defId);
             }
         }).Replay(1).RefCount());
 

@@ -21,11 +21,11 @@ public class Coordinator : IDisposable
         _masterSwitch = masterSwitch;
         _sim = sim;
         var sw = Stopwatch.StartNew();
-        
+
         Span<byte> sessionBytes = stackalloc byte[8];
         RandomNumberGenerator.Fill(sessionBytes);
         var sessionId = BitConverter.ToUInt64(sessionBytes);
-        
+
         net.RegisterPacket<Update, Update.Codec>();
         net.RegisterPacket<Interact, InteractCodec>();
 
@@ -33,15 +33,15 @@ public class Coordinator : IDisposable
         _sim.Register<Surfaces>();
         _net.RegisterPacket<Physics, Physics.Codec>();
         _net.RegisterPacket<Surfaces, Surfaces.Codec>();
-        
+
         _d.Add(sim.Aircraft.Subscribe(Load));
-        
+
         _d.Add(sim.Aircraft.Take(1).Subscribe(_ => AddLink((ref Physics physics) =>
         {
             physics.SessionId = sessionId;
             physics.TimeMs = (uint)sw.ElapsedMilliseconds;
         })));
-        
+
         _d.Add(sim.Aircraft.Take(1).Subscribe(_ => AddLink((ref Surfaces surfaces) =>
         {
             surfaces.SessionId = sessionId;
@@ -76,7 +76,7 @@ public class Coordinator : IDisposable
 
         foreach (var def in definitions) AddLink(def);
     }
-    
+
     private void AddLink<TPacket>(RefAction<TPacket> modify)
         where TPacket : unmanaged
     {
@@ -103,7 +103,7 @@ public class Coordinator : IDisposable
         var master = !def.Shared;
         object? currentValue = null;
         var getVar = def.Get;
-        
+
         _cSubs.Add(_sim.Stream(getVar, def.Units)
             .Do(value => currentValue = value)
             .Where(_ => !master || _masterSwitch.IsMaster)
@@ -123,10 +123,10 @@ public class Coordinator : IDisposable
             .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
             {
-                var setVar = def.Set(update.Value, currentValue ?? update.Value,
+                var setVar = def.Set(update.Value, currentValue ?? update.Value, out var sUints,
                     out var val0, out var val1, out var val2, out var val3, out var val4);
                 Skip.Next(getVar);
-                _sim.Set(setVar, val0, val1, val2, val3, val4);
+                _sim.Set(setVar, sUints, val0, val1, val2, val3, val4);
             }));
     }
 
@@ -186,7 +186,7 @@ public class Coordinator : IDisposable
             }
         }
     }
-    
+
     private class InteractCodec : IPacketCodec<Interact>
     {
         public void Encode(Interact packet, BinaryWriter bw)
@@ -204,10 +204,10 @@ public class Coordinator : IDisposable
             var @event = br.ReadString();
             var id = br.ReadString();
             var hasValue = br.ReadBoolean();
-            var value = hasValue ? br.ReadString() : null; 
+            var value = hasValue ? br.ReadString() : null;
             return new(instrument, @event, id, value);
         }
     }
-    
+
     delegate void RefAction<T>(ref T value);
 }
