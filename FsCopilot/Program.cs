@@ -1,5 +1,6 @@
 ﻿namespace FsCopilot;
 
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Connection;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,11 @@ sealed class Program
     {
         var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
         var isDebug = args.Any(a => string.Equals(a, "--debug", StringComparison.OrdinalIgnoreCase));
-        
+        var version = Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion
+            .Split('+')[0] ?? "unknown";
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .WriteTo.Console()
@@ -36,21 +41,22 @@ sealed class Program
 
         try
         {
+            Log.Information("[Application] Loaded {Version} version", version);
             DeployModuleToCommunity();
             BuildAvaloniaApp(args).StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Something went wrong");
+            Log.Error(ex, "[Application] Something went wrong");
         }
         finally
         {
             Log.CloseAndFlush();
         }
     }
-    
+
     // Avalonia configuration, don't remove; also used by visual designer.
-    public static AppBuilder BuildAvaloniaApp() => BuildAvaloniaApp([]); 
+    public static AppBuilder BuildAvaloniaApp() => BuildAvaloniaApp([]);
 
     public static AppBuilder BuildAvaloniaApp(string[] args)
     {
@@ -58,7 +64,7 @@ sealed class Program
         var isExperimental = args.Any(a => string.Equals(a, "--experimental", StringComparison.OrdinalIgnoreCase));
         var peerId = Random.String(8);
         var name = Environment.UserName;
-        
+
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .UseReactiveUIWithMicrosoftDependencyResolver(
@@ -79,7 +85,7 @@ sealed class Program
                             sp.GetRequiredService<SimClient>(),
                             sp.GetRequiredService<MasterSwitch>(),
                             sp.GetRequiredService<Coordinator>()
-                        ));    
+                        ));
                     }
                     else
                     {
@@ -95,13 +101,12 @@ sealed class Program
 
     private static void DeployModuleToCommunity()
     {
-        Log.Debug("Deploying module to Community");
         try
         {
             var source = Path.Combine(AppContext.BaseDirectory, "Community", "fscopilot-bridge");
             if (!Directory.Exists(source))
             {
-                Log.Debug("Missing FS copilot module. Skipped");
+                Log.Debug("[Application] Missing FS Copilot module. Skipped");
                 return;
             }
 
@@ -110,7 +115,7 @@ sealed class Program
             {
                 var community = Path.Combine(packagesPath, "Community");
                 if (!Directory.Exists(community)) Directory.CreateDirectory(community);
-                Log.Debug("Found community folder: {0}", community);
+                Log.Debug("[Application] Found community folder: {0}", community);
                 var target = Path.Combine(community, "fscopilot-bridge");
                 if (Directory.Exists(target)) Directory.Delete(target, true);
                 CopyDirectory(source, target, overwrite: true);
@@ -123,7 +128,7 @@ sealed class Program
                 //     File.Copy(Path.Combine(source, "layout.json"), Path.Combine(target, "layout.json"), overwrite: true);
                 //     File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(target, "manifest.json"), overwrite: true);
                 // }
-                Log.Debug("FS copilot module has been deployed to community");
+                Log.Debug("[Application] FS Copilot module has been deployed to community");
             }
         }
         catch (Exception e)
@@ -131,7 +136,7 @@ sealed class Program
             Log.Debug(e.Message);
         }
     }
-    
+
     /// Finds InstalledPackagesPath from UserCfg.opt (MS Store or Steam).
     private static IEnumerable<string> GetInstalledPackagesPath()
     {
@@ -155,7 +160,7 @@ sealed class Program
 
         foreach (var path in cfgPaths.Where(File.Exists))
         {
-            Log.Debug("Detected configuration path: {0}", path);
+            Log.Debug("[Application] Detected configuration path: {0}", path);
             foreach (var line in File.ReadAllLines(path))
             {
                 if (!line.TrimStart().StartsWith("InstalledPackagesPath", StringComparison.OrdinalIgnoreCase)) continue;
