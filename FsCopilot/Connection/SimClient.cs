@@ -14,11 +14,12 @@ public class SimClient : IDisposable
 
     private readonly SimConnectConsumer _consumer;
     private readonly SimConnectProducer _producer;
+    private readonly SimConnectConsumer[] _consumers;
     private readonly ConcurrentDictionary<string, DEF> _defs = new();
     private readonly ConcurrentDictionary<string, object> _streams = new();
+    private int _rrIndex;
     private uint _defId = 100;
     private uint _requestId = 100;
-    // private readonly IObservable<WatchedVar> _varMessages;
     private readonly IObservable<string> _hEvents;
     private readonly IObservable<bool> _conflict;
     private readonly BehaviorSubject<BehaviorControl> _control = new(BehaviorControl.Master);
@@ -38,8 +39,15 @@ public class SimClient : IDisposable
 
     public SimClient(string appName)
     {
-        _consumer = new(appName);
-        _producer = new(appName);
+        _consumer = new($"{appName} (Consumer)");
+        _producer = new($"{appName} (Producer)");
+        _consumers =
+        [
+            new($"{appName} (Consumer 1)"),
+            new($"{appName} (Consumer 2)"),
+            new($"{appName} (Consumer 3)")
+        ];
+        _consumer.Aircraft.Subscribe(name => Log.Information("[SimConnect] Loaded aircraft: {Aircraft}", name));
 
         var readyDefId = RegisterClientStruct<StrMsg>("FSC_READY", producer: false);
         var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_OUT", producer: false);
@@ -99,11 +107,6 @@ public class SimClient : IDisposable
             .Select(json => new Interact(json.String("instrument"), json.String("event"), json.String("id"), json.StringOrNull("value")))
             .Replay(0).RefCount();
 
-       // Config = socketMessages
-       //     .Where(json => json.String("type").Equals("config"))
-       //     .Select(json => new SimConfig(json.BoolOrNull("control") == null, json.BoolOrNull("control") ?? false))
-       //     .Replay(0).RefCount();
-
        _conflict = Stream("L:YourControlsPanelId", "number")
            .Select(value => Convert.ToInt32(value) > 0)
            .DistinctUntilChanged()
@@ -134,6 +137,7 @@ public class SimClient : IDisposable
     {
         _consumer.Dispose();
         _producer.Dispose();
+        foreach (var consumer in _consumers) consumer.Dispose();
     }
 
     public IDisposable Register<T>() where T : unmanaged
@@ -373,7 +377,8 @@ public class SimClient : IDisposable
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
 
-            var sub = _consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
+            var consumer = _consumers[(Interlocked.Increment(ref _rrIndex) & int.MaxValue) % _consumers.Length];
+            var sub = consumer.SimObjectData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
                 {
                     if ((DEF)e.dwDefineID != defId) return;
                     if (e.dwData is { Length: > 0 }) observer.OnNext(e.dwData[0]);
@@ -381,8 +386,8 @@ public class SimClient : IDisposable
                 observer.OnError,
                 observer.OnCompleted);
 
-            var consumerConfig = _consumer.Configure(InitializeConsumer, DeinitializeConsumer);
             var producerConfig = _producer.Configure(InitializeProducer, DeinitializeProducer);
+            var consumerConfig = consumer.Configure(InitializeConsumer, DeinitializeConsumer);
 
             return () =>
             {

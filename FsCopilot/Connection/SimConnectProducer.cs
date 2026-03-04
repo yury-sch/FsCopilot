@@ -22,7 +22,7 @@ public sealed class SimConnectProducer : IDisposable
 
     public SimConnectProducer(string appName)
     {
-        _appName = appName + " (Producer)";
+        _appName = appName;
         _reconnectTask = Task.Factory.StartNew(
             () => AutoReconnect(_cts.Token),
             _cts.Token,
@@ -54,7 +54,7 @@ public sealed class SimConnectProducer : IDisposable
         using var sim = new SimConnect(_appName, IntPtr.Zero, 0, evt, 0);
         evt.WaitOne();
         Log.Information("[SimConnect] Producer connected");
-        
+
         lock (_cfgLock) foreach (var action in _configure)
         {
             try { action(sim); }
@@ -64,11 +64,11 @@ public sealed class SimConnectProducer : IDisposable
             {
             }
         }
-        
+
         while (!ct.IsCancellationRequested)
         {
             if (!await _queue.Reader.WaitToReadAsync(ct)) return;
-        
+
             while (_queue.Reader.TryRead(out var job))
             {
                 try { job(sim); }
@@ -77,7 +77,7 @@ public sealed class SimConnectProducer : IDisposable
             }
         }
     }
-    
+
     public void Post(Action<SimConnect> action) => _queue.Writer.TryWrite(action);
 
     public IDisposable Configure(Action<SimConnect> configure, Action<SimConnect> deconfigure)

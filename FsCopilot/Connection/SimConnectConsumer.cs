@@ -54,7 +54,7 @@ public sealed class SimConnectConsumer : IDisposable
 
     public SimConnectConsumer(string appName)
     {
-        _appName = appName + " (Consumer)";
+        _appName = appName;
 
         _pumpObjTask = Task.Factory.StartNew(
             () => PumpAsync(_simObjectDataCh.Reader, _simObjectData, _cts.Token),
@@ -145,7 +145,7 @@ public sealed class SimConnectConsumer : IDisposable
                 {
                 }
             }
-        
+
             while (!ct.IsCancellationRequested)
             {
                 while (_cfgQueue.Reader.TryRead(out var job))
@@ -156,7 +156,7 @@ public sealed class SimConnectConsumer : IDisposable
                 }
 
                 if (!evt.WaitOne(10)) continue;
-            
+
                 try { sim.ReceiveMessage(); }
                 catch (System.Runtime.InteropServices.COMException) { return; }
                 catch (Exception e) { Log.Fatal(e, "[SimConnect] Consumer processing error"); }
@@ -181,11 +181,7 @@ public sealed class SimConnectConsumer : IDisposable
         var name = match.Success ? match.Groups[1].Value : null;
         if (name == null) return;
 
-        if (!name.Equals(_aircraft.Value))
-        {
-            Log.Information("[SimConnect] Loaded aircraft: {Aircraft}", name);
-            _aircraft.OnNext(name);
-        }
+        if (!name.Equals(_aircraft.Value)) _aircraft.OnNext(name);
     }
 
     private static async Task PumpAsync<T>(ChannelReader<T> reader, IObserver<T> sink, CancellationToken ct)
@@ -201,7 +197,7 @@ public sealed class SimConnectConsumer : IDisposable
             catch (Exception e) { Log.Error(e, "[SimConnect] Consumer sinking error"); }
         }
     }
-    
+
     public IDisposable Configure(Action<SimConnect> configure, Action<SimConnect> deconfigure)
     {
         lock (_cfgLock) _configure.Add(configure);
