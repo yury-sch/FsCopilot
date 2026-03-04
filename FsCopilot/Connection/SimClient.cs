@@ -365,7 +365,7 @@ public class SimClient : IDisposable
         if (name.StartsWith("L:")) return SimVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits, SIMCONNECT_DATATYPE.FLOAT32);
         if (name.StartsWith("B:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("Z:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
-        if (name.StartsWith("A:")) return SimVar(name[2..], sUnits);
+        if (name.StartsWith("A:")) return SimVar(name[2..], string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("H:")) return HVar(name);
         // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
         return Observable.Empty<object>();
