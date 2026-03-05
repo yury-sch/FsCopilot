@@ -13,14 +13,15 @@ using Simulation;
 public class MainViewModel : ReactiveObject, IDisposable
 {
     private readonly CompositeDisposable _d = new();
-    
+
     private string _aircraft = string.Empty;
     private string _connectionCode = string.Empty;
     private bool _isBusy;
     private bool _connected;
     private bool _showTakeControl;
+    private bool _newProfileAvailable;
     private ViewErrors _errors = ViewErrors.None;
-    
+
     private string Aircraft
     {
         set
@@ -29,7 +30,7 @@ public class MainViewModel : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(ErrorMessage));
         }
     }
-    
+
     private ViewErrors Errors
     {
         get => _errors;
@@ -57,23 +58,29 @@ public class MainViewModel : ReactiveObject, IDisposable
         get => _showTakeControl;
         set => this.RaiseAndSetIfChanged(ref _showTakeControl, value);
     }
-    
+
     public string ConnectionCode
     {
         get => _connectionCode;
         set => this.RaiseAndSetIfChanged(ref _connectionCode, value);
     }
 
+    public bool NewProfileAvailable
+    {
+        get => _newProfileAvailable;
+        set => this.RaiseAndSetIfChanged(ref _newProfileAvailable, value);
+    }
+
     public string PeerId { get; init; }
     public string ClientName { get; init; }
-    
+
     public string Version => App.Version;
     public string ErrorMessage =>
         _errors.HasFlag(ViewErrors.Failed) ? "Failed to connect." :
         _errors.HasFlag(ViewErrors.NotRunning) ? "Microsoft Flight Simulator is not running!" :
         _errors.HasFlag(ViewErrors.NotLoadedBridge) ? "Bridge package is not loaded. Check your Community folder." :
         _errors.HasFlag(ViewErrors.BridgeMismatch) ? "Bridge version mismatch. Update Community package." :
-        _errors.HasFlag(ViewErrors.NotSupported) ? $"{_aircraft} is not supported. Provide profile for aircraft." :
+        _errors.HasFlag(ViewErrors.NotSupported) ? $"No profile available for the {_aircraft}." :
         _errors.HasFlag(ViewErrors.Rejected) ? "Both sides must use the same FS Copilot version." :
         _errors.HasFlag(ViewErrors.Conflict) ? "Conflict detected with YourControls package." :
         string.Empty;
@@ -82,30 +89,46 @@ public class MainViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> JoinCommand { get; }
     public ReactiveCommand<Unit, Unit> LeaveCommand { get; }
     public ReactiveCommand<Unit, Unit> TakeControlCommand { get; }
+    public ReactiveCommand<Unit, Unit> DownloadProfileCommand { get; }
 
     public MainViewModel(string peerId,
         string name,
-        INetwork net, 
-        SimClient sim, 
-        MasterSwitch masterSwitch, 
-        Coordinator coordinator)
+        INetwork net,
+        SimClient sim,
+        MasterSwitch masterSwitch,
+        Coordinator coordinator,
+        Updater updater)
     {
         ClientName = name;
         PeerId = peerId;
-        
+
         sim.Aircraft
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(aircraft => Aircraft = aircraft)
             .DisposeWith(_d);
-        
-        coordinator.Configured
-            .Select(configured => configured == false)
-            .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(notSupported => Errors = notSupported
-                ? _errors | ViewErrors.NotSupported
-                : _errors & ~ViewErrors.NotSupported)
+
+        var definitions = new BehaviorSubject<Definitions?>(null);
+       sim.Aircraft
+            .Select(Definitions.Load)
+            .Subscribe(defs => definitions.OnNext(defs))
             .DisposeWith(_d);
-        
+
+        definitions.Subscribe(defs => Errors = defs is { Count: 0 }
+                ? _errors | ViewErrors.NotSupported
+                : _errors & ~ViewErrors.NotSupported).DisposeWith(_d);
+
+        definitions
+            .Where(defs => defs != null)
+            .Subscribe(defs => coordinator.Load(defs!))
+            .DisposeWith(_d);
+
+        definitions
+            .Where(defs => defs != null)
+            .Do(defs => Console.WriteLine(defs?.UpdatedAt))
+            .SelectMany(defs => Observable.FromAsync(ct => updater.Check(defs!.Name, ct))
+                .Select(updatedAt => updatedAt != null && updatedAt > defs!.UpdatedAt))
+            .Subscribe(updateAvailable => NewProfileAvailable =  updateAvailable).DisposeWith(_d);
+
         sim.Connected
             .Sample(TimeSpan.FromMilliseconds(250))
             .Select(connected => !connected)
@@ -114,7 +137,7 @@ public class MainViewModel : ReactiveObject, IDisposable
                 ? _errors | ViewErrors.NotRunning
                 : _errors & ~ViewErrors.NotRunning)
             .DisposeWith(_d);
-        
+
         sim.WasmReady
             .Sample(TimeSpan.FromMilliseconds(250))
             .Select(connected => !connected)
@@ -123,7 +146,7 @@ public class MainViewModel : ReactiveObject, IDisposable
                 ? _errors | ViewErrors.NotLoadedBridge
                 : _errors & ~ViewErrors.NotLoadedBridge)
             .DisposeWith(_d);
-        
+
         sim.WasmVersionMismatch
             .Sample(TimeSpan.FromMilliseconds(250))
             .ObserveOn(RxApp.MainThreadScheduler)
@@ -131,7 +154,7 @@ public class MainViewModel : ReactiveObject, IDisposable
                 ? _errors | ViewErrors.BridgeMismatch
                 : _errors & ~ViewErrors.BridgeMismatch)
             .DisposeWith(_d);
-        
+
         sim.Conflict
             .Sample(TimeSpan.FromMilliseconds(250))
             .ObserveOn(RxApp.MainThreadScheduler)
@@ -139,12 +162,12 @@ public class MainViewModel : ReactiveObject, IDisposable
                 ? _errors | ViewErrors.Conflict
                 : _errors & ~ViewErrors.Conflict)
             .DisposeWith(_d);
-        
+
         net.Peers
             .Sample(TimeSpan.FromMilliseconds(250))
             .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(peers =>  
-            { 
+            .Subscribe(peers =>
+            {
                 var i = 0;
                 Connections.Clear();
                 foreach (var peer in peers) Connections.Add(new(
@@ -157,7 +180,7 @@ public class MainViewModel : ReactiveObject, IDisposable
                 Connected = Connections.Any();
             })
             .DisposeWith(_d);
-        
+
         net.Peers
             .Select(p => p.Count)
             .DistinctUntilChanged()
@@ -170,14 +193,14 @@ public class MainViewModel : ReactiveObject, IDisposable
                 else if (x.Curr < x.Prev) UiSounds.Play("disconnect");
             })
             .DisposeWith(_d);
-        
+
         masterSwitch.Master
             .Sample(TimeSpan.FromMilliseconds(250))
             .Select(isMaster => !isMaster)
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(isSlave => ShowTakeControl = isSlave)
             .DisposeWith(_d);
-        
+
         JoinCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             if (IsBusy) return;
@@ -217,10 +240,19 @@ public class MainViewModel : ReactiveObject, IDisposable
         });
 
         TakeControlCommand = ReactiveCommand.Create(masterSwitch.TakeControl);
+
+        DownloadProfileCommand = ReactiveCommand.CreateFromTask(async ct =>
+        {
+            if (definitions.Value == null) return;
+            var cfg = await updater.Download(definitions.Value.Name, ct);
+            if (cfg == null) return;
+            var defs = Definitions.Save(definitions.Value.Name, cfg);
+            definitions.OnNext(defs);
+        });
     }
 
     public void Dispose() => _d.Dispose();
-    
+
     [Flags]
     private enum ViewErrors : byte
     {

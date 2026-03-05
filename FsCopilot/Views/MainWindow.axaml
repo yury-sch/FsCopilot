@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fsCopilot="clr-namespace:FsCopilot"
-        mc:Ignorable="d" 
-        d:DesignWidth="500" 
+        mc:Ignorable="d"
+        d:DesignWidth="500"
         d:DesignHeight="700"
         Width="500"
         Height="700"
@@ -30,7 +30,7 @@
     <Window.Styles>
         <StyleInclude Source="./MainWindowStyles.axaml" />
     </Window.Styles>
-    
+
     <Window.Cursor>
         <Binding Path="IsBusy" Converter="{StaticResource Wait}"/>
     </Window.Cursor>
@@ -63,7 +63,7 @@
                         <TextBlock Classes="Version"
                                    Text="{Binding Version, StringFormat='v{0}'}" />
                     </StackPanel>
-                    
+
                     <Border DockPanel.Dock="Left" Classes="MainIcon">
                         <PathIcon Data="{StaticResource airplane_regular}">
                             <PathIcon.RenderTransform>
@@ -113,7 +113,7 @@
                                  Watermark="Client code"
                                  Text="{Binding ConnectionCode}" />
                     </DockPanel>
-                    
+
                     <TextBlock Classes="Note"
                                Text="Note: Make sure that all clients see each other after connecting." />
                 </StackPanel>
@@ -154,7 +154,7 @@
 
                     <DockPanel Classes="ConnectionsCardTitle"
                                DockPanel.Dock="Top">
-                        <PathIcon DockPanel.Dock="Left" 
+                        <PathIcon DockPanel.Dock="Left"
                                   Classes="CardTitle"
                                   Data="{StaticResource person_board_regular}" />
                         <TextBlock DockPanel.Dock="Left"
@@ -174,10 +174,10 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel>
-                                        <StackPanel Orientation="Horizontal" 
-                                                    Spacing="10" 
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="10"
                                                     VerticalAlignment="Center">
-                                                
+
                                                 <PathIcon Foreground="#4CAF50"
                                                           Height="22"
                                                           IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=1}"
@@ -198,39 +198,39 @@
                                                           Height="22"
                                                           IsVisible="{Binding QualityLevel, Converter={StaticResource QualityToBrush}, ConverterParameter=5}"
                                                           Data="{StaticResource cellular_data_5_regular}" />
-                                                
+
                                                 <StackPanel>
-                                                    <StackPanel DockPanel.Dock="Top" 
+                                                    <StackPanel DockPanel.Dock="Top"
                                                                 Orientation="Horizontal">
                                                         <TextBlock Text="{Binding PeerId}"
                                                                    Foreground="#8ec6ff"
                                                                    VerticalAlignment="Bottom"
-                                                                   FontSize="14" /> 
+                                                                   FontSize="14" />
                                                         <TextBlock Text="{Binding Name}"
                                                                    Margin="5, 0, 0, 0"
-                                                                   FontSize="14" /> 
+                                                                   FontSize="14" />
                                                     </StackPanel>
-                                                    
-                                                    <StackPanel Orientation="Horizontal" 
-                                                                Spacing="4" 
+
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="4"
                                                                 VerticalAlignment="Center">
                                                         <TextBlock Foreground="#94a3b8"
                                                                    FontSize="11"
                                                                    Text="{Binding Ping, StringFormat='PING: ~{0} ms'}" />
                                                         <Border Classes="Direct"
                                                                 IsVisible="{Binding IsDirect}">
-                                                            <TextBlock Classes="Direct" 
+                                                            <TextBlock Classes="Direct"
                                                                        Text="direct" />
                                                         </Border>
                                                         <Border Classes="Relay"
                                                                 IsVisible="{Binding IsDirect, Converter={StaticResource Inverse}}">
-                                                            <TextBlock Classes="Relay" 
+                                                            <TextBlock Classes="Relay"
                                                                        Text="relay" />
                                                         </Border>
                                                     </StackPanel>
                                                 </StackPanel>
                                         </StackPanel>
-                                        
+
                                         <Separator IsVisible="{Binding HasSeparatorAfter}" />
                                         <!-- <Border Height="1" Background="#94a3b8" Margin="0,10,0,10" /> -->
                                     </StackPanel>
@@ -242,18 +242,28 @@
                 </DockPanel>
             </Border>
 
-            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource Empty}}" 
-                    Grid.Row="3"
-                    Classes="Card Badge Success">
-                <TextBlock Text="FS Copilot is ready to use. Have a nice flight." />
-            </Border>
+            <StackPanel Grid.Row="3" Spacing="10">
+                <Border IsVisible="{Binding NewProfileAvailable}"
+                        Classes="Card Badge Info">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right"
+                                Classes="Link"
+                                Content="Download"
+                                Command="{Binding DownloadProfileCommand}"/>
+                        <TextBlock>New profile available</TextBlock>
+                    </DockPanel>
+                </Border>
 
-            <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmpty}}" 
-                    Grid.Row="3"
-                    Classes="Card Badge Error">
-                <TextBlock Text="{Binding ErrorMessage}" />
-            </Border>
+                <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource Empty}}"
+                        Classes="Card Badge Success">
+                    <TextBlock Text="FS Copilot is ready to use. Have a nice flight." />
+                </Border>
 
+                <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource NotEmpty}}"
+                        Classes="Card Badge Error">
+                    <TextBlock Text="{Binding ErrorMessage}" />
+                </Border>
+            </StackPanel>
         </Grid>
 
     </Panel>

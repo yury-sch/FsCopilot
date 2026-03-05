@@ -76,6 +76,7 @@ sealed class Program
                             ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
                             : new HybridNetwork("p2p.fscopilot.com", peerId, name));
                         services.AddSingleton<MasterSwitch>();
+                        services.AddSingleton(new Updater("http://p2p.fscopilot.com:2320"));
                         services.AddSingleton<Coordinator>();
                         services.AddSingleton(new SimClient("FS Copilot"));
                         services.AddSingleton(sp => new MainViewModel(
@@ -84,7 +85,8 @@ sealed class Program
                             sp.GetRequiredService<INetwork>(),
                             sp.GetRequiredService<SimClient>(),
                             sp.GetRequiredService<MasterSwitch>(),
-                            sp.GetRequiredService<Coordinator>()
+                            sp.GetRequiredService<Coordinator>(),
+                            sp.GetRequiredService<Updater>()
                         ));
                     }
                     else

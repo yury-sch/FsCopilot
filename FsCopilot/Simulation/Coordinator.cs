@@ -12,8 +12,6 @@ public class Coordinator : IDisposable
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
     private CompositeDisposable _cSubs = new();
-    private readonly BehaviorSubject<bool?> _configured = new(null);
-    public IObservable<bool?> Configured => _configured;
 
     public Coordinator(SimClient sim, INetwork net, MasterSwitch masterSwitch)
     {
@@ -33,8 +31,6 @@ public class Coordinator : IDisposable
         _sim.Register<Surfaces>();
         _net.RegisterPacket<Physics, Physics.Codec>();
         _net.RegisterPacket<Surfaces, Surfaces.Codec>();
-
-        _d.Add(sim.Aircraft.Subscribe(Load));
 
         _d.Add(sim.Aircraft.Take(1).Subscribe(_ => AddLink((ref Physics physics) =>
         {
@@ -60,20 +56,10 @@ public class Coordinator : IDisposable
         _cSubs.Dispose();
     }
 
-    private void Load(string name)
+    public void Load(Definitions definitions)
     {
-        _configured.OnNext(null);
         if (!_cSubs.IsDisposed) _cSubs.Dispose();
         _cSubs = new();
-
-        var definitions = Definitions.Load(name);
-        if (definitions.Count == 0)
-        {
-            _configured.OnNext(false);
-            return;
-        }
-        _configured.OnNext(true);
-
         foreach (var def in definitions) AddLink(def);
     }
 

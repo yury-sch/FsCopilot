@@ -1,9 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
+using Avalonia.Platform;
 
 namespace FsCopilot.Simulation;
 
-using System.Globalization;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Jint;
 using YamlDotNet.Serialization;
@@ -22,12 +23,21 @@ public class Definitions : IReadOnlyCollection<Definition>
         // .IgnoreUnmatchedProperties()
         .Build();
 
+    private static readonly Regex UpdatedRx =
+        new(@"^\s*#\s*Updated:\s*(?<date>.+?)\s*$",
+            RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
     private readonly Definition[] _links;
 
+
+    public string Name { get; }
+    public DateTime UpdatedAt { get; }
     public string[] Ignore { get; }
 
-    private Definitions(Definition[] links, string[] ignore)
+    private Definitions(string name, DateTime updatedAt, Definition[] links, string[] ignore)
     {
+        Name = name;
+        UpdatedAt = updatedAt;
         _links = links;
         Ignore = ignore;
     }
@@ -49,7 +59,7 @@ public class Definitions : IReadOnlyCollection<Definition>
             }
             cfg = ParseConfig(cfgFile);
         }
-        catch (FileNotFoundException)
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
             Log.Information("[Definitions] Failed to load {Module} configuration", path);
             node = DefinitionNode.Empty;
@@ -83,13 +93,32 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     public static Definitions Load(string name)
     {
-        if (!TryLoadTree($"{name}.yaml", out var node)) return new([], []);
+        var cfgFile = LoadModule($"{name}.yaml") ?? string.Empty;
+        if (!TryLoadTree($"{name}.yaml", out var node)) return new(name, DateTime.MinValue, [], []);
         var master = new List<Definition>();
         var shared = new List<Definition>();
         var ignore = new List<string>();
         Collect(node, master, shared, ignore);
         var simVars = master.Concat(shared).ToArray();
-        return new(simVars, ignore.ToArray());
+        return new(name, TryReadUpdatedUtc(cfgFile) ?? DateTime.MinValue, simVars, ignore.ToArray());
+    }
+
+    private static string? LoadModule(string path)
+    {
+        try
+        {
+            return File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')])).Trim();
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            Log.Information("[Definitions] Failed to load {Module} configuration", path);
+            return null;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "[Definitions] Failed to load {Module} configuration", path);
+            return null;
+        }
     }
 
     private static void Collect(DefinitionNode node, List<Definition> master, List<Definition> shared, List<string> ignore)
@@ -98,6 +127,40 @@ public class Definitions : IReadOnlyCollection<Definition>
         master.AddRange(node.Master);
         shared.AddRange(node.Shared);
         ignore.AddRange(node.Ignore);
+    }
+
+    private static DateTime? TryReadUpdatedUtc(string cfgFile)
+    {
+        var m = UpdatedRx.Match(cfgFile);
+        if (!m.Success) return null;
+
+        var raw = m.Groups["date"].Value.Trim();
+
+        // ISO format
+        if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+            return dt;
+
+        // yyyy-MM-dd HH:mm:ss format
+        if (DateTime.TryParseExact(raw, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out dt))
+            return dt;
+
+        return null;
+    }
+
+    public static Definitions Save(string name, byte[] file)
+    {
+        try
+        {
+            var definitionsPath = Path.Combine([AppContext.BaseDirectory, "Definitions"]);
+            if (!Directory.Exists(definitionsPath))
+                Directory.CreateDirectory(definitionsPath);
+            File.WriteAllBytes(Path.Combine([AppContext.BaseDirectory, "Definitions", $"{name}.yaml"]), file);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "[Definitions] Failed to save {Module} configuration", name);
+        }
+        return Load(name);
     }
 
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties

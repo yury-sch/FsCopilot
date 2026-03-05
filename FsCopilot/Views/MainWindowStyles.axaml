@@ -56,18 +56,18 @@
         <Setter Property="CornerRadius" Value="8"></Setter>
         <Setter Property="Padding" Value="10"></Setter>
     </Style>
-    
+
     <Style Selector="TextBlock.JoinedSession">
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
     </Style>
-    
+
     <Style Selector="Border.JoinedSession">
         <Setter Property="Background" Value="#66000000"></Setter>
         <Setter Property="BorderBrush" Value="#99FFFFFF"></Setter>
         <Setter Property="CornerRadius" Value="8"></Setter>
         <Setter Property="Padding" Value="10"></Setter>
     </Style>
-    
+
     <Style Selector="SelectableTextBlock.JoinedSession">
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
         <Setter Property="Foreground" Value="#8ec6ff"></Setter>
@@ -82,7 +82,7 @@
         <Setter Property="Padding" Value="10"></Setter>
         <Setter Property="Margin" Value="10,0,00,0"></Setter>
     </Style>
-    
+
     <Style Selector="Button.Connect:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="#5facfc"></Setter>
         <Setter Property="Foreground" Value="Black"></Setter>
@@ -95,7 +95,7 @@
         <Setter Property="Padding" Value="10"></Setter>
         <Setter Property="Margin" Value="10,0,00,0"></Setter>
     </Style>
-    
+
     <Style Selector="Button.TakeControl:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="#5facfc"></Setter>
         <Setter Property="Foreground" Value="Black"></Setter>
@@ -150,6 +150,14 @@
         <Setter Property="Background" Value="#7Fff6d6d"></Setter>
     </Style>
 
+    <Style Selector="Border.Success">
+        <Setter Property="Background" Value="DarkSeaGreen"></Setter>
+    </Style>
+
+    <Style Selector="Border.Info">
+        <Setter Property="Background" Value="#8ec6ff"></Setter>
+    </Style>
+
     <Style Selector="Separator">
         <Setter Property="Background" Value="Black"></Setter>
         <Setter Property="Margin" Value="10"></Setter>
@@ -167,7 +175,7 @@
         <Setter Property="AllowAutoHide" Value="True"></Setter>
         <Setter Property="Padding" Value="20, 0"></Setter>
     </Style>
-    
+
     <Style Selector="ComboBox.Aircraft">
         <Setter Property="BorderThickness" Value="0"></Setter>
         <Setter Property="CornerRadius" Value="8"></Setter>
@@ -179,19 +187,19 @@
         <Setter Property="Foreground" Value="#94a3b8"></Setter>
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
     </Style>
-    
+
     <Style Selector="Border.Direct">
         <Setter Property="Background" Value="Green"></Setter>
         <Setter Property="CornerRadius" Value="7"></Setter>
         <Setter Property="Padding" Value="4, 2, 4, 2"></Setter>
     </Style>
-    
+
     <Style Selector="TextBlock.Direct">
         <Setter Property="Foreground" Value="White"></Setter>
         <Setter Property="FontSize" Value="8"></Setter>
     </Style>
 
-    
+
     <Style Selector="Border.Relay">
         <Setter Property="Background" Value="Orange"></Setter>
         <Setter Property="CornerRadius" Value="7"></Setter>
@@ -201,5 +209,12 @@
     <Style Selector="TextBlock.Relay">
         <Setter Property="Foreground" Value="Black"></Setter>
         <Setter Property="FontSize" Value="8"></Setter>
+    </Style>
+
+    <Style Selector="Button.Link">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="#3b82f6"/>
+        <Setter Property="Padding" Value="0"/>
     </Style>
 </Styles>

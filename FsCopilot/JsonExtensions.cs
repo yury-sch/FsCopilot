@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace FsCopilot.Connection;
+namespace FsCopilot;
 
 public static class JsonExtensions
 {
@@ -8,12 +8,15 @@ public static class JsonExtensions
         => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
             ? v.GetString()!
             : fallback;
-    
+
     public static string? StringOrNull(this JsonElement el, string prop)
         => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
             ? v.GetString()
             : null;
-    
+
+    public static bool Bool(this JsonElement el, string prop)
+        => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.True && v.GetBoolean();
+
     public static bool? BoolOrNull(this JsonElement el, string prop)
         => el.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.True
             ? v.GetBoolean()
