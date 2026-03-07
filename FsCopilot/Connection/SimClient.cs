@@ -364,7 +364,7 @@ public class SimClient : IDisposable
             void InitializeConsumer(SimConnect sim) =>
                 sim.RequestDataOnSimObject(
                     (REQ)Interlocked.Increment(ref _requestId), defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
-                    SIMCONNECT_PERIOD.SECOND, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
+                    SIMCONNECT_PERIOD.SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
 
             void DeinitializeConsumer(SimConnect sim) =>
                 sim.RequestDataOnSimObject(
