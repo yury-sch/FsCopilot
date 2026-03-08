@@ -14,52 +14,31 @@ Fly as a real crew. 👨‍✈️👩‍✈️
 
 ![FS Copilot](https://raw.githubusercontent.com/yury-sch/FsCopilot/refs/heads/main/preview.png)
 
-## 🤝 Acknowledgements
-
-This project was inspired by the ideas explored in [YourControls](https://github.com/Sequal32/yourcontrols).
-
-Several good concepts and approaches originated there and helped shape the early direction of this work.
-
-*The core of this project has been written entirely from scratch*, features a distinct architecture, and is implemented in a different programming language.
-
-## ✈️ What FS Copilot Does
-
-- Connects several players to the same aircraft.
-- Synchronizes controls: yoke, pedals, brakes, trim, lights, and more.
-- Shares instrument states and systems between all participants.
-- Works peer-to-peer — no external servers required.
-- Supports modern dark Fluent-style UI theme.
-- Includes a **developer interface** for quick testing and editing of control mappings,
-  available when launching the app with the `--dev` argument.
-
 ## 💡 How It Works
 
-FS Copilot connects to your Microsoft Flight Simulator and keeps all control inputs synchronized between pilots.
-Each participant sees and feels the same cockpit actions — just like a real multi-crew flight.
+FS Copilot synchronizes the aircraft position, control surfaces, and cockpit switches between both pilots.
+So when one pilot turns right, the other pilot’s aircraft turns right as well. It’s like you’re both flying the same plane together.
 
-## 🚀 Getting Started
-
+## 🚀 Quick start
 1. Launch **FS Copilot**.
-   On the first run, it will automatically copy all required files into your *Community* folder.
-   If this doesn’t happen, you can do it manually.
-2. Enter your partner’s **session code** and click Connect.
-3. Launch **Microsoft Flight Simulator**, choose supported aircraft and enjoy your shared flight experience! 🛫
+   On the first run, it copies the required files into your *Community* folder automatically.
+2. Start Microsoft Flight Simulator and choose a supported aircraft.
+3. Enter your partner’s session code and select Join.
+4. Enjoy shared flight 🛫
+
+## ✈️ Which aircraft are supported?
+You can find the list of supported aircraft directly on https://fscopilot.com/.
+
+The list is always up to date and updates automatically.
+
+Additionally, join to the ⁠[Discord](https://discord.gg/HyKMRp47ka) server.
+Community members often share new or custom profiles there, so your aircraft might already be supported even if it’s not included by default. 
 
 ## ⚙️ Compatibility
 
-FS Copilot is built for **Microsoft Flight Simulator 2024**.
-Compatibility with **MSFS 2020** has **not been tested**... but should works :)
+FS Copilot is built for **Microsoft Flight Simulator 2024** but aims to remain compatible with MSFS 2020.
 
-## 💬 Tips
-
-- Both pilots must use the **same FS Copilot version**.
-- Make sure both are flying **the same aircraft model** and using **identical YAML configuration files** for proper synchronization.
-
-## ✨ Why It’s Awesome
-
-- Realistic shared cockpit — no complex setup.
-- No accounts, no servers, no hassle.
-- Inspired by *YourControls*, but simpler and faster.
+However, development is primarily focused on MSFS 2024, so some features may not behave exactly as intended in the 2020 version.
 
 ## 🧩 For Developers
 
@@ -97,6 +76,14 @@ For example:
 
 You can find a detailed documentation here:
 👉 [FS Copilot — Definitions Guide](https://github.com/yury-sch/FsCopilot/wiki)
+
+## 🤝 Acknowledgements
+
+This project was inspired by the ideas explored in [YourControls](https://github.com/Sequal32/yourcontrols).
+
+Several good concepts and approaches originated there and helped shape the early direction of this work.
+
+*The core of this project has been written entirely from scratch*, features a distinct architecture, and is implemented in a different programming language.
 
 ## 🧑‍💻 Author
 
