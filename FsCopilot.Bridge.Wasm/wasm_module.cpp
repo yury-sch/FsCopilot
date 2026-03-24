@@ -10,7 +10,7 @@
 
 namespace
 {
-constexpr auto k_version = "1.2-rc";
+constexpr auto k_version = "1.2-rc2";
 
 enum : DWORD // NOLINT(performance-enum-size)
 {
@@ -23,7 +23,7 @@ enum : DWORD // NOLINT(performance-enum-size)
     def_watch        = 0xF503,
     def_unwatch      = 0xF504,
     def_variable     = 0xF505,
-    def_set          = 0xF506,
+    def_exe          = 0xF506,
     def_physics      = 0xF901,
     def_surfaces     = 0xF902
 };
@@ -252,13 +252,11 @@ void CALLBACK dispatch(SIMCONNECT_RECV* p_data, DWORD /*cb_data*/, void* /*p_con
             (void)fprintf(stdout, "Unwatch %s", msg->name);
         }
 
-        if (cd->dwRequestID == def_set)
+        if (cd->dwRequestID == def_exe)
         {
-            const auto* msg = reinterpret_cast<const fsc::protocol::var_set*>(&cd->dwData);
-            char        cmd[128];
-            (void)snprintf(cmd, sizeof(cmd), "%.15g (>%s)", msg->value, msg->name);
-            execute_calculator_code(cmd, nullptr, nullptr, nullptr);
-            (void)fprintf(stdout, cmd);
+            const auto* msg = reinterpret_cast<const fsc::protocol::str_msg*>(&cd->dwData);
+            execute_calculator_code(msg->msg, nullptr, nullptr, nullptr);
+            (void)fprintf(stdout, "%s", msg->msg);
         }
     }
 }
@@ -336,10 +334,10 @@ extern "C" MSFS_CALLBACK void module_init(void)
     (void)SimConnect_AddToClientDataDefinition(h_sim, def_variable, 0, sizeof(fsc::protocol::var_set), 0, 0);
 
     // set
-    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_SET", def_set);
-    (void)SimConnect_CreateClientData(h_sim, def_set, sizeof(fsc::protocol::var_set), 0);
-    (void)SimConnect_AddToClientDataDefinition(h_sim, def_set, 0, sizeof(fsc::protocol::var_set), 0, 0);
-    (void)SimConnect_RequestClientData(h_sim, def_set, def_set, def_set, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
+    (void)SimConnect_MapClientDataNameToID(h_sim, "FSC_EXE", def_exe);
+    (void)SimConnect_CreateClientData(h_sim, def_exe, sizeof(fsc::protocol::var_set), 0);
+    (void)SimConnect_AddToClientDataDefinition(h_sim, def_exe, 0, sizeof(fsc::protocol::var_set), 0, 0);
+    (void)SimConnect_RequestClientData(h_sim, def_exe, def_exe, def_exe, SIMCONNECT_CLIENT_DATA_PERIOD_ON_SET, 0, 0, 0, 0);
 
     (void)SimConnect_CallDispatch(h_sim, dispatch, nullptr);
 

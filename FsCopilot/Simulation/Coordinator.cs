@@ -1,7 +1,6 @@
-using System.Security.Cryptography;
-
 namespace FsCopilot.Simulation;
 
+using System.Security.Cryptography;
 using Connection;
 using Network;
 
@@ -67,6 +66,7 @@ public class Coordinator : IDisposable
         where TPacket : unmanaged
     {
         _d.Add(_sim.Stream<TPacket>()
+            .Sample(TimeSpan.FromMilliseconds(50), new EventLoopScheduler()) // 20 fps
             .Where(_ => _masterSwitch.IsMaster)
             .Subscribe(update =>
             {
@@ -90,14 +90,18 @@ public class Coordinator : IDisposable
         object? currentValue = null;
         var getVar = def.Get;
 
-        _cSubs.Add(_sim.Stream(getVar, def.Units)
+        var simRx = _sim.Stream(getVar, def.Units);
+        if (master) simRx = simRx.Sample(TimeSpan.FromMilliseconds(30), DefaultScheduler.Instance); // 33 fps
+        simRx = simRx
             .Do(value => currentValue = value)
-            .Where(_ => !master || _masterSwitch.IsMaster)
-            .Delay(getVar[0] == 'H' ? TimeSpan.FromMilliseconds(500) : TimeSpan.Zero)
-            .Where(_ => !Skip.Should(getVar))
+            .Where(_ => !master || _masterSwitch.IsMaster);
+        if (getVar[0] == 'H') simRx = simRx.Delay(TimeSpan.FromMilliseconds(500));
+        if (!master) simRx = simRx.Where(_ => !Skip.Should(getVar));
+        
+        _cSubs.Add(simRx
             .Subscribe(value =>
             {
-                if (def.Skip != null) Skip.Next(def.Skip);
+                if (!master && def.Skip != null) Skip.Next(def.Skip);
                 _net.SendAll(new Update(getVar, value), unreliable: master);
                 Log.Verbose("[PACKET] SENT {Name} {Value}", getVar, value);
             }));
@@ -109,10 +113,18 @@ public class Coordinator : IDisposable
             .Where(update => getVar[0] == 'H' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
             {
-                var setVar = def.Set(update.Value, currentValue ?? update.Value, out var sUints,
-                    out var val0, out var val1, out var val2, out var val3, out var val4);
-                Skip.Next(getVar);
-                _sim.Set(setVar, sUints, val0, val1, val2, val3, val4);
+                if (!master)
+                {
+                    var expression = def.Set(update.Value, currentValue ?? update.Value);
+                    Skip.Next(getVar);
+                    _sim.Execute(expression);
+                }
+                else
+                {
+                    var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values );
+                    if (values.Length == 0) return;
+                    _sim.Set(set, units, values);
+                }
             }));
     }
 

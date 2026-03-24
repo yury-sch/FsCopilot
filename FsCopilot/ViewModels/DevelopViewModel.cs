@@ -246,16 +246,22 @@ public class Node : ReactiveObject, IDisposable
     private Node(SimClient sim, Definition def, object value, object prevValue) : this(string.Empty, false)
     {
         IsVariable = true;
-        var setVar = def.Set(value, prevValue, out var sUnits, out var val0, out var val1, out var val2, out var val3, out var val4);
-        Title += $"{Convert.ToString(val0, CultureInfo.InvariantCulture)} ";
-        if (val1 != null) Title += $"{Convert.ToString(val1, CultureInfo.InvariantCulture)} ";
-        if (val2 != null) Title += $"{Convert.ToString(val2, CultureInfo.InvariantCulture)} ";
-        if (val3 != null) Title += $"{Convert.ToString(val3, CultureInfo.InvariantCulture)} ";
-        if (val4 != null) Title += $"{Convert.ToString(val4, CultureInfo.InvariantCulture)} ";
-        var units = !string.IsNullOrWhiteSpace(sUnits) ? $", {sUnits}" : string.Empty;
-        Title += $"(>{setVar}{units})";
+        Title = def.Set(value, prevValue);
 
-        PushCommand = ReactiveCommand.Create(() => sim.Set(setVar, sUnits, val0, val1, val2, val3, val4));
+        PushCommand = ReactiveCommand.Create(() =>
+        {
+            if (def.Shared)
+            {
+                sim.Execute(Title);
+                
+            }
+            else
+            {
+                var set = def.ParseSet(value, prevValue, out var units, out var values );
+                if (values.Length == 0) return;
+                sim.Set(set, units, values);
+            }
+        });
     }
 
     public void Dispose()

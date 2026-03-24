@@ -9,14 +9,14 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>FsCopilot</RootNamespace>
         <ApplicationIcon>Assets/fscopilot.ico</ApplicationIcon>
-        <Version>1.2-rc1</Version>
+        <Version>1.2-dev</Version>
 
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
         <Platforms>x64;AnyCPU</Platforms>
 
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
-        <PublishTrimmed>false</PublishTrimmed>     <!-- try to trim later -->
+        <PublishTrimmed>true</PublishTrimmed>     <!-- try to trim later -->
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
         <DebugType>none</DebugType>
         <ErrorReport>none</ErrorReport>

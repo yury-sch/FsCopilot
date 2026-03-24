@@ -205,8 +205,11 @@ public record DefinitionNode(
     public static readonly DefinitionNode Empty = new(string.Empty, [], [], [], []);
 }
 
-public class Definition
+public partial class Definition
 {
+    [GeneratedRegex(@"^(?<args>.*?)\s*\(\>\s*(?<name>[^,\)]+)\s*(?:,\s*(?<units>[^\)]+))?\s*\)$", RegexOptions.CultureInvariant)]
+    private static partial Regex SetRegex();
+    
     private readonly string? _set;
     public bool Shared { get; init; }
     public string Get { get; init; }
@@ -217,78 +220,69 @@ public class Definition
     {
         Shared = shared;
         var parts = get.Split(',');
-        Units = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+        Units = parts.Length > 1 ? parts[1].Trim() : "Number";
         Get = parts[0].Trim();
         _set = set?.Trim();
         Skip = skp?.Trim();
     }
 
-    public string Set(object value, object current, out string sUnits,
-        out object value0, out object? value1, out object? value2, out object? value3, out object? value4)
+    public string Set(object value, object current)
     {
-        value0 = value;
-        value1 = null;
-        value2 = null;
-        value3 = null;
-        value4 = null;
-
-        if (_set == null)
-        {
-            sUnits = Units;
-            return Get;
-        }
-        var set = _set;
+        // current = Math.Round(Convert.ToDouble(current), 15);
+        // value = Math.Round(Convert.ToDouble(value), 15);
+        // if (_set == null) return $"{Convert.ToDouble(value).ToString("G15", CultureInfo.InvariantCulture)} (>{Get})";
+        if (_set == null) return $"{Convert.ToString(value, CultureInfo.InvariantCulture)} (>{Get}, {Units})";
+        
+        // var set = _set;
         if (_set.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
         {
             try
             {
                 var engine = new Engine().SetValue("value", value).SetValue("current", current);
-                set = engine.Evaluate(_set).AsString();
+                return engine.Evaluate(_set).AsString();
             }
             catch (Exception e)
             {
                 Log.Error(e, "[Definitions] Unable to parse event expression {Name}", _set);
-                sUnits = Units;
-                return Get;
+                return string.Empty;
             }
         }
+        
+        if (_set.StartsWith('(')) return $"{Convert.ToString(value, CultureInfo.InvariantCulture)} {_set}";
 
-        var rx = new Regex(
-            @"^(?<args>.*?)\s*\(\>\s*(?<name>[^,\)]+)\s*(?:,\s*(?<units>[^\)]+))?\s*\)$",
-            RegexOptions.CultureInvariant);
-        // var rx = new Regex(@"^([A-Z]):([^(:]+)(?:\(([^)]*)\))?$", RegexOptions.CultureInvariant);
+        return _set;
+    }
 
-        var m = rx.Match(set);
+    public string ParseSet(object value, object current, out string sUnits, out object[] values)
+    {
+        var exp = Set(value, current);
+
+        var m = SetRegex().Match(exp);
         if (!m.Success)
         {
             sUnits = Units;
+            values = [value];
             return Get;
         }
 
-        // value = TransformValue(value);
-
-        set = m.Groups["name"].Value.Trim();
+        var set = m.Groups["name"].Value.Trim();
         sUnits = m.Groups["units"].Value.Trim();
-        var pars = m.Groups["args"].Value
+        values = m.Groups["args"].Value
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(p => p.Trim())
             .Select(ParseParam)
+            .Reverse()
             .ToArray();
-        if (pars.Length == 0) value0 = value;
-        if (pars.Length >= 1) value0 = pars[0] ?? 1;
-        if (pars.Length >= 2) value1 = pars[1];
-        if (pars.Length >= 3) value2 = pars[2];
-        if (pars.Length >= 4) value3 = pars[3];
-        if (pars.Length >= 5) value4 = pars[4];
-
+        if (values.Length == 0) values = [value];
+        
         return set;
-
-        object? ParseParam(string p) => uint.TryParse(p, out var ui)
+        
+        object ParseParam(string p) => uint.TryParse(p, out var ui)
             ? ui
             : int.TryParse(p, out var i)
                 ? i
                 : double.TryParse(p, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
                     ? d
-                    : p;
+                    : 0;
     }
 }

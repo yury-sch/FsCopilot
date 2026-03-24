@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FsCopilot.Connection;
 
 using System.Reflection;
@@ -8,7 +10,7 @@ using Microsoft.FlightSimulator.SimConnect;
 
 public class SimClient : IDisposable
 {
-    private const string WasmVersion = "1.2-rc";
+    private const string WasmVersion = "1.2-rc2";
 
     private static readonly object DefaultHValue = 1;
 
@@ -27,7 +29,8 @@ public class SimClient : IDisposable
     private readonly DEF _varWatchDefId;
     private readonly DEF _watchDefId;
     private readonly DEF _unwatchDefId;
-    private readonly DEF _setDefId;
+    // private readonly DEF _setDefId;
+    private readonly DEF _exeDefId;
 
     public readonly IObservable<bool> WasmReady;
     public readonly IObservable<bool> WasmVersionMismatch;
@@ -44,8 +47,7 @@ public class SimClient : IDisposable
         _consumers =
         [
             new($"{appName} (Consumer 1)"),
-            new($"{appName} (Consumer 2)"),
-            new($"{appName} (Consumer 3)")
+            new($"{appName} (Consumer 2)")
         ];
         _consumer.Aircraft.Subscribe(name => Log.Information("[SimConnect] Loaded aircraft: {Aircraft}", name));
 
@@ -53,10 +55,11 @@ public class SimClient : IDisposable
         var commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_OUT", producer: false);
         var controlDefId = RegisterClientStruct<ControlMsg>("FSC_CONTROL", producer: true);
         _commBusDefId = RegisterClientStruct<StrMsg>("FSC_BUS_IN", producer: true);
-        _watchDefId = RegisterClientStruct<VarSetMsg>("FSC_WATCH", producer: true);
-        _unwatchDefId = RegisterClientStruct<VarSetMsg>("FSC_UNWATCH", producer: true);
-        _varWatchDefId = RegisterClientStruct<VarSetMsg>("FSC_VARIABLE", producer: false);
-        _setDefId = RegisterClientStruct<VarSetMsg>("FSC_SET", producer: true);
+        _watchDefId = RegisterClientStruct<VarMsg>("FSC_WATCH", producer: true);
+        _unwatchDefId = RegisterClientStruct<VarMsg>("FSC_UNWATCH", producer: true);
+        _varWatchDefId = RegisterClientStruct<VarMsg>("FSC_VARIABLE", producer: false);
+        // _setDefId = RegisterClientStruct<VarMsg>("FSC_SET", producer: true);
+        _exeDefId = RegisterClientStruct<StrMsg>("FSC_EXE", producer: true);
 
         var wasmVersion = new Subject<string>();
         _consumer.SimClientData
@@ -210,17 +213,21 @@ public class SimClient : IDisposable
         _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new StrMsg { Msg = msg }));
     }
 
-    public void Set(string eventName, object value) =>
-        Set(eventName, null, value, null, null, null, null);
-
-    public void Set(string name, string? sUnits, object value, object? value1, object? value2, object? value3, object? value4)
+    public void Execute(string expression)
     {
-        if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(value));
-        if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, value);
-        if (name.StartsWith("Z:")) SetClientVar(name, value);
-        if (name.StartsWith("H:")) SetClientVar(name, value);
-        if (name.StartsWith("B:")) SetClientVar(name, value);
-        if (name.StartsWith("K:")) TransmitKEvent(name[2..], value, value1, value2, value3, value4);
+        if (string.IsNullOrWhiteSpace(expression)) return;
+        _producer.Post(sim => sim.SetClientData(_exeDefId, _exeDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
+            new StrMsg { Msg = expression }));
+    }
+    
+    public void Set(string name, string? sUnits, object[] values)
+    {
+        if (values.Length == 0) return;
+        if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(values[^1]));
+        if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, values[^1]);
+        if (name.StartsWith("K:")) TransmitKEvent(name[2..], values);
+        if (name.StartsWith("Z:") || name.StartsWith("H:") || name.StartsWith("B:")) 
+            Execute($"{string.Join(' ', values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture)))} (>{name})");
     }
 
     private void SetLVar(string datumName, string? sUnits, object value)
@@ -232,10 +239,10 @@ public class SimClient : IDisposable
             {
                 const SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE.FLOAT32;
                 var clrType = SimConnectExtensions.ToClrType(datumType);
-
+    
                 sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
                 sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-
+    
                 typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
                         BindingFlags.Public | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType)
@@ -243,11 +250,11 @@ public class SimClient : IDisposable
             }, _ => { });
             return nextId;
         });
-
+    
         _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
-
+    
     private void SetSimVar(string datumName, string? sUnits, object value)
     {
         var defId = _defs.GetOrAdd($"PRODUCER_{datumName}_{sUnits}", _ =>
@@ -258,9 +265,9 @@ public class SimClient : IDisposable
                 sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
                 var datumType = SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
-
+    
                 sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-
+    
                 typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
                         BindingFlags.Public | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType)
@@ -268,12 +275,12 @@ public class SimClient : IDisposable
             }, _ => { });
             return nextId;
         });
-
+    
         _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
-
-    private void TransmitKEvent(string eventName, object? value, object? value1, object? value2, object? value3, object? value4)
+    
+    private void TransmitKEvent(string eventName, object[] values)
     {
         var eventId = _defs.GetOrAdd($"K:{eventName}", _ =>
         {
@@ -281,22 +288,21 @@ public class SimClient : IDisposable
             _producer.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, eventName), _ => { });
             return nextId;
         });
-
-        var dwData0 = NormalizeValue(value);
-        var dwData1 = NormalizeValue(value1);
-        var dwData2 = NormalizeValue(value2);
-        var dwData3 = NormalizeValue(value3);
-        var dwData4 = NormalizeValue(value4);
-
+    
+        var dwData0 = NormalizeValue(values[0]);
+        var dwData1 = values.Length > 1 ? NormalizeValue(values[1]) : 0;
+        var dwData2 = values.Length > 2 ? NormalizeValue(values[2]) : 0;
+        var dwData3 = values.Length > 3 ? NormalizeValue(values[3]) : 0;
+        var dwData4 = values.Length > 4 ? NormalizeValue(values[4]) : 0;
+    
         _producer.Post(sim => sim.TransmitClientEvent_EX1(
             SimConnect.SIMCONNECT_OBJECT_ID_USER, (EVT)eventId, GRP.DUMMY,
             SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY,
-            dwData0 ?? 0, dwData1 ?? 0, dwData2 ?? 0, dwData3 ?? 0, dwData4 ?? 0));
+            dwData0, dwData1, dwData2, dwData3, dwData4));
         return;
-
-        uint? NormalizeValue(object? val)
+    
+        uint NormalizeValue(object val)
         {
-            if (val == null) return null;
             uint vb = val switch
             {
                 uint ui => ui,
@@ -316,12 +322,12 @@ public class SimClient : IDisposable
             return vb;
         }
     }
-
-    private void SetClientVar(string name, object value)
-    {
-        _producer.Post(sim => sim.SetClientData(_setDefId, _setDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
-            new VarSetMsg { Name = name, Value = Convert.ToDouble(value) }));
-    }
+    
+    // private void SetClientVar(string name, object value)
+    // {
+    //     _producer.Post(sim => sim.SetClientData(_setDefId, _setDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
+    //         new VarMsg { Name = name, Value = Convert.ToDouble(value) }));
+    // }
 
     public IObservable<T> Stream<T>() where T : struct
     {
@@ -442,7 +448,7 @@ public class SimClient : IDisposable
             var sub = _consumer.SimClientData
                 .ObserveOn(TaskPoolScheduler.Default)
                 .Where(e => (DEF)e.dwDefineID == _varWatchDefId && e.dwData is { Length: > 0 })
-                .Select(e => (VarSetMsg)e.dwData[0])
+                .Select(e => (VarMsg)e.dwData[0])
                 .Where(e => e.Name.Equals(datumName, StringComparison.InvariantCultureIgnoreCase))
                 .Subscribe(e => observer.OnNext(e.Value),
                     observer.OnError,
@@ -453,14 +459,14 @@ public class SimClient : IDisposable
                 // _wasmReady
                 // .Where(ready => ready)
                 .Subscribe(_ => _producer.Post(sim => sim.SetClientData(_watchDefId, _watchDefId,
-                    SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarSetMsg { Name = datumName, Units = sUnits })));
+                    SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarMsg { Name = datumName, Units = sUnits })));
 
             return () =>
             {
                 watch.Dispose();
                 sub.Dispose();
                 _producer.Post(sim => sim.SetClientData(_unwatchDefId, _unwatchDefId,
-                    SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarSetMsg { Name = datumName }));
+                    SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new VarMsg { Name = datumName }));
             };
         }).Replay(1).RefCount());
 
@@ -544,7 +550,7 @@ public class SimClient : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-    private struct VarSetMsg
+    private struct VarMsg
     {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string Name;

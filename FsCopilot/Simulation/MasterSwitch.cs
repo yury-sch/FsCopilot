@@ -38,7 +38,7 @@ public class MasterSwitch : IDisposable
             .Subscribe(_ =>
             {
                 Skip.Next("FSC_TAKE_CONTROL");
-                sim.Set("A:WATER RUDDER HANDLE POSITION", 0);
+                sim.Execute("0 (>A:WATER RUDDER HANDLE POSITION)");
             }));
         
         _d.Add(sim.Stream("A:WATER RUDDER HANDLE POSITION", "Bool")
