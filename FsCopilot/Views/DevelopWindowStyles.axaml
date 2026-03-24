@@ -30,19 +30,20 @@
         <Setter Property="Padding" Value="0, 20"></Setter>
     </Style>
 
-    <Style Selector="ScrollViewer.Tree">
-        <Setter Property="AllowAutoHide" Value="True"></Setter>
+    <Style Selector="TreeView.Tree">
         <Setter Property="Padding" Value="20, 0"></Setter>
     </Style>
     
     <Style Selector="TextBlock.Line">
         <Setter Property="VerticalAlignment" Value="Center"></Setter>
         <Setter Property="Foreground" Value="white"></Setter>
+        <Setter Property="FontSize" Value="12"></Setter>
     </Style>
 
     <Style Selector="Button.Push">
         <Setter Property="Margin" Value="0, 0, 10, 0"></Setter>
         <Setter Property="Foreground" Value="white"></Setter>
+        <Setter Property="Padding" Value="5,2"></Setter>
     </Style>
     
     <Style Selector="Button.Tool">

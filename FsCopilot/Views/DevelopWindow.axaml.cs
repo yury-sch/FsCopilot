@@ -1,8 +1,10 @@
 namespace FsCopilot.Views;
 
+using System.ComponentModel;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ViewModels;
 
@@ -12,6 +14,7 @@ public partial class DevelopWindow : Window
     {
         InitializeComponent();
         ExpandOnRowClick(DefTree);
+        Opened += OnOpened;
     }
 
     private static void ExpandOnRowClick(TreeView tv)
@@ -37,5 +40,56 @@ public partial class DevelopWindow : Window
 
             e.Handled = true;
         }
+    }
+
+    private void OnOpened(object? sender, EventArgs e)
+    {
+        if (DataContext is not DevelopViewModel vm)
+            return;
+
+        vm.PropertyChanged += ViewModelOnPropertyChanged;
+    }
+
+    private async void ViewModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(DevelopViewModel.FoundNode))
+            return;
+
+        if (DataContext is not DevelopViewModel vm || vm.FoundNode is null)
+            return;
+
+        await ScrollToNodeAsync(vm.FoundNode);
+    }
+
+    private async Task ScrollToNodeAsync(Node node)
+    {
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+
+        var container = FindTreeViewItem(DefTree, node);
+        if (container is null)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+            container = FindTreeViewItem(DefTree, node);
+        }
+
+        if (container is null)
+            return;
+
+        container.BringIntoView();
+
+        node.IsPulse = true;
+        await Task.Delay(1000);
+        node.IsPulse = false;
+    }
+
+    private static TreeViewItem? FindTreeViewItem(Control root, object item)
+    {
+        foreach (var visual in root.GetVisualDescendants())
+        {
+            if (visual is TreeViewItem tvi && ReferenceEquals(tvi.DataContext, item))
+                return tvi;
+        }
+
+        return null;
     }
 }

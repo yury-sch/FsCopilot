@@ -44,16 +44,22 @@
         
 
         <Grid Classes="Wrapper" 
-              RowDefinitions="*,Auto">
-            <Border Grid.Row="0"
+              RowDefinitions="Auto,*,Auto">
+            <TextBox Grid.Row="0" 
+                     Classes="Search"
+                     Watermark="Search"
+                     Text="{Binding Search}" />
+            
+            <Border Grid.Row="1"
                     Classes="Card Tree">
-                <ScrollViewer Classes="Tree"
-                              DockPanel.Dock="Bottom">
                     <TreeView x:Name="DefTree"
+                              DockPanel.Dock="Bottom"
+                              Classes="Tree"
                               ItemsSource="{Binding Nodes}">
                         <TreeView.Styles>
                             <Style Selector="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).IsExpanded}"></Setter>
+                                <Setter Property="MinHeight" Value="24"></Setter>
                             </Style>
                         </TreeView.Styles>
                         
@@ -87,10 +93,9 @@
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
-                </ScrollViewer>
             </Border>
 
-            <DockPanel Grid.Row="1">
+            <DockPanel Grid.Row="2">
                 <Button DockPanel.Dock="Right"
                         Classes="Tool" 
                         Command="{Binding ReloadCommand}">

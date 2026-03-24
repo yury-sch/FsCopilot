@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using Avalonia.VisualTree;
 
 namespace FsCopilot.ViewModels;
 
@@ -27,6 +28,8 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     private string _loaded = string.Empty;
     private bool _isPlaying;
     private bool _isRecording;
+    private string _search = string.Empty;
+    private Node? _foundNode;
 
     public string Loaded
     {
@@ -50,6 +53,36 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     public ReactiveCommand<Unit, Unit> ReloadCommand { get; }
     public ReactiveCommand<Unit, Unit> RecordCommand { get; }
     public ReactiveCommand<Unit, Unit> PlayCommand { get; }
+
+    public string Search
+    {
+        get => _search;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _search, value);
+            if (string.IsNullOrWhiteSpace(value) || value.Length <= 4)
+            {
+                FoundNode = null;
+                return;
+            }
+
+            var node = FindNode(Nodes, value);
+            if (node is null)
+            {
+                FoundNode = null;
+                return;
+            }
+
+            node.ExpandParents();
+            FoundNode = node;
+        }
+    }
+
+    public Node? FoundNode
+    {
+        get => _foundNode;
+        set => this.RaiseAndSetIfChanged(ref _foundNode, value);
+    }
 
     public DevelopViewModel(SimClient sim)
     {
@@ -175,6 +208,33 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             return nodes.ToArray();
         }
     }
+    
+    private static TreeViewItem? FindTreeViewItem(Visual root, object item)
+    {
+        foreach (var visual in root.GetVisualDescendants())
+        {
+            if (visual is TreeViewItem tvi && ReferenceEquals(tvi.DataContext, item))
+                return tvi;
+        }
+
+        return null;
+    }
+    
+    private static Node? FindNode(IEnumerable<Node> nodes, string text)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.Title.Contains(text, StringComparison.OrdinalIgnoreCase))
+                return node;
+
+            if (node.SubNodes == null) continue;
+            var found = FindNode(node.SubNodes, text);
+            if (found is not null)
+                return found;
+        }
+
+        return null;
+    }
 }
 
 public class Node : ReactiveObject, IDisposable
@@ -182,15 +242,21 @@ public class Node : ReactiveObject, IDisposable
     private readonly IDisposable? _sub;
 
     private bool _isPulse;
+    private bool _isExpanded;
 
     public string Title { get; }
     public bool IsVariable { get; }
-    public bool IsExpanded { get; }
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
+    }
     public bool IsPulse
     {
         get => _isPulse;
         set => this.RaiseAndSetIfChanged(ref _isPulse, value);
     }
+    public Node? Parent { get; private set; }
 
     public ObservableCollection<Node>? SubNodes { get; }
     public ReactiveCommand<Unit, Unit>? PushCommand { get; }
@@ -204,6 +270,7 @@ public class Node : ReactiveObject, IDisposable
     public Node(string title, ObservableCollection<Node> subNodes, bool isExpanded) : this(title, isExpanded)
     {
         SubNodes = subNodes;
+        foreach (var node in subNodes) node.Parent = this;
     }
 
     public Node(SimClient sim, Definition def) : this(string.Empty, false)
@@ -224,7 +291,7 @@ public class Node : ReactiveObject, IDisposable
             .Subscribe(pair =>
             {
                 if (SubNodes.Count >= 20) SubNodes.Clear();
-                SubNodes.Add(new(sim, def, pair.Curr, pair.Prev));
+                SubNodes.Add(new(sim, def, pair.Curr, pair.Prev) { Parent = this });
                 PulseOnce(TimeSpan.FromMilliseconds(1200));
             });
         return;
@@ -268,6 +335,16 @@ public class Node : ReactiveObject, IDisposable
     {
         foreach (var subNode in SubNodes ?? []) subNode.Dispose();
         _sub?.Dispose();
+    }
+    
+    public void ExpandParents()
+    {
+        var current = Parent;
+        while (current is not null)
+        {
+            current.IsExpanded = true;
+            current = current.Parent;
+        }
     }
 }
 
