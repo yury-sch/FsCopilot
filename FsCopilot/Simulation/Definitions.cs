@@ -275,6 +275,9 @@ public partial class Definition
             .ToArray();
         if (values.Length == 0) values = [value];
         
+        if (set.Length > 2 && set[0] == 'K' && set[1] == ':' && set[3] == ':')
+            set = $"K:{set[4..]}";
+        
         return set;
         
         object ParseParam(string p) => uint.TryParse(p, out var ui)

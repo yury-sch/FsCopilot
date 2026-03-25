@@ -7,7 +7,7 @@
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   
   - get: A:NAV VOLUME:2, Percent # VOL
-    set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
+    set: (>K:NAV2_VOLUME_SET_EX1)
   - get: A:NAV ACTIVE FREQUENCY:2, Hz # NAV ACTIVE
     set: (>K:NAV2_RADIO_SET_HZ)
   - get: A:NAV STANDBY FREQUENCY:2, Hz # NAV STANDBY

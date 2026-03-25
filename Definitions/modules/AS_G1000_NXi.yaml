@@ -5,9 +5,9 @@
 shared:
   # PFD
   - get: A:NAV VOLUME:1, Percent # VOL
-    set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
+    set: (>K:NAV1_VOLUME_SET_EX1)
   - get: A:NAV VOLUME:2, Percent # VOL
-    set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
+    set: (>K:NAV2_VOLUME_SET_EX1)
   - get: H:AS1000_PFD_NAV_Push # NAV 1/2
   - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
     set: (>K:NAV1_RADIO_SET_HZ)
@@ -21,7 +21,7 @@ shared:
 #  - get: A:AUTOPILOT ALTITUDE SLOT INDEX, Number
 #    set: (>K:AP_ALTITUDE_SLOT_INDEX_SET)
   - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # A hack for uninitialized ALT. First, you need to trigger the k event when the height isn't set, otherwise the value won't update. We can't use the k event all the time because the value is set incorrectly with it 
-    set: "current == 0 ? `1 ${value} (>K:AP_ALT_VAR_SET_ENGLISH)` : `${value} (>A:AUTOPILOT ALTITUDE LOCK VAR:1)`"
+    set: "current == 0 ? `1 ${value} (>K:2:AP_ALT_VAR_SET_ENGLISH)` : `${value} (>A:AUTOPILOT ALTITUDE LOCK VAR:1)`"
     
   - get: H:AS1000_PFD_SOFTKEYS_1
 #    set: (>B:G1000_PFD_SOFTKEY1)
@@ -67,9 +67,9 @@ shared:
     skp: H:AS1000_PFD_SOFTKEYS_9
 
   - get: A:COM VOLUME:1, Percent # VOL
-    set: "`${value} (>K:COM1_VOLUME_SET)`"
+    set: (>K:COM1_VOLUME_SET)
   - get: A:COM VOLUME:2, Percent # VOL
-    set: "`${value} (>K:COM2_VOLUME_SET)`"
+    set: (>K:COM2_VOLUME_SET)
   - get: H:AS1000_PFD_COM_Push # COM 1/2
   - get: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
     set: (>K:COM_RADIO_SET_HZ)
@@ -80,7 +80,7 @@ shared:
   - get: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
     set: (>K:COM2_STBY_RADIO_SET_HZ)
   - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
-    set: "`0 ${value * 16} (>K:KOHLSMAN_SET)`"
+    set: "`0 ${value * 16} (>K:2:KOHLSMAN_SET)`"
   - get: A:GPS OBS ACTIVE, Bool # CRS CTR
     set: (>K:GPS_OBS)
     skp: H:AS1000_PFD_SOFTKEYS_5

@@ -1,0 +1,133 @@
+# Original author: https://discord.com/channels/1454265644416765974/1485824178128031764/1486462293846786180
+# Updated: 2026-03-25 20:30:00
+# Created By: DKgolfnut
+
+shared:
+############## GTN650 & 750 COMMON RADIO SETTINGS ################
+  - get: A:NAV VOLUME:1, Percent # VOL
+    set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
+  - get: A:NAV VOLUME:2, Percent # VOL
+    set: "`${value} (>K:NAV2_VOLUME_SET_EX1)`"
+  - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV1 ACTIVE
+    set: (>K:NAV1_RADIO_SET_HZ)
+  - get: A:NAV ACTIVE FREQUENCY:2, Hz # NAV2 ACTIVE
+    set: (>K:NAV2_RADIO_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:1, Hz # NAV1 STANDBY
+    set: (>K:NAV1_STBY_SET_HZ)
+  - get: A:NAV STANDBY FREQUENCY:2, Hz # NAV2 STANDBY
+    set: (>K:NAV2_STBY_SET_HZ)
+  - get: A:ADF ACTIVE FREQUENCY:1, Frequency ADF BCD32 # ADF ACTIVE
+    set: (>K:ADF_ACTIVE_SET)
+  - get: A:ADF STANDBY FREQUENCY:1, Frequency ADF BCD32 # ADF STANDBY
+    set: (>K:ADF_STBY_SET)
+  - get: A:ADF SOUND:1, Bool # ADF SOUND
+    set: (>K:RADIO_ADF_IDENT_SET)
+  - get: A:TRANSPONDER STATE:1, Enum # XPDR StandBy/On/Alt
+  - get: A:TRANSPONDER CODE:1, BCO16 # XPDR Code
+    set: (>K:XPNDR_SET)
+  - get: A:TRANSPONDER IDENT:1, Bool # Ident
+    set: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
+  - get: A:COM VOLUME:1, Percent # VOL
+    set: "`${value} (>K:COM1_VOLUME_SET)`"
+  - get: A:COM VOLUME:2, Percent # VOL
+    set: "`${value} (>K:COM2_VOLUME_SET)`"
+############ Commented out until H:Events can be SKP'd
+#  - get: A:COM ACTIVE FREQUENCY:1, Hz # COM1 ACTIVE
+#    set: (>K:COM_RADIO_SET_HZ)
+#  - get: A:COM ACTIVE FREQUENCY:2, Hz # COM2 ACTIVE
+#    set: (>K:COM2_RADIO_SET_HZ)
+#  - get: A:GPS DRIVES NAV1, Bool # CDI
+############ Commented out until H:Events can be SKP'd
+  - get: A:COM STANDBY FREQUENCY:1, Hz # COM1 STANDBY
+    set: (>K:COM_STBY_RADIO_SET_HZ)
+  - get: A:COM STANDBY FREQUENCY:2, Hz # COM2 STANDBY
+    set: (>K:COM2_STBY_RADIO_SET_HZ)
+  - get: A:KOHLSMAN SETTING MB:0, Millibars # BARO
+    set: "`0 ${value * 16} (>K:2:KOHLSMAN_SET)`"
+  - get: A:GPS OBS ACTIVE, Bool # CRS CTR
+    set: (>K:GPS_OBS)
+  - get: A:GPS OBS VALUE, Degrees # CRS CTR
+    set: (>K:GPS_OBS_SET)
+  - get: A:NAV OBS:1, Degrees # CRS CTR 
+    set: (>K:VOR1_SET)
+  - get: A:NAV OBS:2, Degrees # CRS CTR
+    set: (>K:VOR2_SET)
+  - get: A:COM TRANSMIT:1, Bool # COM1 MIC
+    set: "value ? '0 (>K:PILOT_TRANSMITTER_SET)' : '1 (>K:PILOT_TRANSMITTER_SET)'"
+  - get: A:COM TRANSMIT:1, Bool # COM1 MIC
+    set: "value ? '0 (>K:COPILOT_TRANSMITTER_SET)' : '1 (>K:COPILOT_TRANSMITTER_SET)'"
+  - get: A:COM RECEIVE:1, Bool # COM1
+    set: (>K:COM1_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:2, Bool # COM2
+    set: (>K:COM2_RECEIVE_SELECT)
+  - get: A:DME SOUND, Bool # DME
+    set: (>K:RADIO_DME1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:1, Bool # NAV1
+    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - get: A:ADF SOUND, Bool # ADF
+    set: (>K:RADIO_ADF_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+############## GTN650 & 750 EXTERNAL BTNs and KNOBS   ################
+
+# LVARS for BEZEL. These may not be needed
+  - get: H:GTN750_HomePush
+  - get: H:GTN750_HomePushLong
+  - get: H:GTN750_DirectToPush
+  - get: H:GTN750_KnobSmallInc
+  - get: H:GTN750_KnobSmallDec
+  - get: H:GTN750_KnobLargeInc
+  - get: H:GTN750_KnobLargeDec
+  - get: H:GTN750_KnobPush
+  - get: H:GTN750_KnobPushLong
+  - get: H:GTN750_VolInc
+  - get: H:GTN750_VolDec
+  - get: H:GTN750_VolPush
+  - get: H:GTN750_ToggleVisibility
+  - get: H:GTN750_2_HomePush
+  - get: H:GTN750_2_HomePushLong
+  - get: H:GTN750_2_DirectToPush
+  - get: H:GTN750_2_KnobSmallInc
+  - get: H:GTN750_2_KnobSmallDec
+  - get: H:GTN750_2_KnobLargeInc
+  - get: H:GTN750_2_KnobLargeDec
+  - get: H:GTN750_2_KnobPush
+  - get: H:GTN750_2_KnobPushLong
+  - get: H:GTN750_2_VolInc
+  - get: H:GTN750_2_VolDec
+  - get: H:GTN750_2_VolPush 
+  - get: H:GTN750_2_PANEL_ToggleVisibility  
+############## GTN650 ################
+  - get: H:GTN650_PANEL_HomePush
+  - get: H:GTN650_PANEL_HomePushLong
+  - get: H:GTN650_PANEL_DirectToPush
+  - get: H:GTN650_PANEL_KnobSmallInc
+  - get: H:GTN650_PANEL_KnobSmallDec
+  - get: H:GTN650_PANEL_KnobLargeInc
+  - get: H:GTN650_PANEL_KnobLargeDec
+  - get: H:GTN650_PANEL_KnobPush
+  - get: H:GTN650_PANEL_KnobPushLong
+  - get: H:GTN650_PANEL_VolInc
+  - get: H:GTN650_PANEL_VolDec
+  - get: H:GTN650_PANEL_VolPush
+  - get: H:GTN650_PANEL_ToggleVisibility
+  - get: H:GTN650_2_PANEL_HomePush
+  - get: H:GTN650_2_PANEL_HomePushLong
+  - get: H:GTN650_2_PANEL_DirectToPush
+  - get: H:GTN650_2_PANEL_KnobSmallInc
+  - get: H:GTN650_2_PANEL_KnobSmallDec
+  - get: H:GTN650_2_PANEL_KnobLargeInc
+  - get: H:GTN650_2_PANEL_KnobLargeDec
+  - get: H:GTN650_2_PANEL_KnobPush
+  - get: H:GTN650_2_PANEL_KnobPushLong
+  - get: H:GTN650_2_PANEL_VolInc
+  - get: H:GTN650_2_PANEL_VolDec
+  - get: H:GTN650_2_PANEL_VolPush
+  - get: H:GTN650_2_PANEL_ToggleVisibility
+
+
+
+
+

@@ -1,6 +1,6 @@
 ﻿shared:
   - get: A:COM VOLUME:1, Percent # VOL
-    set: "`${value} (>K:COM1_VOLUME_SET)`"
+    set: (>K:COM1_VOLUME_SET)
   - get: L:AS1000_PFD_SelectedComIndex # COM 1/2
     set: (>B:AS1000_PFD_1_COM_Khz_Button_Push)
   - get: A:COM ACTIVE FREQUENCY:1, Hz # COM ACTIVE
@@ -9,7 +9,7 @@
     set: (>K:COM_STBY_RADIO_SET_HZ)
   
   - get: A:NAV VOLUME:1, Percent # VOL
-    set: "`${value} (>K:NAV1_VOLUME_SET_EX1)`"
+    set: (>K:NAV1_VOLUME_SET_EX1)
   - get: A:NAV ACTIVE FREQUENCY:1, Hz # NAV ACTIVE
     set: (>K:NAV1_RADIO_SET_HZ)
   - get: A:NAV STANDBY FREQUENCY:1, Hz # NAV STANDBY

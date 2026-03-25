@@ -284,7 +284,11 @@ public class Node : ReactiveObject, IDisposable
         if (!string.IsNullOrWhiteSpace(units)) title.Append($", {units}");
         Title = title.ToString();
 
-        _sub = sim.Stream(getVar, units)
+        var rx = sim.Stream(getVar, units);
+        if (!def.Shared)
+            rx = rx.Sample(TimeSpan.FromMilliseconds(30), DefaultScheduler.Instance); // 33 fps
+        
+        _sub = rx
             .Do(value => Log.Information("[DEVELOP] RECV {Name} {Value}", getVar, value))
             .WithPreviousFirstPair()
             .ObserveOn(RxApp.MainThreadScheduler)
