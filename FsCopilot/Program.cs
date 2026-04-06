@@ -61,7 +61,7 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp(string[] args)
     {
         var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
-        var isExperimental = args.Any(a => string.Equals(a, "--experimental", StringComparison.OrdinalIgnoreCase));
+        // var isExperimental = args.Any(a => string.Equals(a, "--experimental", StringComparison.OrdinalIgnoreCase));
         var peerId = Random.String(8);
         var name = Environment.UserName;
 
@@ -72,9 +72,10 @@ sealed class Program
                 {
                     if (!isDev)
                     {
-                        services.AddSingleton<INetwork>(!isExperimental
-                            ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
-                            : new HybridNetwork("p2p.fscopilot.com", peerId, name));
+                        services.AddSingleton<INetwork>(new HybridNetwork("p2p.fscopilot.com", peerId, name));
+                        // services.AddSingleton<INetwork>(!isExperimental
+                        //     ? new P2PNetwork("p2p.fscopilot.com", peerId, name)
+                        //     : new HybridNetwork("p2p.fscopilot.com", peerId, name));
                         services.AddSingleton<MasterSwitch>();
                         services.AddSingleton(new Updater("http://p2p.fscopilot.com:2320"));
                         services.AddSingleton<Coordinator>();
