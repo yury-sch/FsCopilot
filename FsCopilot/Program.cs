@@ -1,4 +1,6 @@
-﻿namespace FsCopilot;
+﻿using System.Security.Cryptography;
+
+namespace FsCopilot;
 
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -120,18 +122,24 @@ sealed class Program
                 if (!Directory.Exists(community)) Directory.CreateDirectory(community);
                 Log.Debug("[Application] Found community folder: {0}", community);
                 var target = Path.Combine(community, "fscopilot-bridge");
-                if (Directory.Exists(target)) Directory.Delete(target, true);
-                CopyDirectory(source, target, overwrite: true);
-                // {
-                //     CopyDirectory(source, target, overwrite: true);
-                // }
-                // else
-                // {
-                //     CopyDirectory(Path.Combine(source, "html_ui"), Path.Combine(target, "html_ui"), overwrite: true);
-                //     File.Copy(Path.Combine(source, "layout.json"), Path.Combine(target, "layout.json"), overwrite: true);
-                //     File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(target, "manifest.json"), overwrite: true);
-                // }
-                Log.Debug("[Application] FS Copilot module has been deployed to community");
+                
+                if (!Directory.Exists(target))
+                {
+                    CopyDirectory(source, target, overwrite: true);
+                    Log.Debug("[Application] FS Copilot module has been deployed to community");
+                    continue;
+                }
+                
+                if (DirectoriesDiffer(source, target))
+                {
+                    Directory.Delete(target, recursive: true);
+                    CopyDirectory(source, target, overwrite: true);
+                    Log.Debug("[Application] FS Copilot module differs from deployed version. Replaced");
+                }
+                else
+                {
+                    Log.Debug("[Application] FS Copilot module is up to date. Skipped");
+                }
             }
         }
         catch (Exception e)
@@ -192,5 +200,54 @@ sealed class Program
             var destSub = Path.Combine(destDir, Path.GetFileName(dir));
             CopyDirectory(dir, destSub, overwrite);
         }
+    }
+    
+    private static bool DirectoriesDiffer(string sourceDir, string targetDir)
+    {
+        var sourceFiles = GetDirectoryFileMap(sourceDir);
+        var targetFiles = GetDirectoryFileMap(targetDir);
+
+        if (sourceFiles.Count != targetFiles.Count)
+            return true;
+
+        foreach (var (relativePath, sourceFilePath) in sourceFiles)
+        {
+            if (!targetFiles.TryGetValue(relativePath, out var targetFilePath))
+                return true;
+
+            var sourceInfo = new FileInfo(sourceFilePath);
+            var targetInfo = new FileInfo(targetFilePath);
+
+            if (sourceInfo.Length != targetInfo.Length)
+                return true;
+
+            if (!FilesHaveSameContent(sourceFilePath, targetFilePath))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static Dictionary<string, string> GetDirectoryFileMap(string rootDir)
+    {
+        return Directory
+            .GetFiles(rootDir, "*", SearchOption.AllDirectories)
+            .ToDictionary(
+                path => Path.GetRelativePath(rootDir, path).Replace('\\', '/'),
+                path => path,
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool FilesHaveSameContent(string file1, string file2)
+    {
+        using var sha256 = SHA256.Create();
+
+        using var stream1 = File.OpenRead(file1);
+        using var stream2 = File.OpenRead(file2);
+
+        var hash1 = sha256.ComputeHash(stream1);
+        var hash2 = sha256.ComputeHash(stream2);
+
+        return hash1.AsSpan().SequenceEqual(hash2);
     }
 }
