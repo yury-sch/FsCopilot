@@ -11,6 +11,7 @@ public class Coordinator : IDisposable
     private readonly SimClient _sim;
     private readonly CompositeDisposable _d = new();
     private CompositeDisposable _cSubs = new();
+    private HashSet<string> _ignore = [];
 
     public Coordinator(SimClient sim, INetwork net, MasterSwitch masterSwitch)
     {
@@ -44,6 +45,7 @@ public class Coordinator : IDisposable
         })));
 
         _d.Add(_sim.Interactions
+            .Where(i => !_ignore.Contains(i.Instrument))
             .Subscribe(interact => _net.SendAll(interact)));
         _d.Add(_net.Stream<Interact>()
             .Subscribe(update => _sim.Set(update)));
@@ -58,8 +60,10 @@ public class Coordinator : IDisposable
     public void Load(Definitions definitions)
     {
         if (!_cSubs.IsDisposed) _cSubs.Dispose();
+        _ignore.Clear();
         _cSubs = new();
         foreach (var def in definitions) AddLink(def);
+        foreach (var i in definitions.Ignore) _ignore.Add(i);
     }
 
     private void AddLink<TPacket>(RefAction<TPacket> modify)
