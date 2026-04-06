@@ -2,7 +2,7 @@ class Hook {
     constructor(instrument) {
         const hookId = Math.floor(Math.random() * 100000);
         const id = instrument.instrumentIdentifier;
-        document.title = 'FS Copilot Hook - ' + id;
+        // document.title = 'FS Copilot Hook - ' + id;
         SimVar.SetSimVarValue('L:FSC_HOOK', 'number', hookId);
 
         const bus = new Bus();
