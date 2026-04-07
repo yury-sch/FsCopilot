@@ -44,11 +44,11 @@ public class Definitions : IReadOnlyCollection<Definition>
 
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config.Link))]
-    private static Config ParseConfig(string yaml) => Deserializer.Deserialize<Config>(yaml);
+    private static Config? ParseConfig(string yaml) => Deserializer.Deserialize<Config?>(yaml);
 
     public static bool TryLoadTree(string path, out DefinitionNode node)
     {
-        Config cfg;
+        Config? cfg;
         try
         {
             var cfgFile = File.ReadAllText(Path.Combine([AppContext.BaseDirectory, "Definitions", ..path.Split('/')])).Trim();
@@ -58,6 +58,11 @@ public class Definitions : IReadOnlyCollection<Definition>
                 return true;
             }
             cfg = ParseConfig(cfgFile);
+            if (cfg == null)
+            {
+                node = DefinitionNode.Empty;
+                return false;
+            }
         }
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
