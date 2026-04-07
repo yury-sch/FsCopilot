@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Globalization;
+using System.Security.Cryptography;
 
 namespace FsCopilot;
 
@@ -19,6 +20,9 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+        
         var isDev = args.Any(a => string.Equals(a, "--dev", StringComparison.OrdinalIgnoreCase));
         var isDebug = args.Any(a => string.Equals(a, "--debug", StringComparison.OrdinalIgnoreCase));
         var version = Assembly.GetEntryAssembly()?

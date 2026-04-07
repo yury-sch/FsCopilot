@@ -124,7 +124,6 @@ public class MainViewModel : ReactiveObject, IDisposable
 
         definitions
             .Where(defs => defs != null)
-            .Do(defs => Console.WriteLine(defs?.UpdatedAt))
             .SelectMany(defs => Observable.FromAsync(ct => updater.Check(defs!.Name, ct))
                 .Select(updatedAt => updatedAt != null && updatedAt > defs!.UpdatedAt))
             .Subscribe(updateAvailable => NewProfileAvailable =  updateAvailable).DisposeWith(_d);
