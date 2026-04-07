@@ -101,7 +101,7 @@ public sealed class P2PNetwork : INetwork, IDisposable
         if (device == null)
         {
             portMapper = PortMapper.Pmp;
-            await GetNat(PortMapper.Upnp, ct);
+            await GetNat(portMapper, ct);
         }
         
         if (device != null)
