@@ -4,8 +4,6 @@ using System.Reflection;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using Connection;
-using Microsoft.Extensions.DependencyInjection;
 using Network;
 using Simulation;
 using Splat;
@@ -31,33 +29,49 @@ public class App : Application
         {
             var args = desktop.Args ?? [];
             var dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
+            var skipInstall = args.Contains("--skip-install", StringComparer.OrdinalIgnoreCase);
             
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
-            if (!dev)
+            if (!skipInstall && Installer.RequiresInstallation)
             {
-                desktop.MainWindow = new MainWindow
+                var vm = Locator.Current.GetService<SetupViewModel>()!;
+                var setup = new SetupWindow { DataContext = vm };
+
+                vm.Completed += () =>
                 {
-                    DataContext = Locator.Current.GetService<MainViewModel>()
+                    CreateWindow(desktop, dev);
+                    setup.Close();
                 };
-                desktop.Exit += (_, _) =>
-                {
-                    Locator.Current.GetService<INetwork>()?.Disconnect();
-                    Locator.Current.GetService<MasterSwitch>()?.TakeControl();
-                };
+
+                desktop.MainWindow = setup;
             }
             else
             {
-                desktop.MainWindow = new DevelopWindow
-                {
-                    DataContext = Locator.Current.GetService<DevelopViewModel>()
-                };
+                CreateWindow(desktop, dev);
             }
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void CreateWindow(IClassicDesktopStyleApplicationLifetime desktop, bool dev)
+    {
+        if (!dev)
+        {
+            desktop.Exit += (_, _) =>
+            {
+                Locator.Current.GetService<INetwork>()?.Disconnect();
+                Locator.Current.GetService<MasterSwitch>()?.TakeControl();
+            };
+        }
+        
+        var window = desktop.MainWindow = !dev 
+            ? new MainWindow { DataContext = Locator.Current.GetService<MainViewModel>() }
+            : new DevelopWindow { DataContext = Locator.Current.GetService<DevelopViewModel>() };
+        window.Show();
     }
 
     private void DisableAvaloniaDataAnnotationValidation()

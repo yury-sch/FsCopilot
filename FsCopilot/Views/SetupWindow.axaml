@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FsCopilot.ViewModels"
+        x:Class="FsCopilot.Views.SetupWindow"
+        x:DataType="vm:SetupViewModel"
+        Width="800"
+        Height="600"
+        CanResize="False"
+        Background="Black"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Window.Styles>
+        <Style Selector="Button.cta">
+            <Setter Property="Margin" Value="0,32,0,0" />
+            <Setter Property="MinWidth" Value="220" />
+            <Setter Property="Height" Value="58" />
+            <Setter Property="Padding" Value="34,0" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#3D82FF" Offset="0" />
+                    <GradientStop Color="#0D5AE8" Offset="1" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.cta:pointerover">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#4B8CFF" Offset="0" />
+                    <GradientStop Color="#1A66F0" Offset="1" />
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.cta:pressed">
+            <Setter Property="Opacity" Value="0.96" />
+        </Style>
+
+        <Style Selector="Button.cta:disabled">
+            <Setter Property="Opacity" Value="0.55" />
+        </Style>
+
+        <Style Selector="TextBlock.status">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="#99FFFFFF" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="MaxWidth" Value="520" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+        </Style>
+    </Window.Styles>
+
+    <Grid Background="Black">
+        <StackPanel HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="0"
+                    Margin="32">
+
+            <Image Source="/Assets/hero.png"
+                   Width="300"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,36"
+                   Stretch="Uniform">
+                <Image.Effect>
+                    <DropShadowEffect BlurRadius="70"
+                                      OffsetY="18"
+                                      Color="#2D193674" />
+                </Image.Effect>
+            </Image>
+
+            <TextBlock Text="FS Copilot"
+                       HorizontalAlignment="Center"
+                       FontSize="48"
+                       FontWeight="SemiBold"
+                       TextAlignment="Center">
+                <TextBlock.Foreground>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="White" Offset="0" />
+                        <GradientStop Color="#B8D1FF" Offset="1" />
+                    </LinearGradientBrush>
+                </TextBlock.Foreground>
+            </TextBlock>
+
+            <TextBlock Text="{Binding Subtitle}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       Foreground="#F5FFFFFF"
+                       FontSize="24"
+                       FontWeight="Normal"
+                       TextWrapping="Wrap"
+                       MaxWidth="600"
+                       Margin="0,14,0,0" />
+
+            <TextBlock Classes="status"
+                       IsVisible="{Binding IsBusy}"
+                       Text="Please wait..." />
+
+            <Button Classes="cta"
+                    IsVisible="{Binding ShowPrimaryButton}"
+                    Content="{Binding PrimaryButtonText}"
+                    Command="{Binding PrimaryCommand}"
+                    IsEnabled="{Binding CanExecutePrimaryAction}"
+                    HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</Window>

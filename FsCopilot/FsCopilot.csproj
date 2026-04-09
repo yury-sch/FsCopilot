@@ -26,6 +26,7 @@
     <ItemGroup>
         <AvaloniaResource Include="Assets\icon.svg"/>
         <AvaloniaResource Include="Assets\fscopilot.ico"/>
+        <AvaloniaResource Include="Assets\hero.png"/>
     </ItemGroup>
 
     <ItemGroup>
