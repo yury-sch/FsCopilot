@@ -31,22 +31,8 @@ public class MasterSwitch : IDisposable
             .Where(isMaster => isMaster)
             .Subscribe(_ => net.SendAll(new SetMaster(PeerId))));
         
-        _d.Add(sim.Stream("A:WATER RUDDER HANDLE POSITION", "Bool")
-            .Select(Convert.ToDouble)
-            .Sample(TimeSpan.FromSeconds(1))
-            .Where(v => v < 0)
-            .Subscribe(_ =>
-            {
-                Skip.Next("FSC_TAKE_CONTROL");
-                sim.Execute("0 (>A:WATER RUDDER HANDLE POSITION)");
-            }));
-        
-        _d.Add(sim.Stream("A:WATER RUDDER HANDLE POSITION", "Bool")
-            .Skip(1)
-            .Select(Convert.ToDouble)
-            .Where(v => v >= 0 && !Skip.Should("FSC_TAKE_CONTROL"))
-            .DistinctUntilChanged()
-            .Do(_ => Log.Information("Water rudder toggle detected"))
+        _d.Add(sim.Stream("K:TOGGLE_LAUNCH_BAR_SWITCH", string.Empty)
+            .Do(_ => Log.Information("Launch bar toggle detected"))
             .Subscribe(_ => TakeControl()));
         
         // _d.Add(sim.Config.Where(c => c.Undefined).Subscribe(_ => sim.Set(new SimConfig(false, _master.Value))));

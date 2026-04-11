@@ -225,18 +225,23 @@ public partial class Definition
     {
         Shared = shared;
         var parts = get.Split(',');
-        Units = parts.Length > 1 ? parts[1].Trim() : "Number";
         Get = parts[0].Trim();
+        Units = parts.Length > 1 
+            ? parts[1].Trim() 
+            : Get.Length > 0 && (Get[0] == 'K' || Get[0] == 'H')
+                ? string.Empty 
+                : "Number";
         _set = set?.Trim();
         Skip = skp?.Trim();
     }
 
     public string Set(object value, object current)
     {
+        var valueStr = Convert.ToString(value, CultureInfo.InvariantCulture);
         // current = Math.Round(Convert.ToDouble(current), 15);
         // value = Math.Round(Convert.ToDouble(value), 15);
         // if (_set == null) return $"{Convert.ToDouble(value).ToString("G15", CultureInfo.InvariantCulture)} (>{Get})";
-        if (_set == null) return $"{Convert.ToString(value, CultureInfo.InvariantCulture)} (>{Get}, {Units})";
+        if (_set == null) return !string.IsNullOrWhiteSpace(Units) ? $"{valueStr} (>{Get}, {Units})" : $"{valueStr} (>{Get})";
         
         // var set = _set;
         if (_set.IndexOfAny(['\'', '`', '?', '{', '}'])  >= 0)
@@ -253,7 +258,7 @@ public partial class Definition
             }
         }
         
-        if (_set.StartsWith('(')) return $"{Convert.ToString(value, CultureInfo.InvariantCulture)} {_set}";
+        if (_set.StartsWith('(')) return $"{valueStr} {_set}";
 
         return _set;
     }

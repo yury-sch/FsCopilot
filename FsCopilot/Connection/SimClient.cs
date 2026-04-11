@@ -386,6 +386,7 @@ public class SimClient : IDisposable
         if (name.StartsWith("Z:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("A:")) return SimVar(name[2..], string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("H:")) return HVar(name);
+        if (name.StartsWith("K:")) return KEvent(name[2..]);
         // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
         return Observable.Empty<object>();
     }
@@ -491,6 +492,48 @@ public class SimClient : IDisposable
     //             _producer.Post(sim => sim.SetClientData(_commBusDefId, _commBusDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0, new CommBusMsg { Msg = unwatch }));
     //         };
     //     }).Replay(1).RefCount());
+
+    private IObservable<object> KEvent(string datumName) =>
+        (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
+        {
+            var defId = (DEF)Interlocked.Increment(ref _defId);
+            var groupId = (DEF)0;
+
+            var consumer = _consumers[(Interlocked.Increment(ref _rrIndex) & int.MaxValue) % _consumers.Length];
+            var sub = consumer.SimEventData.ObserveOn(TaskPoolScheduler.Default).Subscribe(e =>
+                {
+                    if ((DEF)e.uGroupID != groupId) return;
+                    if ((DEF)e.uEventID != defId) return;
+                    observer.OnNext(e.dwData);
+                },
+                observer.OnError,
+                observer.OnCompleted);
+
+            var consumerConfig = consumer.Configure(InitializeConsumer, DeinitializeConsumer);
+
+            return () =>
+            {
+                sub.Dispose();
+                consumerConfig.Dispose();
+            };
+
+            void InitializeConsumer(SimConnect sim)
+            {
+                _defs.TryAdd(key, defId);
+                sim.MapClientEventToSimEvent(defId, datumName);
+                sim.AddClientEventToNotificationGroup(groupId, defId, false);
+                sim.SetNotificationGroupPriority(groupId, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
+            }
+
+            void DeinitializeConsumer(SimConnect sim)
+            {
+                // sim.RequestDataOnSimObject(
+                //     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
+                //     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
+                // sim.ClearDataDefinition(defId);
+                _defs.TryRemove(key, out _);
+            }
+        }).Replay(1).RefCount());
 
     private IObservable<object> HVar(string name) =>
         (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
