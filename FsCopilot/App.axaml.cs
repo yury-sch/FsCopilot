@@ -12,6 +12,8 @@ using Views;
 
 public class App : Application
 {
+    private readonly CancellationTokenSource _appCts = new();
+    
     public static readonly string Version =
         Assembly.GetEntryAssembly()?
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
@@ -27,6 +29,14 @@ public class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            desktop.Exit += (_, _) =>
+            {
+                _appCts.Cancel();
+
+                Locator.Current.GetService<INetwork>()?.Disconnect();
+                Locator.Current.GetService<MasterSwitch>()?.TakeControl();
+            };
+            
             var args = desktop.Args ?? [];
             var dev = args.Contains("--dev", StringComparer.OrdinalIgnoreCase);
             var skipInstall = args.Contains("--skip-install", StringComparer.OrdinalIgnoreCase);
@@ -51,6 +61,7 @@ public class App : Application
             else
             {
                 CreateWindow(desktop, dev);
+                _ = CheckForUpdatesAsync(Locator.Current.GetService<Updater>()!, _appCts.Token);
             }
         }
 
@@ -59,15 +70,6 @@ public class App : Application
 
     private static void CreateWindow(IClassicDesktopStyleApplicationLifetime desktop, bool dev)
     {
-        if (!dev)
-        {
-            desktop.Exit += (_, _) =>
-            {
-                Locator.Current.GetService<INetwork>()?.Disconnect();
-                Locator.Current.GetService<MasterSwitch>()?.TakeControl();
-            };
-        }
-        
         var window = desktop.MainWindow = !dev 
             ? new MainWindow { DataContext = Locator.Current.GetService<MainViewModel>() }
             : new DevelopWindow { DataContext = Locator.Current.GetService<DevelopViewModel>() };
@@ -84,6 +86,20 @@ public class App : Application
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(Updater updater, CancellationToken ct)
+    {
+        var release = await updater.CheckForUpdateAsync(Version, ct);
+        if (release is null)
+            return;
+
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null } desktop)
+        {
+            var dialog = new UpdateAvailableWindow(new UpdateAvailableViewModel(Version, release.TagName, release.HtmlUrl));
+
+            await dialog.ShowDialog(desktop.MainWindow);
         }
     }
 }

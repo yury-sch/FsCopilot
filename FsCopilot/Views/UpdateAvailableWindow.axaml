@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FsCopilot.ViewModels"
+        x:Class="FsCopilot.Views.UpdateAvailableWindow"
+        x:DataType="vm:UpdateAvailableViewModel"
+        Width="360"
+        Height="260"
+        CanResize="False"
+        CanMinimize="False"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner"
+        ExtendClientAreaToDecorationsHint="True"
+        Title="FS Copilot Update">
+
+    <Window.Styles>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#8ec6ff"></Setter>
+            <Setter Property="Foreground" Value="Black"></Setter>
+            <Setter Property="CornerRadius" Value="8"></Setter>
+            <Setter Property="Padding" Value="10"></Setter>
+            <Setter Property="Margin" Value="10,0,00,0"></Setter>
+        </Style>
+
+        <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#5facfc"></Setter>
+            <Setter Property="Foreground" Value="Black"></Setter>
+        </Style>
+
+        <Style Selector="Button.secondary">
+            <Setter Property="CornerRadius" Value="8"></Setter>
+            <Setter Property="Padding" Value="10"></Setter>
+            <Setter Property="Margin" Value="10,0,00,0"></Setter>
+            <Setter Property="Foreground" Value="White"></Setter>
+        </Style>
+    </Window.Styles>
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+
+        <Grid>
+            <Border Width="300"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel Spacing="0">
+
+                    <TextBlock Text="A newer version of FS Copilot is ready to download."
+                               Margin="0,12,0,0"
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"
+                               Foreground="#E8FFFFFF"
+                               FontSize="18"
+                               TextWrapping="Wrap"
+                               MaxWidth="390" />
+
+                    <Border Margin="0,22,0,0"
+                            Padding="16,14"
+                            CornerRadius="16"
+                            Background="#7F000000"
+                            BorderBrush="#12FFFFFF"
+                            BorderThickness="1">
+                        <Grid ColumnDefinitions="*,Auto"
+                              RowDefinitions="Auto,Auto">
+                            <TextBlock Text="Current version"
+                                       Foreground="#8FFFFFFF"
+                                       FontSize="14" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding CurrentVersion}"
+                                       Foreground="White"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+
+                            <TextBlock Grid.Row="1"
+                                       Margin="0,10,0,0"
+                                       Text="Latest version"
+                                       Foreground="#8FFFFFFF"
+                                       FontSize="14" />
+                            <TextBlock Grid.Row="1"
+                                       Grid.Column="1"
+                                       Margin="0,10,0,0"
+                                       Text="{Binding LatestVersion}"
+                                       Foreground="#7FB0FF"
+                                       FontSize="14"
+                                       FontWeight="SemiBold" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Spacing="12"
+                                Margin="0,26,0,0">
+                        <Button Classes="secondary"
+                                Content="Later"
+                                Command="{Binding LaterCommand}" />
+
+                        <Button Classes="primary"
+                                Content="Open GitHub"
+                                Command="{Binding OpenGitHubCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+        
+    </Panel>
+</Window>

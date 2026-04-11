@@ -1,6 +1,7 @@
 ﻿namespace FsCopilot;
 
 using System.IO.Compression;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 public sealed class Updater(string baseAddress)
@@ -84,6 +85,45 @@ public sealed class Updater(string baseAddress)
         return [];
     }
 
+    public async Task<GitHubReleaseInfo?> CheckForUpdateAsync(string version, CancellationToken ct)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/yury-sch/FsCopilot/releases/latest");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        request.Headers.UserAgent.ParseAdd("FS-Copilot-Updater");
+
+        try
+        {
+            using var response = await _http.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+            var root = doc.RootElement;
+
+            var tagName = root.GetProperty("tag_name").GetString();
+            var htmlUrl = root.GetProperty("html_url").GetString();
+
+            if (string.IsNullOrWhiteSpace(tagName) || string.IsNullOrWhiteSpace(htmlUrl))
+                return null;
+
+            var latestVersion = ParseVersion(tagName);
+            var currentVersion = ParseVersion(version);
+
+            if (latestVersion is null || currentVersion is null)
+                return null;
+
+            return latestVersion > currentVersion
+                ? new GitHubReleaseInfo(tagName, latestVersion, htmlUrl)
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static List<ProfileFile> ExtractProfiles(byte[] zipBuffer)
     {
         using var ms = new MemoryStream(zipBuffer);
@@ -125,6 +165,23 @@ public sealed class Updater(string baseAddress)
 
         return normalized;
     }
+
+    private static Version? ParseVersion(string value)
+    {
+        // Supports: v1.2.3, 1.2.3, 1.2.3-beta.1
+        var cleaned = value.Trim();
+
+        if (cleaned.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+            cleaned = cleaned[1..];
+
+        var dashIndex = cleaned.IndexOf('-');
+        if (dashIndex >= 0)
+            cleaned = cleaned[..dashIndex];
+
+        return Version.TryParse(cleaned, out var version) ? version : null;
+    }
 }
 
 public sealed record ProfileFile(string RelativePath, byte[] Content);
+
+public sealed record GitHubReleaseInfo(string TagName, Version Version, string HtmlUrl);
