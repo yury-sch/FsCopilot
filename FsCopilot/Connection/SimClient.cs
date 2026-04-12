@@ -10,7 +10,7 @@ using Microsoft.FlightSimulator.SimConnect;
 
 public class SimClient : IDisposable
 {
-    private const string WasmVersion = "1.2-rc2";
+    private const string WasmVersion = "1.2";
 
     private static readonly object DefaultHValue = 1;
 
@@ -219,14 +219,14 @@ public class SimClient : IDisposable
         _producer.Post(sim => sim.SetClientData(_exeDefId, _exeDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
             new StrMsg { Msg = expression }));
     }
-    
+
     public void Set(string name, string? sUnits, object[] values)
     {
         if (values.Length == 0) return;
         if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(values[^1]));
         if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, values[^1]);
         if (name.StartsWith("K:")) TransmitKEvent(name[2..], values);
-        if (name.StartsWith("Z:") || name.StartsWith("H:") || name.StartsWith("B:")) 
+        if (name.StartsWith("Z:") || name.StartsWith("H:") || name.StartsWith("B:"))
             Execute($"{string.Join(' ', values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture)))} (>{name})");
     }
 
@@ -239,10 +239,10 @@ public class SimClient : IDisposable
             {
                 const SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE.FLOAT32;
                 var clrType = SimConnectExtensions.ToClrType(datumType);
-    
+
                 sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
                 sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-    
+
                 typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
                         BindingFlags.Public | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType)
@@ -250,11 +250,11 @@ public class SimClient : IDisposable
             }, _ => { });
             return nextId;
         });
-    
+
         _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
-    
+
     private void SetSimVar(string datumName, string? sUnits, object value)
     {
         var defId = _defs.GetOrAdd($"PRODUCER_{datumName}_{sUnits}", _ =>
@@ -265,9 +265,9 @@ public class SimClient : IDisposable
                 sUnits = !string.IsNullOrWhiteSpace(sUnits) ? sUnits : "number";
                 var datumType = SimConnectExtensions.InferDataType(sUnits);
                 var clrType = SimConnectExtensions.ToClrType(datumType);
-    
+
                 sim.AddToDataDefinition(nextId, datumName, sUnits, datumType, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-    
+
                 typeof(SimConnect).GetMethod(nameof(SimConnect.RegisterDataDefineStruct),
                         BindingFlags.Public | BindingFlags.Instance)!
                     .MakeGenericMethod(clrType)
@@ -275,11 +275,11 @@ public class SimClient : IDisposable
             }, _ => { });
             return nextId;
         });
-    
+
         _producer.Post(sim => sim.SetDataOnSimObject(defId,
             SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_DATA_SET_FLAG.DEFAULT, value));
     }
-    
+
     private void TransmitKEvent(string eventName, object[] values)
     {
         var eventId = _defs.GetOrAdd($"K:{eventName}", _ =>
@@ -288,19 +288,19 @@ public class SimClient : IDisposable
             _producer.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, eventName), _ => { });
             return nextId;
         });
-    
+
         var dwData0 = NormalizeValue(values[0]);
         var dwData1 = values.Length > 1 ? NormalizeValue(values[1]) : 0;
         var dwData2 = values.Length > 2 ? NormalizeValue(values[2]) : 0;
         var dwData3 = values.Length > 3 ? NormalizeValue(values[3]) : 0;
         var dwData4 = values.Length > 4 ? NormalizeValue(values[4]) : 0;
-    
+
         _producer.Post(sim => sim.TransmitClientEvent_EX1(
             SimConnect.SIMCONNECT_OBJECT_ID_USER, (EVT)eventId, GRP.DUMMY,
             SIMCONNECT_EVENT_FLAG.GROUPID_IS_PRIORITY,
             dwData0, dwData1, dwData2, dwData3, dwData4));
         return;
-    
+
         uint NormalizeValue(object val)
         {
             uint vb = val switch
@@ -322,7 +322,7 @@ public class SimClient : IDisposable
             return vb;
         }
     }
-    
+
     // private void SetClientVar(string name, object value)
     // {
     //     _producer.Post(sim => sim.SetClientData(_setDefId, _setDefId, SIMCONNECT_CLIENT_DATA_SET_FLAG.DEFAULT, 0,
