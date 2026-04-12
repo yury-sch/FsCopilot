@@ -1,0 +1,51 @@
+﻿# HUES - HuesZCore V1.0
+# Created by JF97. 
+
+shared:
+  #FENIX A320 BASE
+  - get: L:HUES_EZ_LFC_delayed #Visibility of HUES_EZ_LFC with Delay
+  - get: L:Cube.SS1, Bool #Rear left window shade
+  - get: L:Cube.SS2, Bool #Side left window shade
+  - get: L:Cube.SS3, Bool #Front left window shade
+  - get: L:Cube.SS4, Bool #Front right window shade
+  - get: L:Cube.SS5, Bool #Side right window shade
+  - get: L:Cube.SS6, Bool #Rear right window shade
+  - get: L:PAX_REFUEL_STORED, Bool #PAX Refuel card display
+  - get: L:EZ_WIPES_PED, Bool #Move wipes
+  - get: L:HUES_EZ_NOKIA_PED, Bool #Move phone
+  - get: L:HUES_EZ_FC, Bool #Move fuel card to and from window
+  - get: L:HUES_EZ_ACARS_VISIBLE, Bool #Show ACARS message
+  - get: L:DIGIT_1_TRANS, Bool #Change Fuel Chart Number 1
+  - get: L:DIGIT_2_STATE, Bool #Change Fuel Chart Number 2
+  - get: L:DIGIT_3_STATE, Bool #Change Fuel Chart Number 3
+  - get: L:DIGIT_PLUS_TRANS, Bool #Change Fuel Chart Plus
+  - get: L:DIGIT_ARROWS_TRANS, Bool #Change Fuel Chart Arrows
+  - get: L:iPhone151_delayed, Bool #iPhone Visibility
+  - get: L:iPhone152_delayed, Bool #iPhone Visibility
+  - get: L:hidescontrino, Bool #Move loadsheet
+  - get: L:hidesoda, Bool
+  - get: L:hide_HUESFOODAP_BREAD, Bool
+  - get: L:hide_HUESFOODAP_DESSERT, Bool
+  - get: L:hide_HUESFOODAP_SALAD, Bool
+  - get: L:hide_HUESFOODAP_PASTA, Bool
+  - get: L:hide_COFFE, Bool
+  - get: L:hide_HUESFOODAP_BREAD2, Bool
+  - get: L:hide_HUESFOODAP_DESSERT2, Bool
+  - get: L:hide_HUESFOODAP_SALAD2, Bool
+  - get: L:hide_HUESFOODAP_PASTA2, Bool
+  - get: L:hide_MF_CPT, Bool
+  - get: L:Cube.EIS1, Bool
+  #INIBUILDS A320, A330 & A340 ADDITIONS
+  - get: L:clickspot_sun1, Bool
+  - get: L:clickspot_sun2, Bool
+  - get: L:clickspot_sun3, Bool
+  - get: L:clickspot_sun4, Bool
+  - get: L:clickspot_sun5, Bool
+  - get: L:clickspot_sun6, Bool
+  - get: L:hide_SODACAN_CPT, Bool
+  - get: L:hide_SODACAN_FO, Bool
+  - get: L:hide_iPhone_15, Bool
+  - get: L:hide_iPhone_152, Bool
+  #INIBUILDS A350 ADDITIONS
+  - get: L:hide_HUESPAPER, Bool
+  - get: L:hide_HUESPAPER2, Bool
