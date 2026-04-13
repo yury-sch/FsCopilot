@@ -1,16 +1,17 @@
+namespace P2PDiscovery;
+
 using System.Buffers;
 using LiteNetLib;
 using LiteNetLib.Utils;
-
-namespace P2PDiscovery;
 
 public sealed class Relay : BackgroundService
 {
     private const int Port = 3600;
     private const byte ControlChannel = 0;
     private const int TickMs = 10;
-    
+
     private readonly ILogger<Relay> _logger;
+    private readonly ServerStats _stats;
 
     private readonly EventBasedNetListener _listener = new();
     private readonly NetManager _net;
@@ -19,9 +20,10 @@ public sealed class Relay : BackgroundService
     private readonly Dictionary<NetPeer, PeerState> _byPeer = new();
     private readonly Dictionary<string, PeerState> _byId = new(StringComparer.Ordinal);
 
-    public Relay(ILogger<Relay> logger)
+    public Relay(ILogger<Relay> logger, ServerStats stats)
     {
         _logger = logger;
+        _stats = stats;
 
         _net = new(_listener)
         {
@@ -64,14 +66,14 @@ public sealed class Relay : BackgroundService
             catch (OperationCanceledException) { /* normal */ }
             catch (Exception ex) { _logger.LogError(ex, "An error occurred during server event processing"); }
         }
-        
+
         _logger.LogInformation("Server stopped.");
     }
 
     private void OnConnectionRequest(ConnectionRequest request)
     {
         var token = request.Data.GetString();
-    
+
         // Token handshake: pid=...;schema=...
         if (!TryParseToken(token, out var peerId, out var schemaId))
         {
@@ -89,7 +91,7 @@ public sealed class Relay : BackgroundService
 
         var peer = request.Accept();
         if (peer == null) return;
-        
+
         var ps = new PeerState(peerId, schemaId, peer);
         _byPeer[peer] = ps;
         _byId[peerId] = ps;
@@ -122,6 +124,7 @@ public sealed class Relay : BackgroundService
         ps.Sessions.Clear();
 
         _logger.LogInformation("DISCONNECT pid={PeerId} reason={Reason}", ps.PeerId, info.Reason);
+        UpdateRelayLinksStats();
     }
 
     // ---------------------------------
@@ -199,7 +202,7 @@ public sealed class Relay : BackgroundService
             SendError(from, targetId, "SCHEMA_MISMATCH", $"Schema mismatch: self={self.SchemaId}, target={target.SchemaId}");
             return;
         }
-        
+
         if (self.Sessions.Contains(target.NetPeer) && target.Sessions.Contains(from)) return;
 
         // Create symmetric link
@@ -210,6 +213,8 @@ public sealed class Relay : BackgroundService
         SendLinkReady(target.NetPeer, self.PeerId);
 
         _logger.LogInformation("LINK UP {A} <-> {B}", self.PeerId, target.PeerId);
+
+        UpdateRelayLinksStats();
     }
 
     private void HandleDisconnectIntent(NetPeer from, PeerState self, NetPacketReader reader)
@@ -243,6 +248,8 @@ public sealed class Relay : BackgroundService
             otherPeerId: "*",
             code: "LEFT_ALL",
             message: "Left all relay links");
+
+        UpdateRelayLinksStats();
     }
 
     private void SendLinkReady(NetPeer peer, string otherPeerId)
@@ -337,6 +344,13 @@ public sealed class Relay : BackgroundService
         if (string.IsNullOrWhiteSpace(peerId)) return false;
 
         return true;
+    }
+
+    private void UpdateRelayLinksStats()
+    {
+        // Each link is stored in both peers' Sessions collections
+        var links = _byPeer.Values.Sum(x => x.Sessions.Count) / 2;
+        _stats.SetRelayLinks(links);
     }
 
     // ---------------------------------

@@ -1,9 +1,9 @@
-﻿using System.Collections.Concurrent;
+﻿namespace P2PDiscovery;
+
+using System.Collections.Concurrent;
 using System.Net;
 using LiteNetLib;
 using LiteNetLib.Utils;
-
-namespace P2PDiscovery;
 
 public sealed class Stun : BackgroundService
 {
@@ -11,16 +11,18 @@ public sealed class Stun : BackgroundService
     private static readonly TimeSpan PeerTtl = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan CleanupInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan TickInterval = TimeSpan.FromMilliseconds(15);
-    
+
     private readonly ILogger<Stun> _logger;
+    private readonly ServerStats _stats;
     private readonly EventBasedNetListener _listener = new();
     private readonly EventBasedNatPunchListener _natListener = new();
     private readonly NetManager _net;
     private readonly ConcurrentDictionary<string, PeerInfo> _peers = new();
 
-    public Stun(ILogger<Stun> logger)
+    public Stun(ILogger<Stun> logger, ServerStats stats)
     {
         _logger = logger;
+        _stats = stats;
 
         _net = new(_listener)
         {
@@ -48,6 +50,7 @@ public sealed class Stun : BackgroundService
     {
         _logger.LogInformation("Stopping server...");
         _net.Stop();
+        _stats.SetP2PUsers(0);
         return base.StopAsync(ct);
     }
 
@@ -66,8 +69,9 @@ public sealed class Stun : BackgroundService
                     if (now - kv.Value.LastSeen <= PeerTtl) continue;
                     if (_peers.TryRemove(kv.Key, out _)) _logger.LogInformation("STALE {PeerId} => REMOVED", kv.Key);
                 }
+                _stats.SetP2PUsers(_peers.Count);
             }
-            
+
             try
             {
                 _net.PollEvents();
@@ -77,7 +81,7 @@ public sealed class Stun : BackgroundService
             catch (OperationCanceledException) { /* normal */ }
             catch (Exception ex) { _logger.LogError(ex, "LOOP error"); }
         }
-        
+
         _logger.LogInformation("Server stopped.");
     }
 
@@ -94,6 +98,7 @@ public sealed class Stun : BackgroundService
         var info = _peers.AddOrUpdate(selfId, peer, (_, _) => peer);
 
         _logger.LogInformation("INTRODUCE {PeerId} => {External}, {Internal}", selfId, info.External, info.Internal);
+        _stats.SetP2PUsers(_peers.Count);
     }
 
     private void OnUnconnectedMessage(IPEndPoint remote, NetPacketReader reader, UnconnectedMessageType messageType)
@@ -154,7 +159,7 @@ public sealed class Stun : BackgroundService
 
         if (!_peers.TryGetValue(targetId, out var target))
         {
-            _logger.LogInformation("CALL {SelfId} ({SelfExt}) -> {TargetId} (NOT_FOUND) => Rejected", 
+            _logger.LogInformation("CALL {SelfId} ({SelfExt}) -> {TargetId} (NOT_FOUND) => Rejected",
                 selfId, self.External, targetId);
             _net.SendUnconnectedMessage(NetDataWriter.FromString($"REJECT|{selfId}|{targetId}|NOT_FOUND"), remote);
             return;
