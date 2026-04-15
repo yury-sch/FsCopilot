@@ -282,7 +282,7 @@ public class SimClient : IDisposable
 
     private void TransmitKEvent(string eventName, object[] values)
     {
-        var eventId = _defs.GetOrAdd($"K:{eventName}", _ =>
+        var eventId = _defs.GetOrAdd($"PRODUCER_K:{eventName}", _ =>
         {
             var nextId = (DEF)Interlocked.Increment(ref _defId);
             _producer.Configure(sim => sim.MapClientEventToSimEvent((EVT)nextId, eventName), _ => { });
@@ -334,7 +334,7 @@ public class SimClient : IDisposable
         var key = typeof(T).FullName!;
         if (!_defs.TryGetValue(key, out var defId)) return Observable.Empty<T>();
 
-        return (IObservable<T>)_streams.GetOrAdd(key, _ => Observable.Create<T>(observer =>
+        return (IObservable<T>)_streams.GetOrAdd($"Stream_{key}", _ => Observable.Create<T>(observer =>
         {
             var scheduler = new EventLoopScheduler();
             var started = false;
@@ -382,8 +382,8 @@ public class SimClient : IDisposable
     public IObservable<object> Stream(string name, string sUnits)
     {
         if (name.StartsWith("L:")) return SimVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits, SIMCONNECT_DATATYPE.FLOAT32);
-        if (name.StartsWith("B:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
-        if (name.StartsWith("Z:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
+        // if (name.StartsWith("B:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
+        // if (name.StartsWith("Z:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("A:")) return SimVar(name[2..], string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("H:")) return HVar(name);
         if (name.StartsWith("K:")) return KEvent(name[2..]);
@@ -392,7 +392,7 @@ public class SimClient : IDisposable
     }
 
     private IObservable<object> SimVar(string datumName, string sUnits, SIMCONNECT_DATATYPE? datatype = null) =>
-        (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
+        (IObservable<object>)_streams.GetOrAdd($"SimVar_{datumName}", key => Observable.Create<object>(observer =>
         {
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var reqId = (REQ)Interlocked.Increment(ref _requestId);
@@ -430,7 +430,6 @@ public class SimClient : IDisposable
                 sim.RequestDataOnSimObject(
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG.CHANGED, 0, 0, 0);
-                _defs.TryAdd(key, defId);
             }
 
             void DeinitializeConsumer(SimConnect sim)
@@ -439,12 +438,11 @@ public class SimClient : IDisposable
                     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
                     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
                 sim.ClearDataDefinition(defId);
-                _defs.TryRemove(key, out _);
             }
         }).Replay(1).RefCount());
 
     private IObservable<object> ClientVar(string datumName, string sUnits) =>
-        (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
+        (IObservable<object>)_streams.GetOrAdd($"ClientVar_{datumName}", key => Observable.Create<object>(observer =>
         {
             var sub = _consumer.SimClientData
                 .ObserveOn(TaskPoolScheduler.Default)
@@ -472,7 +470,7 @@ public class SimClient : IDisposable
         }).Replay(1).RefCount());
 
     // private IObservable<object> ZVar(string name) =>
-    //     (IObservable<object>)_streams.GetOrAdd(name, key => Observable.Create<object>(observer =>
+    //     (IObservable<object>)_streams.GetOrAdd($"ZVar_{name}", key => Observable.Create<object>(observer =>
     //     {
     //         var sub = _varMessages
     //             .Where(var => var.Name.Equals(name))
@@ -494,7 +492,7 @@ public class SimClient : IDisposable
     //     }).Replay(1).RefCount());
 
     private IObservable<object> KEvent(string datumName) =>
-        (IObservable<object>)_streams.GetOrAdd(datumName, key => Observable.Create<object>(observer =>
+        (IObservable<object>)_streams.GetOrAdd($"KEvent_{datumName}", key => Observable.Create<object>(observer =>
         {
             var defId = (DEF)Interlocked.Increment(ref _defId);
             var groupId = (DEF)0;
@@ -509,30 +507,21 @@ public class SimClient : IDisposable
                 observer.OnError,
                 observer.OnCompleted);
 
-            var consumerConfig = consumer.Configure(InitializeConsumer, DeinitializeConsumer);
+            var consumerConfig = consumer.Configure(sim =>
+            {
+                sim.MapClientEventToSimEvent(defId, datumName);
+                sim.AddClientEventToNotificationGroup(groupId, defId, false);
+                sim.SetNotificationGroupPriority(groupId, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
+            }, sim =>
+            {
+                sim.RemoveClientEvent(groupId, defId);
+            });
 
             return () =>
             {
                 sub.Dispose();
                 consumerConfig.Dispose();
             };
-
-            void InitializeConsumer(SimConnect sim)
-            {
-                _defs.TryAdd(key, defId);
-                sim.MapClientEventToSimEvent(defId, datumName);
-                sim.AddClientEventToNotificationGroup(groupId, defId, false);
-                sim.SetNotificationGroupPriority(groupId, SimConnect.SIMCONNECT_GROUP_PRIORITY_HIGHEST);
-            }
-
-            void DeinitializeConsumer(SimConnect sim)
-            {
-                // sim.RequestDataOnSimObject(
-                //     reqId, defId, SimConnect.SIMCONNECT_OBJECT_ID_USER,
-                //     SIMCONNECT_PERIOD.NEVER, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
-                // sim.ClearDataDefinition(defId);
-                _defs.TryRemove(key, out _);
-            }
         }).Replay(1).RefCount());
 
     private IObservable<object> HVar(string name) =>

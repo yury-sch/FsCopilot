@@ -101,7 +101,7 @@ public class Coordinator : IDisposable
             .Where(_ => !master || _masterSwitch.IsMaster);
         if (getVar[0] == 'H') simRx = simRx.Delay(TimeSpan.FromMilliseconds(500));
         if (!master) simRx = simRx.Where(_ => !Skip.Should(getVar));
-        
+
         _cSubs.Add(simRx
             .Subscribe(value =>
             {
@@ -117,17 +117,27 @@ public class Coordinator : IDisposable
             .Where(update => getVar[0] == 'H' || getVar[0] == 'K' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
             {
-                if (!master)
+                if (master)
                 {
-                    var expression = def.Set(update.Value, currentValue ?? update.Value);
-                    Skip.Next(getVar);
-                    _sim.Execute(expression);
+                    var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values);
+                    if (values.Length == 0) return;
+                    _sim.Set(set, units, values);
                 }
                 else
                 {
-                    var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values );
-                    if (values.Length == 0) return;
-                    _sim.Set(set, units, values);
+                    var expression = def.Set(update.Value, currentValue ?? update.Value);
+                    if (expression.Contains(">K:#"))
+                    {
+                        var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values);
+                        if (values.Length == 0) return;
+                        Skip.Next(getVar);
+                        _sim.Set(set, units, values);
+                    }
+                    else
+                    {
+                        Skip.Next(getVar);
+                        _sim.Execute(expression);
+                    }
                 }
             }));
     }

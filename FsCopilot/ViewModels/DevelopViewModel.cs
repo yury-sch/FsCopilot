@@ -208,7 +208,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             return nodes.ToArray();
         }
     }
-    
+
     private static TreeViewItem? FindTreeViewItem(Visual root, object item)
     {
         foreach (var visual in root.GetVisualDescendants())
@@ -219,7 +219,7 @@ public class DevelopViewModel : ReactiveObject, IDisposable
 
         return null;
     }
-    
+
     private static Node? FindNode(IEnumerable<Node> nodes, string text)
     {
         foreach (var node in nodes)
@@ -287,7 +287,7 @@ public class Node : ReactiveObject, IDisposable
         var rx = sim.Stream(getVar, units);
         if (!def.Shared)
             rx = rx.Sample(TimeSpan.FromMilliseconds(30), DefaultScheduler.Instance); // 33 fps
-        
+
         _sub = rx
             .Do(value => Log.Information("[DEVELOP] RECV {Name} {Value}", getVar, value))
             .WithPreviousFirstPair()
@@ -321,16 +321,15 @@ public class Node : ReactiveObject, IDisposable
 
         PushCommand = ReactiveCommand.Create(() =>
         {
-            if (def.Shared)
+            if (!def.Shared || Title.Contains(">K:#"))
             {
-                sim.Execute(Title);
-                
+                var set = def.ParseSet(value, prevValue, out var units, out var values);
+                if (values.Length == 0) return;
+                sim.Set(set, units, values);
             }
             else
             {
-                var set = def.ParseSet(value, prevValue, out var units, out var values );
-                if (values.Length == 0) return;
-                sim.Set(set, units, values);
+                sim.Execute(Title);
             }
         });
     }
@@ -340,7 +339,7 @@ public class Node : ReactiveObject, IDisposable
         foreach (var subNode in SubNodes ?? []) subNode.Dispose();
         _sub?.Dispose();
     }
-    
+
     public void ExpandParents()
     {
         var current = Parent;
