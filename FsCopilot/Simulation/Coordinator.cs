@@ -114,7 +114,6 @@ public class Coordinator : IDisposable
             .Where(update => update.Name == getVar)
             .Do(update => Log.Verbose("[PACKET] RECV {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
-            .Where(update => getVar[0] == 'H' || getVar[0] == 'K' || !update.Value.Equals(currentValue))
             .Subscribe(update =>
             {
                 if (master)
@@ -135,6 +134,9 @@ public class Coordinator : IDisposable
                     }
                     else
                     {
+                        if ((expression.Contains(">K:") || expression.Contains(">B:"))
+                            && expression.Contains("TOGGLE", StringComparison.OrdinalIgnoreCase)
+                            && update.Value.Equals(currentValue)) return;
                         Skip.Next(getVar);
                         _sim.Execute(expression);
                     }
