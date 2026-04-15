@@ -226,7 +226,8 @@ public class SimClient : IDisposable
         if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(values[^1]));
         if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, values[^1]);
         if (name.StartsWith("K:")) TransmitKEvent(name[2..], values);
-        if (name.StartsWith("Z:") || name.StartsWith("H:") || name.StartsWith("B:"))
+        // B / H / Z / Others
+        if (name.Length > 2 && name[1] == ':')
             Execute($"{string.Join(' ', values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture)))} (>{name})");
     }
 
@@ -382,12 +383,11 @@ public class SimClient : IDisposable
     public IObservable<object> Stream(string name, string sUnits)
     {
         if (name.StartsWith("L:")) return SimVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits, SIMCONNECT_DATATYPE.FLOAT32);
-        // if (name.StartsWith("B:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
-        // if (name.StartsWith("Z:")) return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("A:")) return SimVar(name[2..], string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         if (name.StartsWith("H:")) return HVar(name);
         if (name.StartsWith("K:")) return KEvent(name[2..]);
-        // if (datumName.StartsWith("K:")) return KEvent(datumName[2..], sUnits);
+        // B / Z / Others
+        if (name.Length > 2 && name[1] == ':') return ClientVar(name, string.IsNullOrWhiteSpace(sUnits) ? "number" : sUnits);
         return Observable.Empty<object>();
     }
 
