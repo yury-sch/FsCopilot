@@ -100,6 +100,7 @@ class VCockpitPanel extends HTMLElement {
         this.data = _data;
         this.curInstrumentIndex = -1;
         if (this.data) {
+            document.title = _data.sName;
             this.setAttributes(this.data.daAttributes);
             this.loadNextInstrument();
         }
@@ -203,11 +204,7 @@ class VCockpitPanel extends HTMLElement {
         this.curInstrumentIndex++;
         if (this.curInstrumentIndex < this.data.daInstruments.length) {
             var instrument = this.data.daInstruments[this.curInstrumentIndex];
-            /* FS Copilot Integration */
-            // for some reason default realisation cause errors on early stage of development. Need recheck
-            var url = '/Pages/VCockpit/Instruments/' + instrument.sUrl;
-            // var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
-            /* End of FS Copilot Integration */
+            var url = VCockpitPanel.instrumentRoot + instrument.sUrl;
             console.log("Importing instrument " + url);
             var index = this.urlAlreadyImported(instrument.sUrl);
             if (index >= 0) {
