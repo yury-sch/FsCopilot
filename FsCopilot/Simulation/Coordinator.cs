@@ -114,34 +114,7 @@ public class Coordinator : IDisposable
             .Where(update => update.Name == getVar)
             .Do(update => Log.Verbose("[PACKET] RECV {Name} {Value}", getVar, update.Value))
             .Where(_ => !master || !_masterSwitch.IsMaster)
-            .Subscribe(update =>
-            {
-                if (master)
-                {
-                    var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values);
-                    if (values.Length == 0) return;
-                    _sim.Set(set, units, values);
-                }
-                else
-                {
-                    var expression = def.Set(update.Value, currentValue ?? update.Value);
-                    if (expression.Contains(">K:#"))
-                    {
-                        var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values);
-                        if (values.Length == 0) return;
-                        Skip.Next(getVar);
-                        _sim.Set(set, units, values);
-                    }
-                    else
-                    {
-                        if ((expression.Contains(">K:") || expression.Contains(">B:"))
-                            && expression.Contains("TOGGLE", StringComparison.OrdinalIgnoreCase)
-                            && update.Value.Equals(currentValue)) return;
-                        Skip.Next(getVar);
-                        _sim.Execute(expression);
-                    }
-                }
-            }));
+            .Subscribe(update => def.ApplyTo(_sim, update.Value, currentValue, fromPeer: true)));
     }
 
     private record Update(string Name, object Value)

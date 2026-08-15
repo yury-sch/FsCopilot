@@ -32,11 +32,11 @@ public static class ObservableExtensions
                 observer.OnCompleted
             );
         });
-    
-    public static IDisposable Record<T>(this IObservable<T> source, IList<Recorded<T>> buffer)
+
+    public static IDisposable Record<T>(this IObservable<T> source, IList<Recorded<T>> buffer, long? startedAt = null)
         where T : notnull
     {
-        var start = Stopwatch.GetTimestamp();
+        var start = startedAt ?? Stopwatch.GetTimestamp();
         var freq = (double)Stopwatch.Frequency;
 
         return source.Subscribe(x =>
@@ -88,7 +88,7 @@ public static class ObservableExtensions
 
                         // Time until next sample
                         var nextDue = buffer[i].Offset;
-                        var remain = (nextDue - elapsed).Milliseconds;
+                        var remain = (nextDue - elapsed).TotalMilliseconds;
 
                         switch (remain)
                         {

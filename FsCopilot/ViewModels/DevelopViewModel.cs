@@ -26,15 +26,23 @@ public class DevelopViewModel : ReactiveObject, IDisposable
     private readonly SerialDisposable _playing = new();
 
     private string _loaded = string.Empty;
+    private string _status = string.Empty;
     private bool _isPlaying;
     private bool _isRecording;
     private string _search = string.Empty;
     private Node? _foundNode;
+    private Definitions? _definitions;
 
     public string Loaded
     {
         get => _loaded;
         set => this.RaiseAndSetIfChanged(ref _loaded, value);
+    }
+
+    public string Status
+    {
+        get => _status;
+        set => this.RaiseAndSetIfChanged(ref _status, value);
     }
 
     public bool IsPlaying
@@ -111,61 +119,94 @@ public class DevelopViewModel : ReactiveObject, IDisposable
             if (IsRecording)
             {
                 trace = new();
+                var start = Stopwatch.GetTimestamp(); // one clock for every channel
 
                 _recording.Disposable = new CompositeDisposable(
-                    sim.Stream<Physics>().Record(trace.Physics),
-                    sim.Stream<Surfaces>().Record(trace.Controls)
-                    // _vars.Record(_trace.Vars)
-                );
+                    sim.Stream<Physics>().Record(trace.Physics, start),
+                    sim.Stream<Surfaces>().Record(trace.Controls, start),
+                    VarStream(sim, _definitions).Record(trace.Vars, start));
+
+                Status = "Recording…";
+                Log.Information("[DEVELOP] Recording started across {Count} definitions", _definitions?.Count ?? 0);
             }
             else
             {
                 _recording.Disposable?.Dispose();
+                var (physics, surfaces, vars) = (trace?.Physics.Count ?? 0, trace?.Controls.Count ?? 0, trace?.Vars.Count ?? 0);
+
+                Status = $"{physics} physics · {surfaces} surfaces · {vars} vars";
+                Log.Information("[DEVELOP] Recording stopped: {Physics} physics, {Surfaces} surfaces, {Vars} vars",
+                    physics, surfaces, vars);
             }
         });
 
         PlayCommand = ReactiveCommand.Create(() =>
         {
             IsPlaying = !IsPlaying;
-            if (IsPlaying)
+            if (!IsPlaying)
             {
-                var rnd = new System.Random();
-                sim.SetControl(BehaviorControl.Slave);
-                trace ??= new();
-                _playing.Disposable = Observable.Merge(
-                    trace.Physics.Playback()
-                        .Do(data =>
-                        {
-                            data.SessionId = sessionId;
-                            data.TimeMs = (uint)sw.ElapsedMilliseconds;
-                            sim.Set(data);
-                        })
-                        .SelectMany(x => Observable.Return(x)
-                            .Delay(TimeSpan.FromMilliseconds(rnd.Next(20, 101))))
-                        .Select(_ => Unit.Default),
-                    trace.Controls.Playback()
-                        .Do(data =>
-                        {
-                            data.SessionId = sessionId;
-                            data.TimeMs = (uint)sw.ElapsedMilliseconds;
-                            sim.Set(data);
-                        })
-                        .SelectMany(x => Observable.Return(x)
-                            .Delay(TimeSpan.FromMilliseconds(rnd.Next(20, 101))))
-                        .Select(_ => Unit.Default)
-                ).Subscribe(_ => {}, () =>
-                {
-                    IsPlaying = false;
-                    sim.SetControl(BehaviorControl.Master);
-                });
+                Stop();
+                Status = "Playback stopped";
+                Log.Information("[DEVELOP] Playback stopped");
+                return;
             }
-            else
+
+            trace ??= new();
+            var total = trace.Physics.Count + trace.Controls.Count + trace.Vars.Count;
+            if (total == 0)
             {
+                IsPlaying = false;
+                Status = "Nothing recorded";
+                Log.Warning("[DEVELOP] Playback skipped, the trace is empty");
+                return;
+            }
+
+            // Only take the aircraft over when there is movement to reproduce; a variables-only trace leaves it alone.
+            if (trace.Physics.Count > 0 || trace.Controls.Count > 0) sim.SetControl(BehaviorControl.Slave);
+
+            Status = $"Replaying {total} events…";
+            Log.Information("[DEVELOP] Playback started: {Physics} physics, {Surfaces} surfaces, {Vars} vars",
+                trace.Physics.Count, trace.Controls.Count, trace.Vars.Count);
+
+            _playing.Disposable = Observable.Merge(
+                    // The lambda both stamps and sends, so the mutation lands on the copy that reaches the sim.
+                    Replay(trace.Physics, data =>
+                    {
+                        data.SessionId = sessionId;
+                        data.TimeMs = (uint)sw.ElapsedMilliseconds;
+                        sim.Set(data);
+                    }),
+                    Replay(trace.Controls, data =>
+                    {
+                        data.SessionId = sessionId;
+                        data.TimeMs = (uint)sw.ElapsedMilliseconds;
+                        sim.Set(data);
+                    }),
+                    Replay(trace.Vars, v => v.Def.ApplyTo(sim, v.Value, v.Prev, fromPeer: false)))
+                .IgnoreElements() // only completion matters here; the work happens on the playback threads
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(
+                    _ => { },
+                    error =>
+                    {
+                        Log.Error(error, "[DEVELOP] Playback failed");
+                        Status = "Playback failed";
+                        Stop();
+                    },
+                    () =>
+                    {
+                        Log.Information("[DEVELOP] Playback finished");
+                        Status = "Playback finished";
+                        Stop();
+                    });
+            return;
+
+            void Stop()
+            {
+                IsPlaying = false;
                 _playing.Disposable?.Dispose();
                 sim.SetControl(BehaviorControl.Master);
             }
-
-            return;
         });
     }
 
@@ -176,14 +217,38 @@ public class DevelopViewModel : ReactiveObject, IDisposable
         _playing.Dispose();
     }
 
+    private static IObservable<Unit> Replay<T>(IReadOnlyList<Recorded<T>> records, Action<T> send) =>
+        records.Playback().Do(send).Select(_ => Unit.Default);
+
+    /// <summary>
+    /// Every value change across the loaded profile as one stream, tagged with the definition that produced it.
+    /// The variable tree already holds these streams open and <see cref="SimClient.Stream(string,string)"/> shares
+    /// them, so recording adds a second subscriber rather than any extra SimConnect traffic.
+    /// </summary>
+    private static IObservable<Var> VarStream(SimClient sim, Definitions? definitions)
+    {
+        if (definitions is null || definitions.Count == 0) return Observable.Empty<Var>();
+
+        return Observable.Merge(definitions.Select(def =>
+        {
+            var rx = sim.Stream(def.Get, def.Units);
+            if (!def.Shared) rx = rx.Sample(TimeSpan.FromMilliseconds(30), DefaultScheduler.Instance); // 33 fps
+            return rx.WithPreviousFirstPair().Select(pair => new Var(def, pair.Curr, pair.Prev));
+        }));
+    }
+
     private IDisposable PopulateTreeAndAttach(SimClient sim, string path)
     {
         Nodes.Clear();
         if (!Definitions.TryLoadTree($"{path}.yaml", out var tree))
         {
+            _definitions = null;
             Loaded = $"Failed to load {path} configuration";
             return Disposable.Empty;
         }
+
+        // Flattened view of the same tree, so recording can subscribe to every definition without walking the UI nodes.
+        _definitions = Definitions.Load(path);
 
         var nodes = PopulateTree(sim, tree);
         foreach (var node in nodes) Nodes.Add(node);
@@ -355,7 +420,8 @@ public class Trace
 {
     public List<Recorded<Physics>> Physics { get; } = [];
     public List<Recorded<Surfaces>> Controls { get; } = [];
-    // public List<Recorded<Var>> Vars { get; set; } = [];
-
-    // public record Var(string Name, object Value);
+    public List<Recorded<Var>> Vars { get; } = [];
 }
+
+/// A single observed value change, carrying the definition needed to reproduce it and the value it replaced.
+public record Var(Definition Def, object Value, object Prev);
