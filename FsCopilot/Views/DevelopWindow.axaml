@@ -43,8 +43,8 @@
         </ExperimentalAcrylicBorder>
         
 
-        <Grid Classes="Wrapper" 
-              RowDefinitions="Auto,*,Auto">
+        <Grid Classes="Wrapper"
+              RowDefinitions="Auto,*,Auto,Auto">
             <TextBox Grid.Row="0" 
                      Classes="Search"
                      Watermark="Search"
@@ -120,10 +120,16 @@
                 
                 <Border DockPanel.Dock="Left"
                         Classes="Card Badge">
-                        <TextBlock Classes="Badge" 
-                                   Text="{Binding Loaded}" />
+                        <TextBlock Classes="Badge"
+                                   Text="{Binding Status}" />
                 </Border>
             </DockPanel>
+
+            <Border Grid.Row="3"
+                    Classes="Card Badge">
+                    <TextBlock Classes="Badge"
+                               Text="{Binding Loaded}" />
+            </Border>
 
         </Grid>
 

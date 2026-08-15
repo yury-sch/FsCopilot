@@ -6,6 +6,7 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Connection;
 using Jint;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -297,5 +298,36 @@ public partial class Definition
                 : double.TryParse(p, NumberStyles.Float, CultureInfo.InvariantCulture, out var d)
                     ? d
                     : 0;
+    }
+
+    /// Applies an incoming value to the sim. Used for updates received from a peer and for local playback.
+    /// Updates from a peer are registered with Skip so the change they cause is not sent straight back out.
+    public void ApplyTo(SimClient sim, object value, object? current, bool fromPeer)
+    {
+        if (!Shared)
+        {
+            var set = ParseSet(value, current ?? value, out var units, out var values);
+            if (values.Length == 0) return;
+            sim.Set(set, units, values);
+        }
+        else
+        {
+            var expression = Set(value, current ?? value);
+            if (expression.Contains(">K:#"))
+            {
+                var set = ParseSet(value, current ?? value, out var units, out var values);
+                if (values.Length == 0) return;
+                if (fromPeer) Simulation.Skip.Next(Get);
+                sim.Set(set, units, values);
+            }
+            else
+            {
+                if ((expression.Contains(">K:") || expression.Contains(">B:"))
+                    && expression.Contains("TOGGLE", StringComparison.OrdinalIgnoreCase)
+                    && value.Equals(current)) return;
+                if (fromPeer) Simulation.Skip.Next(Get);
+                sim.Execute(expression);
+            }
+        }
     }
 }
