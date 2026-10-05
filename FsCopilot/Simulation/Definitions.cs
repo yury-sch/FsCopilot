@@ -33,13 +33,15 @@ public class Definitions : IReadOnlyCollection<Definition>
     public string Name { get; }
     public DateTime UpdatedAt { get; }
     public string[] Ignore { get; }
+    public string[] Notes { get; }
 
-    private Definitions(string name, DateTime updatedAt, Definition[] links, string[] ignore)
+    private Definitions(string name, DateTime updatedAt, Definition[] links, string[] ignore, string[] notes)
     {
         Name = name;
         UpdatedAt = updatedAt;
         _links = links;
         Ignore = ignore;
+        Notes = notes;
     }
 
     [DynamicDependency(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicConstructors, typeof(Config))]
@@ -84,6 +86,7 @@ public class Definitions : IReadOnlyCollection<Definition>
             .Where(m => !string.IsNullOrWhiteSpace(m.Get))
             .Select(m => new Definition(true, m.Get, m.Set, m.Skp)).ToArray();
         var ignore = (cfg.Ignore ?? []).Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToArray();
+        var notes = (cfg.Notes ?? []).Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).ToArray();
         node = new(path, (cfg.Include ?? [])
             .Select(i =>
             {
@@ -92,20 +95,21 @@ public class Definitions : IReadOnlyCollection<Definition>
             })
             .Where(def => def.loaded)
             .Select(def => def.child)
-            .ToArray(), master, shared, ignore);
+            .ToArray(), master, shared, ignore, notes);
         return true;
     }
 
     public static Definitions Load(string name)
     {
         var cfgFile = LoadModule($"{name}.yaml") ?? string.Empty;
-        if (!TryLoadTree($"{name}.yaml", out var node)) return new(name, DateTime.MinValue, [], []);
+        if (!TryLoadTree($"{name}.yaml", out var node)) return new(name, DateTime.MinValue, [], [], []);
         var master = new List<Definition>();
         var shared = new List<Definition>();
         var ignore = new List<string>();
-        Collect(node, master, shared, ignore);
+        var notes = new List<string>();
+        Collect(node, master, shared, ignore, notes);
         var simVars = master.Concat(shared).ToArray();
-        return new(name, TryReadUpdatedUtc(cfgFile) ?? DateTime.MinValue, simVars, ignore.ToArray());
+        return new(name, TryReadUpdatedUtc(cfgFile) ?? DateTime.MinValue, simVars, ignore.ToArray(), notes.ToArray());
     }
 
     private static string? LoadModule(string path)
@@ -126,9 +130,10 @@ public class Definitions : IReadOnlyCollection<Definition>
         }
     }
 
-    private static void Collect(DefinitionNode node, List<Definition> master, List<Definition> shared, List<string> ignore)
+    private static void Collect(DefinitionNode node, List<Definition> master, List<Definition> shared, List<string> ignore, List<string> notes)
     {
-        foreach (var child in node.Include) Collect(child, master, shared, ignore);
+        notes.AddRange(node.Notes);
+        foreach (var child in node.Include) Collect(child, master, shared, ignore, notes);
         master.AddRange(node.Master);
         shared.AddRange(node.Shared);
         ignore.AddRange(node.Ignore);
@@ -180,6 +185,8 @@ public class Definitions : IReadOnlyCollection<Definition>
         public Link[]? Master { get; set; } = [];
         [YamlMember(Alias = "ignore")]
         public string[]? Ignore { get; set; } = [];
+        [YamlMember(Alias = "notes")]
+        public string[]? Notes { get; set; } = [];
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         public class Link
@@ -205,9 +212,10 @@ public record DefinitionNode(
     DefinitionNode[] Include,
     Definition[] Master,
     Definition[] Shared,
-    string[] Ignore)
+    string[] Ignore,
+    string[] Notes)
 {
-    public static readonly DefinitionNode Empty = new(string.Empty, [], [], [], []);
+    public static readonly DefinitionNode Empty = new(string.Empty, [], [], [], [], []);
 }
 
 public partial class Definition

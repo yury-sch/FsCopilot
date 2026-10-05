@@ -20,6 +20,7 @@ public class MainViewModel : ReactiveObject, IDisposable
     private bool _connected;
     private bool _showTakeControl;
     private bool _newProfileAvailable;
+    private string _notes = string.Empty;
     private ViewErrors _errors = ViewErrors.None;
 
     private string Aircraft
@@ -71,6 +72,13 @@ public class MainViewModel : ReactiveObject, IDisposable
         set => this.RaiseAndSetIfChanged(ref _newProfileAvailable, value);
     }
 
+    /// <summary>Pilot instructions from the "notes" section of the loaded aircraft profile.</summary>
+    public string Notes
+    {
+        get => _notes;
+        private set => this.RaiseAndSetIfChanged(ref _notes, value);
+    }
+
     public string PeerId { get; init; }
     public string ClientName { get; init; }
 
@@ -120,6 +128,12 @@ public class MainViewModel : ReactiveObject, IDisposable
         definitions
             .Where(defs => defs != null)
             .Subscribe(defs => coordinator.Load(defs!))
+            .DisposeWith(_d);
+
+        definitions
+            .Select(defs => defs == null ? string.Empty : string.Join("\n\n", defs.Notes))
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(notes => Notes = notes)
             .DisposeWith(_d);
 
         definitions

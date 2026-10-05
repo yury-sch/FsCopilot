@@ -176,6 +176,18 @@
         <Setter Property="Padding" Value="20, 0"></Setter>
     </Style>
 
+    <Style Selector="ScrollViewer.Notes">
+        <Setter Property="MaxHeight" Value="140"></Setter>
+        <Setter Property="AllowAutoHide" Value="True"></Setter>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"></Setter>
+    </Style>
+
+    <Style Selector="TextBlock.NotesText">
+        <Setter Property="Foreground" Value="#cbd5e1"></Setter>
+        <Setter Property="FontSize" Value="13"></Setter>
+        <Setter Property="TextWrapping" Value="Wrap"></Setter>
+    </Style>
+
     <Style Selector="ComboBox.Aircraft">
         <Setter Property="BorderThickness" Value="0"></Setter>
         <Setter Property="CornerRadius" Value="8"></Setter>
