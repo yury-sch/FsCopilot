@@ -34,7 +34,9 @@ static class SetterDispatchChecks {
             check(calls.Count>0&&(name[0] is 'L' or 'A' or 'K'?calls[0].StartsWith(name[..2],StringComparison.Ordinal):calls[0].StartsWith("calculator:",StringComparison.Ordinal)),"Original setter route is retained for "+name);
             calls.Clear();set.Invoke(probe,[name,"Number",Array.Empty<object>()]);check(calls.Count==0,"Empty argument list is ignored for "+name);
         }
-        calls.Clear();set.Invoke(probe,["K:2:KOHLSMAN_SET",null,new object[]{2,16212}]);
-        check(calls.Count==1&&calls[0]=="K:2:KOHLSMAN_SET:2,16212","Indexed key arguments retain their order with one dispatch.");
+        var indexed=new FsCopilot.Simulation.Definition(true,"A:KOHLSMAN SETTING MB EX1:2, Millibars","`2 ${value * 16} (>K:2:KOHLSMAN_SET)`",null);
+        var target=indexed.ParseSet(1013.25,1000d,out var units,out var arguments);
+        calls.Clear();set.Invoke(probe,[target,units,arguments]);
+        check(calls.Count==1&&calls[0]=="K:KOHLSMAN_SET:16212,2","Actual parser-to-dispatcher chain sends pressure first, instrument index second, exactly once.");
     }
 }

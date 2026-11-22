@@ -1,0 +1,533 @@
+# Original author: https://discord.com/channels/1454265644416765974/1485824178128031764/1546561018753327246
+
+# Black Square Baron 58ProPress variant - FsCopilot YAML Configuration
+# Version: 0.0.7
+# Created By: DKgolfnut
+# Special Thanks:
+# Date: 9/7/2026
+
+# Known Issues:
+ # - Make sure you have the PMS50_GTN_650-750.yaml file in the modules folder
+ # - Starting Engines - they are finicky due to BKSQ desire to make this as real as possible. If the engines do not start together, the second pilot may have to start the engine after the first pilot using the starter and moving throttles or disconnect/leave the session, start engines and rejoin the FSC session. I can remove the "Starter HELD logic" if this is too impactful.
+
+# FIXES:
+   # - 9/7/2026
+     # - Corrected Flap operation
+   # - 4/12/2026
+     # - Yury Updated Syntax for :1 showing before argument and K:2: logic
+  # - 4/1/2026
+   # - Fixed issue with the ELT switch not working correctly
+ # - 3-26-2026
+   # - I added all breakers on Pilot side, but they are not animating due to no trigger event on the A:CIRCUIT CONNECTION ON:x Avars. This is a BKSQ issue. I will leave these in incase they fix it. All breakers on the right side near Glove box are functioning correctly.
+   # Added Alternate Static Port switch
+ # - 3-25-2026
+   # - Initial release.
+   # - All functionality is working including all breakers with the exception of the Engine starting difficulty called out above.
+
+include:
+  - modules/PMS50_GTN_650-750_no_baro.yaml
+  - modules/AS_GNS430.yaml
+  - modules/AS_GNS530.yaml
+  - modules/fuel.yaml
+  - modules/payload.yaml
+
+master:
+  - get: A:AILERON TRIM PCT, Percent over 100 # AILERON TRIM
+  - get: A:ELEVATOR TRIM PCT, Percent scaler 16k # ELEVATOR TRIM BTN
+    set: (>K:ELEVATOR_TRIM_SET)
+  - get: A:RUDDER TRIM PCT, Percent # RUDDER TRIM BTN
+    set: (>K:RUDDER_TRIM_SET)
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:1, position 16k # Throttle 1 LEVER
+  - get: A:GENERAL ENG THROTTLE LEVER POSITION:2, position 16k # Throttle 2 LEVER
+  - get: A:GENERAL ENG PROPELLER LEVER POSITION:1, position 16k # PROPELLER 1 LEVER
+    set: (>K:PROP_PITCH1_SET)
+  - get: A:GENERAL ENG PROPELLER LEVER POSITION:2, position 16k # PROPELLER 2 LEVER
+    set: (>K:PROP_PITCH2_SET)
+  - get: A:GENERAL ENG MIXTURE LEVER POSITION:1, position 16k # MIXTURE 1 LEVER
+  - get: L:BKSQ_MixtureLeverPosition_1, Percent
+  - get: L:BKSQ_TurboCharged, Bool
+  - get: A:GENERAL ENG MIXTURE LEVER POSITION:2, position 16k # MIXTURE 2 LEVER
+  - get: L:BKSQ_MixtureLeverPosition_2, Percent
+  - get: A:BRAKE LEFT POSITION EX1, Position 32k
+    set: "`${value - 16384} (>K:AXIS_LEFT_BRAKE_SET)`"
+  - get: A:BRAKE RIGHT POSITION EX1, Position 32k
+    set: "`${value - 16384} (>K:AXIS_RIGHT_BRAKE_SET)`"
+shared:
+######### MISCELLANEOUS ITEMS #########
+  - get: L:var_PilotCws, Number
+  - get: L:var_PilotCws_IsDown, Number
+  - get: L:var_CopilotCws, Number
+  - get: L:var_CopilotCws_IsDown, Number
+  - get: L:var_yokeChronoMode_L, Number
+  - get: L:var_yokeChronoMode_R, Number
+  - get: L:var_yokeTimerMode_L, Number
+  - get: L:var_yokeTimerMode_R, Number
+  - get: L:var_OatMapCompassLightButton_1, Bool
+  - get: L:var_OatMapCompassLightButton_2, Bool
+  - get: L:XMLVAR_YokeHidden1
+  - get: L:XMLVAR_YokeHidden2
+  - get: L:bksq_controlLocks, Bool
+  - get: L:bksq_TabletVisible, Bool
+  - get: L:var_PilotDoorPressureBypass, Bool
+  - get: L:bksq_PilotDoor, Bool
+  - get: L:bksq_stormWindow, Bool
+  - get: L:bksq_HeadphoneSimulationTarget, Number
+  - get: L:var_Visor_L, Number
+  - get: L:var_Visor_R, Number
+  - get: L:var_LIGHTING_Push_Cockpit_1, Bool
+  - get: L:var_LIGHTING_Push_Cockpit_2, Bool
+  - get: L:var_LIGHTING_Push_Cockpit_3, Bool
+  - get: L:var_LIGHTING_Push_Cockpit_4, Bool
+  - get: L:var_LIGHTING_Push_Cockpit_5, Bool
+  - get: L:var_LIGHTING_Push_Cockpit_6, Bool
+  - get: L:var_CabinDoorPressureBypass, Bool
+  - get: L:var_FrontArmrest, Number
+  - get: L:var_RearArmrest, Number
+  - get: L:bksq_CabinDoor, Bool
+  - get: L:bksq_CabinTable, Bool
+  - get: L:bksq_WheelChocks, Bool
+  - get: L:bksq_NoseDoor, Bool
+  - get: L:bksq_PitotCovers, Bool
+  - get: L:bksq_EngineCovers, Bool
+  - get: L:bksq_ExternalPower, Bool
+  - get: L:bksq_EngineHeater, Bool
+  - get: A:ALTERNATE STATIC SOURCE OPEN, Bool
+    set: (>K:TOGGLE_ALTERNATE_STATIC)
+######### Fuel Valves and Cowl Flaps levers #########
+  - get: A:RECIP ENG COWL FLAP POSITION:1, Position 16k
+    set: (>K:COWLFLAP1_SET)
+  - get: A:RECIP ENG COWL FLAP POSITION:2, Position 16k
+    set: (>K:COWLFLAP2_SET)
+
+  - get: A:FUEL TANK SELECTOR:1, Number
+    set: |
+      switch (value) {
+          case   0: return '0 (>K:FUEL_SELECTOR_OFF)'
+          case  19: return '0 (>K:FUEL_SELECTOR_LEFT_MAIN)'
+          case  20: return '0 (>K:FUEL_SELECTOR_RIGHT_MAIN)'
+          default: return ''
+      }
+  - get: A:FUEL TANK SELECTOR:2, Number
+    set: |
+      switch (value) {
+          case   0: return '0 (>K:FUEL_SELECTOR_2_OFF)'
+          case  19: return '0 (>K:FUEL_SELECTOR_2_LEFT_MAIN)'
+          case  20: return '0 (>K:FUEL_SELECTOR_2_RIGHT_MAIN)'
+          default: return ''
+      }
+######### MAIN PANEL #########
+# - # AUTOPILOT GPS-NAV Control Panel # Have to validate in flight ######
+  - get: L:var_radio1Mode, Number
+  - get: H:KLN90B_ApprArm_Push
+  - get: L:var_md41Test, Bool
+# - # Gyro Adjustment and Cage switches
+  - get: L:var_GyroSlaveModeSwitch, Bool
+  - get: L:var_GyroRotationModeSwitch, Bool
+  - get: L:var_TrueAirspeedKnob_L, Number
+  - get: A:DECISION HEIGHT, Feet  # Not moving the DH BUG
+    set: "value > current ? '0 (>K:INCREASE_DECISION_HEIGHT)' : '0 (>K:DECREASE_DECISION_HEIGHT)'"
+  - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG KNOB
+  - get: L:var_dmeMode, Number
+  - get: L:var_rnavDrivesHsi, Bool
+# - #  KAS297B ALERTER SYSTEM
+  - get: H:kas297b_VsButton  # KAS297B VS BUTTON
+  - get: H:kas297b_ArmButton  # KAS297B ARM BUTTON
+  - get: H:kas297b_1000_INC  # KAS297B 1000 INC
+  - get: H:kas297b_1000_DEC  # KAS297B 1000 DEC
+  - get: H:kas297b_100_INC  # KAS297B 100 INC
+  - get: H:kas297b_100_DEC  # KAS297B 100 DEC
+# - # Altimeters
+  # Absolute, explicitly indexed pressures. Equal/quantized values do nothing.
+  - get: A:KOHLSMAN SETTING MB EX1:1, Millibars # Left altimeter; tuned QNH retained in STD
+    set: "Number.isFinite(value) && value >= 500 && value <= 1200 && Math.round(value * 16) !== Math.round(current * 16) ? `1 ${Math.round(value * 16)} (>K:2:KOHLSMAN_SET)` : ''"
+  - get: A:KOHLSMAN SETTING MB EX1:2, Millibars # Right altimeter; independent pressure
+    set: "Number.isFinite(value) && value >= 500 && value <= 1200 && Math.round(value * 16) !== Math.round(current * 16) ? `2 ${Math.round(value * 16)} (>K:2:KOHLSMAN_SET)` : ''"
+# - # OBS1 & 2
+  - get: A:NAV OBS:1, Degrees
+    set: "value > current ? '1 (>K:VOR1_OBI_INC)' : '1 (>K:VOR1_OBI_DEC)'"
+  - get: A:NAV OBS:2, Degrees
+    set: "value > current ? '1 (>K:VOR2_OBI_INC)' : '1 (>K:VOR2_OBI_DEC)'"
+# GMA340 - AUDIO PANEL
+  - get: L:GMA340_ANNUNCIATOR_TEST
+  - get: L:GMA340_Knob_Volume_Pilot_1, Percent # VOL
+  - get: L:GMA340_Knob_Squelch_Pilot_1, Percent # Squelch
+  - get: L:GMA340_Knob_Volume_CoPilot_1, Percent # VOL
+  - get: L:GMA340_Knob_Squelch_CoPilot_1, Percent # Squelch
+  - get: A:MARKER BEACON SENSITIVITY HIGH, Bool # HI
+    set: (>K:MARKER_BEACON_SENSITIVITY_HIGH)
+  - get: A:MARKER BEACON TEST MUTE, Bool # T/M
+    set: (>K:MARKER_BEACON_TEST_MUTE)
+  - get: A:INTERCOM MODE, Enum # ISO/ALL/CREW
+    set: (>K:INTERCOM_MODE_SET)
+  - get: A:COM RECEIVE:1, Bool # COM1
+    set: (>K:COM1_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:2, Bool # COM2
+    set: (>K:COM2_RECEIVE_SELECT)
+  - get: A:COM RECEIVE:3, Bool # COM2
+    set: (>K:COM3_RECEIVE_SELECT)
+  - get: A:NAV SOUND:1, Bool # NAV1
+    set: (>K:RADIO_VOR1_IDENT_TOGGLE)
+  - get: A:NAV SOUND:2, Bool # NAV2
+    set: (>K:RADIO_VOR2_IDENT_TOGGLE)
+  - get: A:MARKER SOUND, Bool # MKR
+    set: (>K:MARKER_SOUND_TOGGLE)
+  - get: A:INTERCOM SYSTEM ACTIVE, Bool # ICS
+    set: (>K:TOGGLE_ICS)
+  - get: A:ADF SOUND:1, Bool # ADF
+    set: (>K:RADIO_ADF_IDENT_TOGGLE) # AUX
+  - get: L:XMLVAR_AudioPanel_1
+  - get: A:DME SOUND:1, Bool # DME
+    set: (>K:RADIO_DME1_IDENT_TOGGLE)
+  - get: A:SPEAKER ACTIVE, Bool # SPR
+    set: (>K:TOGGLE_SPEAKER)
+  - get: Z:AUDIO_Knob_Selector_1 # MIC
+    set: |
+      switch (value) {
+          case   0: return '(>H:KMA28_TRANSMISSION_KNOB_COM3)'
+          case  20: return '(>H:KMA28_TRANSMISSION_KNOB_COM2)'
+          case  40: return '(>H:KMA28_TRANSMISSION_KNOB_COM1)'
+          case  60: return '(>H:KMA28_TRANSMISSION_KNOB_COM1_2)'
+          case  80: return '(>H:KMA28_TRANSMISSION_KNOB_COM2_1)'
+          case 100: return '(>H:KMA28_TRANSMISSION_KNOB_TEL)'
+          default: return ''
+      }
+  - get: B:NAVCOM_AUDIO_TRANSMIT, Number # TRANSMITTER
+         ###########  KING/BENDIX  KNS81  ###########
+  - get: H:KNS81_wptInc
+  - get: H:KNS81_wptDec
+  - get: H:KNS81_modeInc
+  - get: H:KNS81_modeDec
+  - get: H:KNS81_useButton # KNS80 DME ModeButton
+  - get: H:KNS81_returnButton
+  - get: H:KNS81_RNAV_DMERADIALMODE, Bool # KNS80 DME ModeButton
+  - get: L:var_RNAV_CHECKMODE
+  - get: H:KNS81_dataButton  # Data Button
+  - get: L:var_RNAV_VOLUME, Number
+  - get: H:KNS81_bigInc
+  - get: H:KNS81_bigDec
+  - get: H:KNS81_smallInc
+  - get: H:KNS81_smallDec
+  - get: L:var_rnavKnobPulled, Bool
+# - # Bendix/King KFC150 Autopilot
+  - get: A:AUTOPILOT MASTER, Bool # AUTOPILOT MASTER BTN
+    set: (>K:AP_MASTER)
+  - get: A:AUTOPILOT YAW DAMPER, Bool # AUTOPILOT MASTER BTN
+    set: (>K:YAW_DAMPER_TOGGLE)
+  - get: A:AUTOPILOT APPROACH HOLD, Bool # APR
+    set: (>K:AP_APR_HOLD)
+  - get: A:AUTOPILOT BACKCOURSE HOLD, Bool # BC
+    set: (>K:AP_BC_HOLD)
+  - get: A:AUTOPILOT NAV1 LOCK, Bool # NAV
+    set: (>K:AP_NAV1_HOLD)
+  - get: A:AUTOPILOT HEADING LOCK, Bool # HDG
+    set: (>K:AP_PANEL_HEADING_HOLD)
+  - get: A:AUTOPILOT HEADING LOCK DIR:1, Degrees # HDG KNOB
+    set: "`1 ${value} (>K:2:HEADING_BUG_SET)`"
+  - get: A:AUTOPILOT ALTITUDE LOCK, Bool # ALT
+    set: (>K:AP_ALT_HOLD)
+  - get: A:AUTOPILOT FLIGHT LEVEL CHANGE, Bool # FL
+    set: 0 (>K:FLIGHT_LEVEL_CHANGE)
+  - get: A:AUTOPILOT FLIGHT DIRECTOR ACTIVE:1, Bool # FD
+    set: (>K:TOGGLE_FLIGHT_DIRECTOR)
+  - get: L:var_AutopilotTest # AUTOPILOT TEST
+  - get: A:AUTOPILOT VERTICAL HOLD, Bool
+    set: "value ? '(>K:AP_VS_ON)' : '(>K:AP_VS_OFF)'"
+  - get: A:AUTOPILOT VERTICAL HOLD VAR:1, Feet per minute # UP/DN
+  - get: A:AUTOPILOT ALTITUDE LOCK VAR:1, Feet # ALTITUDE LOCK VAR
+    set: (>K:AP_ALT_VAR_ENGLISH)
+  - get: A:AUTOPILOT VERTICAL SPEED VAR:1, Feet # VERTICAL SPEED VAR
+    set: (>K:AP_VS_VAR_ENGLISH)
+  - get: L:var_VsAdjustMode, Bool  # VS ADJUST MODE SWITCH
+         ###########   BENDIX/King KR87 TSO INSTRUMENT   ###########
+  - get: H:adf_AntAdf  # ADF ANTENNA
+  - get: H:adf_bfo  # ADF BFO
+  - get: H:adf_frqTransfert  # ADF FREQUENCY TRANSFER
+  - get: H:adf_FltEt  # ADF FLT ET
+  - get: H:adf_SetRst  # ADF SET/RST
+  - get: A:ADF VOLUME:1, Percent  # ADF VOLUME KNOB
+    set: "value > current ? ' (>K:ADF_VOLUME_INC)' : ' (>K:ADF_VOLUME_DEC)'"
+  - get: A:ADF ACTIVE FREQUENCY:1, KHz  # ADF ACTIVE FREQUENCY
+    set: (>K:ADF_ACTIVE_SET)
+  - get: L:var_adfKnobPulled, Bool  # ADF KNOB PULLED
+         ###########  BENDIX RDR1150XL  ###########
+  - get: L:var_RadarBrightness, number  # RADAR BRIGHTNESS KNOB
+  - get: H:bksq_wradar1_radarAlertToggle  # RADAR ALERT BUTTON
+  - get: H:bksq_wradar1_radarProfile  # RADAR PROFILE BUTTON
+  - get: H:bksq_wradar1_radarMap  # RADAR MAP BUTTON
+  - get: H:bksq_wradar1_radarHold  # RADAR HOLD BUTTON
+  - get: L:var_radarGain, number  # RADAR GAIN KNOB
+  - get: L:var_radarMode, number  # RADAR MODE KNOB
+  - get: H:bksq_wradar1_radarRangeInc  # RADAR RANGE FEET UP BUTTON
+  - get: H:bksq_wradar1_radarTrackLeft  # RADAR TRACK LEFT BUTTON
+  - get: H:bksq_wradar1_radarTrackRight  # RADAR TRACK RIGHT BUTTON
+  - get: L:var_RadarTilt, number  # RADAR TILT KNOB
+         ###########   GARMIN GTX327-330 TRANSPONDER   ###########
+  - get: A:TRANSPONDER IDENT:1, Bool
+    set: "value ? '1 (>K:XPNDR_IDENT_ON)' : '1 (>K:XPNDR_IDENT_OFF)'"
+
+  - get: H:TransponderON  # TRANSPONDER ON BUTTON
+  - get: H:TransponderOFF   # TRANSPONDER OFF BUTTON
+  - get: H:TransponderALT   # TRANSPONDER ALT BUTTON
+  - get: H:TransponderSTBY   # TRANSPONDER STBY BUTTON
+  - get: H:TransponderIDT   # TRANSPONDER IDENT BUTTON
+  - get: H:TransponderVFR   # TRANSPONDER VFR BUTTON
+  - get: H:TransponderFUNC   # TRANSPONDER FUNC BUTTON
+  - get: H:TransponderCRSR   # TRANSPONDER CRSR BUTTON
+  - get: H:TransponderSTARTSTOP   # TRANSPONDER STARTSTOP BUTTON
+  - get: H:TransponderCLR    # TRANSPONDER CLR BUTTON
+  - get: H:Transponder0   # TRANSPONDER 0 BUTTON
+  - get: H:Transponder1   # TRANSPONDER 1 BUTTON
+  - get: H:Transponder2   # TRANSPONDER 2 BUTTON
+  - get: H:Transponder3   # TRANSPONDER 3 BUTTON
+  - get: H:Transponder4   # TRANSPONDER 4 BUTTON
+  - get: H:Transponder5   # TRANSPONDER 5 BUTTON
+  - get: H:Transponder6   # TRANSPONDER 6 BUTTON
+  - get: H:Transponder7   # TRANSPONDER 7 BUTTON
+  - get: H:Transponder8   # TRANSPONDER 8 BUTTON
+  - get: H:Transponder9   # TRANSPONDER 9 BUTTON
+  - get: A:TRANSPONDER CODE:1, BCO16  # TRANSPONDER CODE
+  - set: (>K:XPNDR_SET)
+         ###########   EDM 760 ENGINE ANALYZER   ###########
+  - get: H:bksq_JpiButton_1_L_Short
+  - get: H:bksq_JpiButton_1_R_Short
+  - get: L:var_JpiMode, Number
+  - get: L:var_CabinTempUnitMode, Bool
+         ###########   Copilot Gauge Cluster   ###########
+  - get: L:var_TrueAirspeedKnob_R, Number
+  - get: L:XMLVAR_ELT_STATE  # ELT STATE RC200
+    set: |
+      switch (value) {
+          case 1: return '(>B:SAFETY_ELT_1_ARM)'
+          case 2: return '(>B:SAFETY_ELT_1_ON)'
+          case 3: return '(>B:SAFETY_ELT_1_TEST)'
+          default: return ''
+      }
+  - get: A:ATTITUDE BARS POSITION, Percent Over 100 # ATTITUDE INDICATOR BAR POSITION
+    set: "value > current ? ' (>B:INSTRUMENT_Attitude_Indicator_Bars_Position_Up)' : ' (>B:INSTRUMENT_Attitude_Indicator_Bars_Position_Down)'"
+  - get: L:var_CoTest
+  - get: L:var_CoTest_IsDown
+
+######### LOWER MIDDLE and RIGHT FRONT PANEL SWITCHES #########
+# - # Environmental Control System
+  - get: L:var_pressurizationGoal, FT  # PRESSURIZATION GOAL KNOB
+  - get: L:var_pressurizationClimbRate, Number
+  - get: L:var_pressurizationTest
+  - get: L:var_pressurizationTest_IsDown
+  - get: L:var_pressurizationPress, Bool
+  - get: L:var_doorSealStandbyInflate
+  - get: L:var_doorSealStandbyInflate_IsDown
+  - get: L:var_doorSealPrimaryInflate, Bool
+# - # FLAPS SWITCH
+# - # FLAPS SWITCH
+  - get: A:FLAPS HANDLE INDEX
+    set: "value > current? '1 (>K:FLAPS_INCR)' : '1 (>K:FLAPS_DECR)'"
+# - # PANEL LIGHTS DIMMERS
+  - get: L:var_FlightInstrumentsLightingKnob, Number
+  - get: L:var_GlareshieldLightingKnob, Number
+  - get: L:var_EngineInstrumentsLightingKnob, Number
+  - get: L:var_SubpanelLightingKnob, Number
+# - # PILOT LEFT UPPER BREAKER PANEL # No trigger happening but leaving htem in for now.
+  - get: A:CIRCUIT CONNECTION ON:14, Bool # Oil & Cylinder Left BREAKER
+    set: 14 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:15, Bool # Oil & Cylinder Right BREAKER
+    set: 15 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:11, Bool # TACH & FUEL LEFT BREAKER
+    set: 11 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:13, Bool # TACH & FUEL RIGHT BREAKER
+    set: 13 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:9, Bool # Fuel Quantity LEFT BREAKER
+    set: 9 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:10, Bool # Fuel Quantity RIGHT BREAKER
+    set: 10 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:4, Bool # FUEL BOOST PUMP LEFT BREAKER
+    set: 4 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:5, Bool # FUEL BOOST PUMP RIGHT BREAKER
+    set: 5 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:6, Bool # LANDING GEAR RELAY BREAKER
+    set: 6 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:6, Bool # LANDING GEAR MOTOR BREAKER
+    set: 6 6 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:31, Bool # CABIN HEATER BREAKER
+    set: 31 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+# - # PILOT LEFT MIDDLE BREAKER PANEL # No trigger happening but leaving htem in for now.
+  - get: A:CIRCUIT CONNECTION ON:16, Bool # TURN COORDINATOR BREAKER
+    set: 16 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:17, Bool # VOLT METER BREAKER
+    set: 17 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:18, Bool # YOKE CHRONOS BREAKER
+    set: 18 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:45, Bool # PANEL LIGHTS 1 BREAKER
+    set: 45 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:46, Bool # PANEL LIGHTS 2 BREAKER
+    set: 46 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:47, Bool # PANEL LIGHTS 3 BREAKER
+    set: 47 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:48, Bool # PANEL LIGHTS 4 BREAKER
+    set: 48 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:19, Bool # LDG GR POS LTS BREAKER
+    set: 19 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:20, Bool # ANNUN LTS BREAKER
+    set: 20 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:49, Bool # CABIN LIGHTS 1 BREAKER
+    set: 49 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:50, Bool # CABIN LIGHTS 2 BREAKER
+    set: 50 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:51, Bool # CABIN LIGHTS 3 BREAKER
+    set: 51 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:52, Bool # CABIN LIGHTS 4 BREAKER
+    set: 52 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:53, Bool # CABIN LIGHTS 5 BREAKER
+    set: 53 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:54, Bool # CABIN LIGHTS 6 BREAKER
+    set: 54 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:21, Bool # ACC POWER BREAKER
+    set: 21 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:22, Bool # VENT BLOWERS BREAKER
+    set: 22 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:23, Bool # AIR COND BREAKER
+    set: 23 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:24, Bool # AC & HEATER BLOWER 1 BREAKER
+    set: 24 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:36, Bool # AC & HEATER BLOWER 2 BREAKER
+    set: 36 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+# - # PILOT LEFT LOWER BREAKER PANEL # No trigger happening but leaving htem in for now.
+  - get: A:CIRCUIT CONNECTION ON:1, Bool # START RELAY 1 BREAKER
+    set: 1 1 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:32, Bool # START RELAY 2 BREAKER
+    set: 32 1 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:27, Bool # DEICE BOOTS BREAKER
+    set: 27 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:12, Bool # STBY ANVCS BREAKER
+    set: 12 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:28, Bool # PROP SYNC BREAKER
+    set: 28 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:25, Bool # ENGINE MONITORING BREAKER
+    set: 25 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:26, Bool # STALL WARNING BREAKER
+    set: 26 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:7, Bool # LDG GR WARN BREAKER
+    set: 7 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:23, Bool # CABIN PRESS BREAKER
+    set: 23 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:34, Bool # DOOR SEAL BREAKER
+    set: 34 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:4, Bool # FLAP RELAY BREAKER
+    set: 4 2 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:3, Bool # AILERON RELAY BREAKER
+    set: 3 4 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+# - # FO FRONT LOWER RIGHT BREAKER PANEL
+  - get: A:CIRCUIT CONNECTION ON:63, Bool # COM 1 BREAKER
+    set: 63 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:67, Bool # NAV 1 BREAKER
+    set: 67 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:64, Bool # COM 2 BREAKER
+    set: 64 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:68, Bool # NAV 2 BREAKER
+    set: 68 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:60, Bool # AUD PANEL BREAKER
+    set: 60 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:71, Bool # XPNDR BREAKER
+    set: 71 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:72, Bool # A/P CONT BREAKER
+    set: 72 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:73, Bool # ELEC TRIM BREAKER
+    set: 73 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:74, Bool # ADF 1 BREAKER
+    set: 74 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:69, Bool # RNAV BREAKER
+    set: 69 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:75, Bool # WRDR CONT BREAKER
+    set: 75 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:76, Bool # WRDR ANT BREAKER
+    set: 76 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:77, Bool # RDR ALT BREAKER
+    set: 77 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:78, Bool # HSI BREAKER
+    set: 78 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:61, Bool # Gyro BREAKER
+    set: 61 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:79, Bool # DME 1 BREAKER
+    set: 79 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:80, Bool # ALT ENCD BREAKER
+    set: 80 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: A:CIRCUIT CONNECTION ON:83, Bool # LOW THRUST BREAKER
+    set: 83 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+  - get: L:var_Breaker_AvionicsPowerRelay_readonly, Bool # AMCVS RELAY BREAKER
+    set: 5 3 (>K:2:ELECTRICAL_BUS_TO_CIRCUIT_CONNECTION_TOGGLE)
+# - # CoPilot Air Handle
+  - get: L:var_CopilotAirHandle, Number
+    set: (>B:PASSENGER_Cabin_Heat_7_set)
+
+######### LOWER LEFT FRONT PANEL SWITCHES #########
+# - # Electrical panel
+  - get: B:ELECTRICAL_Battery_1, Number
+    set: (>B:ELECTRICAL_Battery_1_Toggle)
+  - get: B:ELECTRICAL_Alternator_1, Bool
+    set: (>B:ELECTRICAL_Alternator_1_Toggle)
+  - get: B:ELECTRICAL_Alternator_2, Bool
+    set: (>B:ELECTRICAL_Alternator_2_Toggle)
+  - get: B:ELECTRICAL_Avionics_Bus_1, Bool
+    set: (>B:ELECTRICAL_Avionics_Bus_1_Toggle)
+# - # Prop Sync
+  - get: L:var_PropSyncSwitch, Bool
+# - # ICING PANEL
+  - get: A:CIRCUIT SWITCH ON:29, Bool # Pitot Heat L
+    set: 1 (>K:PITOT_HEAT_TOGGLE)
+  - get: A:CIRCUIT SWITCH ON:37, Bool # Pitot Heat L
+    set: 2 (>K:PITOT_HEAT_TOGGLE)
+  - get: L:var_FuelVentHeatSwitch, Bool
+  - get: L:var_StallWarningHeatSwitch, Bool
+  - get: L:var_windshieldHeatSwitch, Bool
+  - get: L:var_PropHeatSwitch, Bool
+  - get: L:var_surfaceDeiceSwitch
+  - get: L:var_VentBlowersSwitch, Bool
+  - get: L:var_AnnunciatorTestButton
+  - get: L:var_AnnunciatorTestButton_IsDown
+# - # MAGS and Starters
+  - get: L:BKSQ_IgnitionPosition_1, Number
+  - get: L:BKSQ_IgnitionPosition_2, Number
+  - get: A:GENERAL ENG STARTER:1, Bool  # STARTER SW
+    set: (>K:SET_STARTER1_HELD)
+  - get: A:GENERAL ENG STARTER:2, Bool  # STARTER SW
+    set: (>K:SET_STARTER1_HELD)
+# - # FUEL BOOST SWITCHES
+  - get: L:var_FUEL_Switch_Pump_1, Number
+  - get: L:var_FUEL_Switch_Pump_2, Number
+# - # AIR COND & HEATER SWITCHES
+  - get: L:var_AirConditionerSwitch, Number
+  - get: L:var_AirConditioningBlowerSwitch, Number
+  - get: L:var_CabinHeaterIgnitionSwitch, Bool
+  - get: L:var_CabinHeaterBlowerSwitch, Number
+# - # LIGHTING PANEL SWITCHES
+  - get: B:LIGHTING_WING_1, Bool
+    set: (>B:LIGHTING_WING_1_Toggle)
+  - get: B:LIGHTING_STROBE_1, Bool
+    set: (>B:LIGHTING_STROBE_1_Toggle)
+  - get: B:LIGHTING_BEACON_1, Bool
+    set: (>B:LIGHTING_BEACON_1_Toggle)
+  - get: B:LIGHTING_NAV_1, Bool
+    set: (>B:LIGHTING_NAV_1_Toggle)
+  - get: L:bksq_MasterGlareShieldLights, Bool
+  - get: L:bksq_MasterPanelLights, Bool
+  - get: B:LIGHTING_TAXI_1, Bool
+    set: (>B:LIGHTING_TAXI_1_Toggle)
+  - get: B:LIGHTING_LANDING_1, Bool
+    set: (>B:LIGHTING_LANDING_1_Toggle)
+  - get: B:LIGHTING_LANDING_2, Bool
+    set: (>B:LIGHTING_LANDING_2_Toggle)
+# - # AIR AND HEAT PULL KNOBS SWITCHES
+  - get: L:var_PilotAirHandle, Number
+    set: (>B:PASSENGER_Cabin_Heat_3_set)
+  - get: L:var_CabinHeatHandle, Number
+    set: (>B:PASSENGER_Cabin_Heat_2_set)
+  - get: L:var_DefrosterHandle, Number
+    set: (>B:PASSENGER_Cabin_Heat_4_set)
+  - get: L:var_PressurizationAirShutoffHandle_L, Number
+    set: (>B:PASSENGER_Cabin_Heat_5_set)
+  - get: L:var_PressurizationAirShutoffHandle_R, Number
+    set: (>B:PASSENGER_Cabin_Heat_6_set)
+  - get: L:var_doorSealStandbyAirValve, Bool
+  - get: L:ParkingBrake_Position, Number
+    set: (>B:LANDING_GEAR_ParkingBrake_Toggle)
+  - get: L:LANDING_GEAR_Gear, Number
+    set: (>B:LANDING_GEAR_Gear_Set)

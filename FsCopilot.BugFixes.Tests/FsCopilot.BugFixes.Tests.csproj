@@ -11,6 +11,7 @@
     <Compile Include="../FsCopilot/Simulation/Coordinator.cs" Link="Production/Coordinator.cs" />
     <Compile Include="../FsCopilot/Network/IPacketCodec.cs" Link="Production/IPacketCodec.cs" />
     <Content Include="../Definitions/**/*.yaml" Link="Definitions/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Fixtures/OriginalBaron.yaml" Link="Definitions/original-baron.yaml" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../FsCopilot/Connection/SimClient.cs" Link="Source/SimClient.cs" CopyToOutputDirectory="PreserveNewest" />
     <Reference Include="Microsoft.CodeAnalysis"><HintPath>$(MSBuildSDKsPath)/../Roslyn/bincore/Microsoft.CodeAnalysis.dll</HintPath></Reference>
     <Reference Include="Microsoft.CodeAnalysis.CSharp"><HintPath>$(MSBuildSDKsPath)/../Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll</HintPath></Reference>
