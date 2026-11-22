@@ -266,6 +266,12 @@ public partial class Definition
     public string ParseSet(object value, object current, out string sUnits, out object[] values)
     {
         var exp = Set(value, current);
+        if (string.IsNullOrWhiteSpace(exp))
+        {
+            sUnits = Units;
+            values = [];
+            return Get;
+        }
 
         var m = SetRegex().Match(exp);
         if (!m.Success)

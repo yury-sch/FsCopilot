@@ -125,6 +125,7 @@ public class Coordinator : IDisposable
                 else
                 {
                     var expression = def.Set(update.Value, currentValue ?? update.Value);
+                    if (string.IsNullOrWhiteSpace(expression)) return;
                     if (expression.Contains(">K:#"))
                     {
                         var set = def.ParseSet(update.Value, currentValue ?? update.Value, out var units, out var values);
