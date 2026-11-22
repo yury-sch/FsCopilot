@@ -224,10 +224,10 @@ public class SimClient : IDisposable
     {
         if (values.Length == 0) return;
         if (name.StartsWith("L:")) SetLVar(name, sUnits, Convert.ToSingle(values[^1]));
-        if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, values[^1]);
-        if (name.StartsWith("K:")) TransmitKEvent(name[2..], values);
+        else if (name.StartsWith("A:")) SetSimVar(name[2..], sUnits, values[^1]);
+        else if (name.StartsWith("K:")) TransmitKEvent(name[2..], values);
         // B / H / Z / Others
-        if (name.Length > 2 && name[1] == ':')
+        else if (name.Length > 2 && name[1] == ':')
             Execute($"{string.Join(' ', values.Select(value => Convert.ToString(value, CultureInfo.InvariantCulture)))} (>{name})");
     }
 
