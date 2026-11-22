@@ -320,7 +320,7 @@ shared:
 # - # FLAPS SWITCH
 # - # FLAPS SWITCH
   - get: A:FLAPS HANDLE INDEX
-    set: "value > current? '1 (>K:FLAPS_INCR)' : '1 (>K:FLAPS_DECR)'"
+    set: "value === current || !Number.isInteger(value) || value < 0 || value > 2 ? '' : ['0 (>K:FLAPS_UP)', '0 (>K:FLAPS_1)', '0 (>K:FLAPS_DOWN)'][value]"
 # - # PANEL LIGHTS DIMMERS
   - get: L:var_FlightInstrumentsLightingKnob, Number
   - get: L:var_GlareshieldLightingKnob, Number

@@ -38,7 +38,7 @@ static class AltimeterChecks {
         for(var i=0;i<Math.Min(untouchedBefore.Length,untouchedAfter.Length);++i){
             var a=untouchedBefore[i];var b=untouchedAfter[i];
             check(a.Get==b.Get&&a.Units==b.Units&&a.Shared==b.Shared&&a.Skip==b.Skip,"Other mappings retain identity, units, direction, order and suppression rule.");
-            check(a.Set(1d,0d)==b.Set(1d,0d)&&a.Set(0d,1d)==b.Set(0d,1d),"Other aircraft/GTN mappings retain both setter directions.");
+            if(a.Get!="A:FLAPS HANDLE INDEX")check(a.Set(1d,0d)==b.Set(1d,0d)&&a.Set(0d,1d)==b.Set(0d,1d),"Other aircraft/GTN mappings retain both setter directions.");
         }
     }
 }
